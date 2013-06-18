@@ -1,0 +1,16 @@
+﻿<ResourceDictionary 
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="clr-namespace:Green.Settings.UI">
+    <Style x:Key="RootContainer" TargetType="Border">
+        <Setter Property="Margin">
+            <Setter.Value>
+                <Thickness Bottom="3" Left="3" Right="3" Top="3"/>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Thickness x:Key="ContentMargin" Top="3"/>
+    <local:SettingToUIConverter x:Key="SettingUIConverter"/>
+    <local:SettingGroupToUIConverter x:Key="SettingGroupToUIConverter"/>
+    <local:HasDefaultValueToFontWeightConverter x:Key="HasDefaultValueToFontWeightConverter"/>
+</ResourceDictionary>
