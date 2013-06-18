@@ -16,9 +16,9 @@ namespace Green
 		{
 		public:
 			static const int ColorWidth = 640;
-			static const int ColorHeight = 640;
+			static const int ColorHeight = 480;
 			static const int DepthWidth = 640;
-			static const int DepthHeight = 640;
+			static const int DepthHeight = 480;
 			static int GetDeviceCount() 
 			{
 				int count;

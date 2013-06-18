@@ -41,7 +41,7 @@ namespace Green
 				VSSimple = new VertexShader(Device, L"SimpleVertexShader.cso");
 				PSInfrared = new PixelShader(Device, L"InfraredPixelShader.cso");
 				VSSimple->SetInputLayout(MainQuad->VBuffer);
-				SLinearWrap = new Sampler(Device, D3D11_FILTER_MIN_MAG_MIP_LINEAR, D3D11_TEXTURE_ADDRESS_WRAP);
+				SLinearWrap = new Sampler(Device, D3D11_FILTER_MIN_MAG_MIP_LINEAR, D3D11_TEXTURE_ADDRESS_BORDER);
 
 				KinectReady = false;
 			}
@@ -79,21 +79,21 @@ namespace Green
 				case Green::Kinect::KinectDevice::Infrared:
 					dxw->ColorTexture = new Texture2D(dxw->Device,
 						KinectDevice::ColorWidth, KinectDevice::ColorHeight,
-						DXGI_FORMAT_A8_UNORM, D3D11_USAGE_DYNAMIC);
+						DXGI_FORMAT_R8_UNORM, D3D11_USAGE_DYNAMIC);
 					
 					break;
 				default:
 					break;
 				}
 
-				byte* d = new byte[640*480];
+				/*byte* d = new byte[640*480];
 					byte* pd = d;
 					for(int i=0;i <640*480;i++)
 					{
-						*pd = 128; pd++;
+						*pd = 255; pd++;
 					}
 					dxw->ColorTexture->Load<byte>(d);
-					delete [640*480] d;
+					delete [640*480] d;*/
 				dxw->KinectReady = true;
 			}
 

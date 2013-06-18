@@ -32,9 +32,9 @@ namespace Green
 				UINT semanticIndex,
 				DXGI_FORMAT format,
 				UINT inputSlot,
-				UINT alignedByteOffset,
 				D3D11_INPUT_CLASSIFICATION inputSlotClass,
-				UINT instanceDataStepRate)
+				UINT instanceDataStepRate,
+				UINT alignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT)
 			{
 				D3D11_INPUT_ELEMENT_DESC ied;
 				ied.SemanticName = semanticName;
@@ -59,25 +59,25 @@ namespace Green
 				ied = new D3D11_INPUT_ELEMENT_DESC[1];
 				ied[0] = CreateDescription(
 					"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,
-					0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0);
+					0, D3D11_INPUT_PER_VERTEX_DATA, 0);
 				VertexPosition = new VertexDefinition(ied, 1);
 
 				ied = new D3D11_INPUT_ELEMENT_DESC[2];
 				ied[0] = CreateDescription(
 					"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,
-					0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0);
+					0, D3D11_INPUT_PER_VERTEX_DATA, 0);
 				ied[1] = CreateDescription(
 					"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT,
-					0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0);
+					0, D3D11_INPUT_PER_VERTEX_DATA, 0);
 				VertexPositionColor = new VertexDefinition(ied, 2);
 
 				ied = new D3D11_INPUT_ELEMENT_DESC[2];
 				ied[0] = CreateDescription(
 					"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,
-					0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0);
+					0, D3D11_INPUT_PER_VERTEX_DATA, 0);
 				ied[1] = CreateDescription(
 					"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,
-					0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0);
+					0, D3D11_INPUT_PER_VERTEX_DATA, 0);
 				VertexPositionTexture = new VertexDefinition(ied, 2);
 			}
 		};

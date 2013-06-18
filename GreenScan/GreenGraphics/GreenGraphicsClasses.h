@@ -205,7 +205,7 @@ namespace Green
 			{
 				D3D11_MAPPED_SUBRESOURCE ms;
 				Error(Context->Map(Texture, 0, D3D11_MAP_WRITE_DISCARD, 0, &ms));
-				//memcpy(ms.pData, data, Width * Height);
+				memcpy(ms.pData, data, Width * Height);
 				Context->Unmap(Texture, 0);
 			}
 
