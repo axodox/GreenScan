@@ -49,7 +49,7 @@ namespace Green
 			{
 				deviceOpened = Device->OpenKinect(index);
 				OnPropertyChanged("DeviceOpened");
-				Device->StartKinect(KinectDevice::Modes::Infrared);
+				Device->StartKinect(KinectDevice::Modes::Depth);
 			}
 			
 			KinectManager()

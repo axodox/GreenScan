@@ -29,18 +29,22 @@ namespace Green
 			}
 
 			bool KinectReady;
+			KinectDevice::Modes KinectMode;
 			Quad *MainQuad;
 			Sampler* SLinearWrap;
 			VertexShader *VSSimple;
-			PixelShader *PSInfrared;
-			Texture2D *ColorTexture;
+			PixelShader *PSInfrared, *PSColor;
+			Texture2D *ColorTexture, *DepthTexture;
 
 			void CreateResources()
 			{
 				MainQuad = new Quad(Device);
 				VSSimple = new VertexShader(Device, L"SimpleVertexShader.cso");
-				PSInfrared = new PixelShader(Device, L"InfraredPixelShader.cso");
 				VSSimple->SetInputLayout(MainQuad->VBuffer);
+
+				PSInfrared = new PixelShader(Device, L"InfraredPixelShader.cso");
+				PSColor = new PixelShader(Device, L"ColorPixelShader.cso");
+				
 				SLinearWrap = new Sampler(Device, D3D11_FILTER_MIN_MAG_MIP_LINEAR, D3D11_TEXTURE_ADDRESS_BORDER);
 
 				KinectReady = false;
@@ -52,35 +56,66 @@ namespace Green
 				delete MainQuad;
 				delete VSSimple;
 				delete PSInfrared;
+				delete PSColor;
 				delete SLinearWrap;
 			}
 
 			void DrawScene()
 			{
 				if(!KinectReady) return;
-				VSSimple->Apply();
-				PSInfrared->Apply();
-				ColorTexture->SetForPS(0);
-				SLinearWrap->SetForPS(0);				
-				MainQuad->Draw();
+				switch (KinectMode)
+				{
+				case Green::Kinect::KinectDevice::Depth:
+					VSSimple->Apply();
+					PSInfrared->Apply();
+					DepthTexture->SetForPS(0);
+					SLinearWrap->SetForPS(0);				
+					MainQuad->Draw();
+					break;
+				case Green::Kinect::KinectDevice::Color:
+					VSSimple->Apply();
+					PSColor->Apply();
+					ColorTexture->SetForPS(0);
+					SLinearWrap->SetForPS(0);				
+					MainQuad->Draw();
+					break;
+				case Green::Kinect::KinectDevice::DepthAndColor:
+					break;
+				case Green::Kinect::KinectDevice::Infrared:
+					VSSimple->Apply();
+					PSInfrared->Apply();
+					ColorTexture->SetForPS(0);
+					SLinearWrap->SetForPS(0);				
+					MainQuad->Draw();
+					break;
+				default:
+					break;
+				}
+				
 			}
 
 			static void OnKinectStarting(KinectDevice::Modes mode, void* obj)
 			{
 				DirectXWindow* dxw = (DirectXWindow*)obj;
+				dxw->KinectMode = mode;
 				switch (mode)
 				{
 				case Green::Kinect::KinectDevice::Depth:
+					dxw->DepthTexture = new Texture2D(dxw->Device,
+						KinectDevice::DepthWidth, KinectDevice::DepthHeight,
+						DXGI_FORMAT_R16_UNORM, D3D11_USAGE_DYNAMIC);
 					break;
 				case Green::Kinect::KinectDevice::Color:
+					dxw->ColorTexture = new Texture2D(dxw->Device,
+						KinectDevice::ColorWidth, KinectDevice::ColorHeight,
+						DXGI_FORMAT_R8G8B8A8_UNORM, D3D11_USAGE_DYNAMIC);
 					break;
 				case Green::Kinect::KinectDevice::DepthAndColor:
 					break;
 				case Green::Kinect::KinectDevice::Infrared:
 					dxw->ColorTexture = new Texture2D(dxw->Device,
 						KinectDevice::ColorWidth, KinectDevice::ColorHeight,
-						DXGI_FORMAT_R8_UNORM, D3D11_USAGE_DYNAMIC);
-					
+						DXGI_FORMAT_R16_UNORM, D3D11_USAGE_DYNAMIC);
 					break;
 				default:
 					break;
@@ -90,7 +125,9 @@ namespace Green
 					byte* pd = d;
 					for(int i=0;i <640*480;i++)
 					{
-						*pd = 255; pd++;
+						*pd = i%100;
+						
+							pd++;
 					}
 					dxw->ColorTexture->Load<byte>(d);
 					delete [640*480] d;*/
@@ -100,14 +137,32 @@ namespace Green
 			static void OnColorFrameReady(void* data, void* obj)
 			{
 				DirectXWindow* dxw = (DirectXWindow*)obj;
-				dxw->ColorTexture->Load<byte>((byte*)data);
+				switch (dxw->KinectMode)
+				{
+				case KinectDevice::Modes::Infrared:
+					dxw->ColorTexture->Load<short>((short*)data);
+					break;
+				case KinectDevice::Modes::Color:
+					dxw->ColorTexture->Load<int>((int*)data);
+				default:
+					break;
+				}
+				dxw->Draw();
+			}
+
+			static void OnDepthFrameReady(void* data, void* obj)
+			{
+				DirectXWindow* dxw = (DirectXWindow*)obj;
+				dxw->DepthTexture->Load<short>((short*)data);
+				dxw->Draw();
 			}
 		public:
 			void InitKinect(KinectDevice* device)
 			{
 				device->SetCallbackObject(this);
 				device->SetKinectStartingCallback(&OnKinectStarting);
-				device->SetFrameReadyCallback(&OnColorFrameReady);
+				device->SetColorFrameReadyCallback(&OnColorFrameReady);
+				device->SetDepthFrameReadyCallback(&OnDepthFrameReady);
 			}
 
 			DirectXWindow(HWND hWnd, LPWSTR root)

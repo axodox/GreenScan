@@ -205,7 +205,24 @@ namespace Green
 			{
 				D3D11_MAPPED_SUBRESOURCE ms;
 				Error(Context->Map(Texture, 0, D3D11_MAP_WRITE_DISCARD, 0, &ms));
-				memcpy(ms.pData, data, Width * Height);
+				memcpy(ms.pData, data, Width * Height * sizeof(T));
+				Context->Unmap(Texture, 0);
+			}
+
+			void Load24bit(void* data)
+			{
+				D3D11_MAPPED_SUBRESOURCE ms;
+				Error(Context->Map(Texture, 0, D3D11_MAP_WRITE_DISCARD, 0, &ms));
+				int size = Width * Height;
+				byte* pTarget = (byte*)ms.pData;
+				byte* pSource = (byte*)data;
+				for(int i = 0; i < size; i++)
+				{
+					*pTarget++ = *pSource++;
+					*pTarget++ = *pSource++;
+					*pTarget++ = *pSource++;
+					*pTarget++ = 255;
+				}
 				Context->Unmap(Texture, 0);
 			}
 
@@ -234,13 +251,13 @@ namespace Green
 				
 				VertexPositionTexture* vertices = new VertexPositionTexture[4];
 				vertices[0].Position = XMFLOAT3(-1.f, -1.f, 0.f);
-				vertices[0].Texture = XMFLOAT2(0.f, 0.f);
+				vertices[0].Texture = XMFLOAT2(0.f, 1.f);
 				vertices[1].Position = XMFLOAT3(-1.f, 1.f, 0.f);
-				vertices[1].Texture = XMFLOAT2(0.f, 1.f);
+				vertices[1].Texture = XMFLOAT2(0.f, 0.f);
 				vertices[2].Position = XMFLOAT3(1.f, -1.f, 0.f);
-				vertices[2].Texture = XMFLOAT2(1.f,0.f);
+				vertices[2].Texture = XMFLOAT2(1.f, 1.f);
 				vertices[3].Position = XMFLOAT3(1.f, 1.f, 0.f);
-				vertices[3].Texture = XMFLOAT2(1.f, 1.f);
+				vertices[3].Texture = XMFLOAT2(1.f, 0.f);
 				VBuffer->Load(vertices, 4);
 				delete [4] vertices;
 				device->GetImmediateContext(&Context);

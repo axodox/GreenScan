@@ -35,13 +35,13 @@ namespace Green
 			};
 
 			typedef void (*KinectStartingCallback)(Modes mode, void* obj);
-			typedef void (*ColorFrameReadyCallback)(void* data, void* obj);
+			typedef void (*FrameReadyCallback)(void* data, void* obj);
 			
 		private:
 			void* CallbackObject;
 			KinectStartingCallback KinectStarting;
 			KinectCountChangedCallback KinectCountChanged;
-			ColorFrameReadyCallback ColorFrameReady;
+			FrameReadyCallback ColorFrameReady, DepthFrameReady;
 			INuiSensor* Sensor;
 			static void CALLBACK StatusChangedCallback(
 				HRESULT hrStatus, const OLECHAR* instanceName, 
@@ -88,7 +88,8 @@ namespace Green
 						{
 							texture = frame.pFrameTexture;
 							texture->LockRect(0, &lockedRect, 0, 0);
-							//copy data here...
+							if(device->DepthFrameReady != nullptr) 
+								device->DepthFrameReady(lockedRect.pBits, device->CallbackObject);
 							texture->UnlockRect(0);
 							sensor->NuiImageStreamReleaseFrame(device->DepthStream, &frame);
 						}
@@ -102,9 +103,14 @@ namespace Green
 				KinectCountChanged = callback;
 			}
 
-			void SetFrameReadyCallback(ColorFrameReadyCallback callback)
+			void SetColorFrameReadyCallback(FrameReadyCallback callback)
 			{
 				ColorFrameReady = callback;
+			}
+
+			void SetDepthFrameReadyCallback(FrameReadyCallback callback)
+			{
+				DepthFrameReady = callback;
 			}
 
 			bool OpenKinect(int index)
@@ -196,6 +202,7 @@ namespace Green
 				KinectCountChanged = nullptr;
 				KinectStarting = nullptr;
 				ColorFrameReady = nullptr;
+				DepthFrameReady = nullptr;
 				NuiSetDeviceStatusCallback(&StatusChangedCallback, this);
 			}
 

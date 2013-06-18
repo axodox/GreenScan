@@ -23,7 +23,7 @@ namespace GreenScan
 
         void TCallback(object o)
         {
-            XC.Draw();
+            //XC.Draw();
             
         }
     }
