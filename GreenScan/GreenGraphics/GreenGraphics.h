@@ -60,8 +60,8 @@ namespace Green
 				if(!KinectReady) return;
 				VSSimple->Apply();
 				PSInfrared->Apply();
-				SLinearWrap->SetForPS(0);
 				ColorTexture->SetForPS(0);
+				SLinearWrap->SetForPS(0);				
 				MainQuad->Draw();
 			}
 
@@ -96,11 +96,18 @@ namespace Green
 					delete [640*480] d;
 				dxw->KinectReady = true;
 			}
+
+			static void OnColorFrameReady(void* data, void* obj)
+			{
+				DirectXWindow* dxw = (DirectXWindow*)obj;
+				dxw->ColorTexture->Load<byte>((byte*)data);
+			}
 		public:
 			void InitKinect(KinectDevice* device)
 			{
 				device->SetCallbackObject(this);
 				device->SetKinectStartingCallback(&OnKinectStarting);
+				device->SetFrameReadyCallback(&OnColorFrameReady);
 			}
 
 			DirectXWindow(HWND hWnd, LPWSTR root)
