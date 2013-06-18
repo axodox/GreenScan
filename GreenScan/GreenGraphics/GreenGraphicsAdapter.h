@@ -77,7 +77,7 @@ namespace Green
 
 			~DirectXCanvas()
 			{
-
+				//delete XWindow;
 			}
 
 			void Draw()

@@ -40,7 +40,7 @@ namespace Green
 			{
 				MainQuad = new Quad(Device);
 				VSSimple = new VertexShader(Device, L"SimpleVertexShader.cso");
-				VSSimple->SetInputLayout(MainQuad->VBuffer);
+				VSSimple->SetInputLayout(MainQuad->GetVertexDefinition());
 
 				PSInfrared = new PixelShader(Device, L"InfraredPixelShader.cso");
 				PSColor = new PixelShader(Device, L"ColorPixelShader.cso");
