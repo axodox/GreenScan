@@ -1,0 +1,7 @@
+﻿<Window x:Class="Green.Scan.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:s="clr-namespace:Green.Settings.UI;assembly=GreenSettings"
+        Title="SettingsWindow" Height="300" Width="300">
+    <s:SettingManagerControl />
+</Window>

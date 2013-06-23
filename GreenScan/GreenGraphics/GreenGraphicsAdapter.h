@@ -80,6 +80,11 @@ namespace Green
 				//delete XWindow;
 			}
 
+			void SetView(float transX, float transY, float transZ, float rotX, float rotY, float rotZ)
+			{
+				XWindow->SetView(transX, transY, transZ, rotX, rotY, rotZ);
+			}
+
 			void Draw()
 			{
 				if(XWindow!=nullptr) 

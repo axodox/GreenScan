@@ -30,34 +30,51 @@ namespace Green
 
 			bool KinectReady;
 			KinectDevice::Modes KinectMode;
-			Quad *MainQuad;
-			Sampler* SLinearWrap;
+			Quad *QMain;
+			Plane *PMain;
+			Sampler *SLinearWrap;
 			VertexShader *VSSimple;
 			PixelShader *PSInfrared, *PSColor;
-			Texture2D *ColorTexture, *DepthTexture;
+			Texture2D *TColor, *TDepth;
+			struct DepthAndColorData
+			{
+				float TransX, TransY, TransZ, RotX, RotY, RotZ;
+			} DepthAndColorConstants;
+			ConstantBuffer<DepthAndColorData>* CBDepthAndColor;
 
 			void CreateResources()
 			{
-				MainQuad = new Quad(Device);
+				QMain = new Quad(Device);
+				PMain = new Plane(Device, 640, 480);
+
 				VSSimple = new VertexShader(Device, L"SimpleVertexShader.cso");
-				VSSimple->SetInputLayout(MainQuad->GetVertexDefinition());
+				VSSimple->SetInputLayout(QMain->GetVertexDefinition());
 
 				PSInfrared = new PixelShader(Device, L"InfraredPixelShader.cso");
 				PSColor = new PixelShader(Device, L"ColorPixelShader.cso");
 				
 				SLinearWrap = new Sampler(Device, D3D11_FILTER_MIN_MAG_MIP_LINEAR, D3D11_TEXTURE_ADDRESS_BORDER);
 
+				ZeroMemory(&DepthAndColorConstants, sizeof(DepthAndColorConstants));
+				CBDepthAndColor = new ConstantBuffer<DepthAndColorData>(Device);
+				CBDepthAndColor->Update(&DepthAndColorConstants);
+				
+
 				KinectReady = false;
+
+				TColor = TDepth = 0;
 			}
 
 			void DestroyResources()
 			{
 				KinectReady = false;
-				delete MainQuad;
+				delete QMain;
+				delete PMain;
 				delete VSSimple;
 				delete PSInfrared;
 				delete PSColor;
 				delete SLinearWrap;
+				delete CBDepthAndColor;
 			}
 
 			void DrawScene()
@@ -65,28 +82,28 @@ namespace Green
 				if(!KinectReady) return;
 				switch (KinectMode)
 				{
-				case Green::Kinect::KinectDevice::Depth:
+				case KinectDevice::Depth:
 					VSSimple->Apply();
 					PSInfrared->Apply();
-					DepthTexture->SetForPS(0);
+					TDepth->SetForPS(0);
 					SLinearWrap->SetForPS(0);				
-					MainQuad->Draw();
+					QMain->Draw();
 					break;
-				case Green::Kinect::KinectDevice::Color:
+				case KinectDevice::Color:
 					VSSimple->Apply();
 					PSColor->Apply();
-					ColorTexture->SetForPS(0);
+					TColor->SetForPS(0);
 					SLinearWrap->SetForPS(0);				
-					MainQuad->Draw();
+					QMain->Draw();
 					break;
-				case Green::Kinect::KinectDevice::DepthAndColor:
+				case KinectDevice::DepthAndColor:
 					break;
-				case Green::Kinect::KinectDevice::Infrared:
+				case KinectDevice::Infrared:
 					VSSimple->Apply();
 					PSInfrared->Apply();
-					ColorTexture->SetForPS(0);
+					TColor->SetForPS(0);
 					SLinearWrap->SetForPS(0);				
-					MainQuad->Draw();
+					QMain->Draw();
 					break;
 				default:
 					break;
@@ -100,20 +117,26 @@ namespace Green
 				dxw->KinectMode = mode;
 				switch (mode)
 				{
-				case Green::Kinect::KinectDevice::Depth:
-					dxw->DepthTexture = new Texture2D(dxw->Device,
+				case KinectDevice::Depth:
+					dxw->TDepth = new Texture2D(dxw->Device,
 						KinectDevice::DepthWidth, KinectDevice::DepthHeight,
 						DXGI_FORMAT_R16_UNORM, D3D11_USAGE_DYNAMIC);
 					break;
-				case Green::Kinect::KinectDevice::Color:
-					dxw->ColorTexture = new Texture2D(dxw->Device,
+				case KinectDevice::Color:
+					dxw->TColor = new Texture2D(dxw->Device,
 						KinectDevice::ColorWidth, KinectDevice::ColorHeight,
 						DXGI_FORMAT_R8G8B8A8_UNORM, D3D11_USAGE_DYNAMIC);
 					break;
-				case Green::Kinect::KinectDevice::DepthAndColor:
+				case KinectDevice::DepthAndColor:
+					dxw->TDepth = new Texture2D(dxw->Device,
+						KinectDevice::DepthWidth, KinectDevice::DepthHeight,
+						DXGI_FORMAT_R16_UNORM, D3D11_USAGE_DYNAMIC);
+					dxw->TColor = new Texture2D(dxw->Device,
+						KinectDevice::ColorWidth, KinectDevice::ColorHeight,
+						DXGI_FORMAT_R16_UNORM, D3D11_USAGE_DYNAMIC);
 					break;
-				case Green::Kinect::KinectDevice::Infrared:
-					dxw->ColorTexture = new Texture2D(dxw->Device,
+				case KinectDevice::Infrared:
+					dxw->TColor = new Texture2D(dxw->Device,
 						KinectDevice::ColorWidth, KinectDevice::ColorHeight,
 						DXGI_FORMAT_R16_UNORM, D3D11_USAGE_DYNAMIC);
 					break;
@@ -129,7 +152,7 @@ namespace Green
 						
 							pd++;
 					}
-					dxw->ColorTexture->Load<byte>(d);
+					dxw->TColor->Load<byte>(d);
 					delete [640*480] d;*/
 				dxw->KinectReady = true;
 			}
@@ -139,11 +162,11 @@ namespace Green
 				DirectXWindow* dxw = (DirectXWindow*)obj;
 				switch (dxw->KinectMode)
 				{
-				case KinectDevice::Modes::Infrared:
-					dxw->ColorTexture->Load<short>((short*)data);
+				case KinectDevice::Infrared:
+					dxw->TColor->Load<short>((short*)data);
 					break;
-				case KinectDevice::Modes::Color:
-					dxw->ColorTexture->Load<int>((int*)data);
+				case KinectDevice::Color:
+					dxw->TColor->Load<int>((int*)data);
 				default:
 					break;
 				}
@@ -153,23 +176,49 @@ namespace Green
 			static void OnDepthFrameReady(void* data, void* obj)
 			{
 				DirectXWindow* dxw = (DirectXWindow*)obj;
-				dxw->DepthTexture->Load<short>((short*)data);
+				dxw->TDepth->Load<short>((short*)data);
 				dxw->Draw();
 			}
+
+			static void OnKinectStopping(void* obj)
+			{
+				DirectXWindow* dxw = (DirectXWindow*)obj;
+				dxw->KinectReady = false;
+				SafeDelete(dxw->TColor);
+				SafeDelete(dxw->TDepth);
+				dxw->ClearScreen();
+			}
 		public:
+			void SetView(float transX, float transY, float transZ, float rotX, float rotY, float rotZ)
+			{
+				DepthAndColorConstants.TransX = transX;
+				DepthAndColorConstants.TransY = transY;
+				DepthAndColorConstants.TransZ = transZ;
+				DepthAndColorConstants.RotX = rotX;
+				DepthAndColorConstants.RotY = rotY;
+				DepthAndColorConstants.RotZ = rotZ;
+				CBDepthAndColor->Update(&DepthAndColorConstants);
+			}
+
 			void InitKinect(KinectDevice* device)
 			{
 				device->SetCallbackObject(this);
 				device->SetKinectStartingCallback(&OnKinectStarting);
 				device->SetColorFrameReadyCallback(&OnColorFrameReady);
 				device->SetDepthFrameReadyCallback(&OnDepthFrameReady);
+				device->SetKinectStoppingCallback(&OnKinectStopping);
 			}
 
+			float BackgroundColor[4];
 			DirectXWindow(HWND hWnd, LPWSTR root)
 			{
 				Root = root;
 				InitD3D(hWnd);
 				CreateResources();
+				BackgroundColor[0] = 1.f;
+				BackgroundColor[1] = 1.f;
+				BackgroundColor[2] = 1.f;
+				BackgroundColor[3] = 1.f;
 			}
 
 			~DirectXWindow()
@@ -228,6 +277,13 @@ namespace Green
 				DeviceContext->RSSetViewports(1, MainViewport);				
 			}
 		public:
+			void ClearScreen()
+			{
+				DeviceContext->OMSetRenderTargets(1, &BackBuffer, NULL);
+				DeviceContext->ClearRenderTargetView(BackBuffer, BackgroundColor);
+				SwapChain->Present(0, 0);
+			}
+
 			void Draw()
 			{
 				static float f = 0;
@@ -240,4 +296,4 @@ namespace Green
 			}
 		};
 	}
-}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+}                                                                                                                                                               

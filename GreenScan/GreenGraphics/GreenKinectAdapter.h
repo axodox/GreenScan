@@ -12,25 +12,24 @@ namespace Green
 	{
 		public ref class KinectManager : public INotifyPropertyChanged
 		{
+		public: 
+			enum class Modes
+			{
+				Color,
+				Depth,
+				DepthAndColor,
+				Infrared
+			};
 		private:
 			int deviceCount;
-			bool deviceOpened;
+			bool deviceOpened, processing;
+			Modes mode;
 		public:
+			property Modes Mode	{ Modes get() { return mode; }}
 			virtual event PropertyChangedEventHandler^ PropertyChanged;
-			property int DeviceCount
-			{
-				int get()
-				{
-					return deviceCount;
-				}
-			}
-			property bool DeviceOpened
-			{
-				bool get()
-				{
-					return deviceOpened;
-				}
-			}
+			property int DeviceCount { int get() { return deviceCount; }}
+			property bool DeviceOpened { bool get()	{ return deviceOpened; }}
+			property bool Processing { bool get()	{ return processing; }}
 			KinectDevice* Device;
 		private:
 			void OnPropertyChanged(String^ name)
@@ -49,7 +48,37 @@ namespace Green
 			{
 				deviceOpened = Device->OpenKinect(index);
 				OnPropertyChanged("DeviceOpened");
-				Device->StartKinect(KinectDevice::Modes::Depth);
+			}
+
+			void StartKinect(Modes mode)
+			{
+				StopKinect();				
+				switch (mode)
+				{
+				case Modes::Color:
+					Device->StartKinect(KinectDevice::Color);
+					break;
+				case Modes::Depth:
+					Device->StartKinect(KinectDevice::Depth);
+					break;
+				case Modes::DepthAndColor:
+					Device->StartKinect(KinectDevice::DepthAndColor);
+					break;
+				case Modes::Infrared:
+					Device->StartKinect(KinectDevice::Infrared);
+					break;
+				}
+				this->mode = mode;
+				OnPropertyChanged("Mode");
+				processing = true;
+				OnPropertyChanged("Processing");
+			}
+
+			void StopKinect()
+			{
+				processing = false;
+				OnPropertyChanged("Processing");
+				Device->StopKinect();				
 			}
 			
 			KinectManager()
@@ -60,6 +89,7 @@ namespace Green
 				KinectCountChanged = gcnew KinectCountChangedHandler(this, &KinectManager::CountChangedCallback);
 				Device->SetCountChangedCallback((KinectCountChangedCallback)Marshal::GetFunctionPointerForDelegate(KinectCountChanged).ToPointer());
 			}
+
 			~KinectManager()
 			{
 				Device->StopKinect();

@@ -4,6 +4,8 @@
 #include <Windows.h>
 #include <comdef.h>
 
+#define SafeDelete(p) { if(p) { delete (p); (p)=NULL; } }
+
 void Error(HRESULT hr)
 {
 	if(FAILED(hr))

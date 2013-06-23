@@ -6,15 +6,18 @@ using System.Threading.Tasks;
 using System.Windows.Data;
 using Green.Kinect;
 using System.Windows.Controls;
+using Green.Settings;
 
-namespace GreenScan
+namespace Green.Scan
 {
 
     [ValueConversion(typeof(KinectManager), typeof(MenuItem[]))]
     class KinectManagerToDeviceListConverter:IValueConverter
     {
+        public static EnumSetting<KinectManager.Modes> ModeSetting;
         public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         {
+            if (!(value is KinectManager)) return null;
             KinectManager KM = (KinectManager)value;
             int count = KM.DeviceCount;
             if (count == 0) return null;
@@ -32,6 +35,7 @@ namespace GreenScan
             KinectManager manager = (KinectManager)(sender as MenuItem).DataContext;
             int index = (int)(sender as MenuItem).Tag;
             manager.OpenKinect(index);
+            manager.StartKinect(ModeSetting.Value);
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)

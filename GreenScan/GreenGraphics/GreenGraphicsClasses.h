@@ -185,7 +185,7 @@ namespace Green
 			{
 				D3D11_BUFFER_DESC bd;
 				ZeroMemory(&bd, sizeof(bd));
-				bd.Usage = D3D11_USAGE_DEFAULT;
+				bd.Usage = D3D11_USAGE_DYNAMIC;
 				bd.ByteWidth = sizeof(T);
 				bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 				Error(device->CreateBuffer(&bd, 0, &Buffer));
@@ -421,8 +421,8 @@ namespace Green
 		public:
 			Plane(ID3D11Device* device, int width, int height)
 			{
-				float xstep = 1.f / (width - 1), xtexstep = 1.f / (width-1), xstart = -0.5f;
-				float ystep = -1.f / (height - 1) , ytexstep = 1.f / (height-1), ystart = 0.5f;
+				float xstep = 2.f / (width - 1), xtexstep = 1.f / (width-1), xstart = -1.f;
+				float ystep = -2.f / (height - 1) , ytexstep = 1.f / (height-1), ystart = 1.f;
 
 				int vertexCount = width * height;
 				VertexPositionTexture* vertices = new VertexPositionTexture[vertexCount];

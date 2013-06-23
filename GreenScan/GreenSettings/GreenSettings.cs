@@ -23,26 +23,16 @@ namespace Green.Settings
         public string Name { get; protected set; }
         
         [Flags]
-        public enum Types : uint { Unknown = 0, Boolean = 1, Enum = 2, SByte = 4, Int16 = 8, Int32 = 16, Int64 = 32, Byte = 64, UInt16 = 128, UInt32 = 256, UInt64 = 512, Single = 1024, Double = 2048, Numeric = 4092, Integer = 1020 };
+        public enum Types : uint { Unknown = 0, Boolean = 1, Enum = 2, SByte = 4, Int16 = 8, Int32 = 16, Int64 = 32, Byte = 64, UInt16 = 128, UInt32 = 256, UInt64 = 512, Single = 1024, Double = 2048, Matrix = 4096, Numeric = 4092, Integer = 1020 };
         public Types Type { get; protected set; }
         
-        public T GetValue<T>() where T : struct
-        {
-            return (this as NumericSetting<T>).Value;
-        }
-
-        public void SetValue<T>(T value) where T : struct
-        {
-            (this as NumericSetting<T>).Value = value;
-        }
-
         public event PropertyChangedEventHandler PropertyChanged;
         public event EventHandler ValueChanged;
         protected void OnPropertyChanged(string name)
         {
             if (PropertyChanged != null) PropertyChanged(this, new PropertyChangedEventArgs(name));
         }
-        protected void OnValueChanged()
+        protected virtual void OnValueChanged()
         {
             OnPropertyChanged("Value");
             OnPropertyChanged("StringValue");
@@ -66,6 +56,104 @@ namespace Green.Settings
             {
                 friendlyName = value;
             }
+        }
+    }
+
+    public class MatrixSetting : Setting
+    {
+        public float[,] DefaultValue { get; private set; }
+        private float[,] value;
+        public float[,] Value
+        {
+            get { return value; }
+            set
+            {
+                this.value = value;
+                OnValueChanged();
+            }
+        }
+
+        public float this[int x, int y]
+        {
+            get
+            {
+                return value[x, y];
+            }
+            set
+            {
+                this.value[x, y] = value;
+                OnValueChanged();
+            }
+        }
+
+        public override string StringValue
+        {
+            get
+            {
+                string s = "";
+                for (int r = 0; r < Rows; r++)
+                {
+                    if (r != 0) s += "|";
+                    for (int c = 0; c < Columns; c++)
+                    {
+                        if (c != 0) s += ";";
+                        s += value[r, c].ToString(Culture);
+                    }
+                }
+                return s;
+            }
+            set
+            {
+                try
+                {
+                    string[] lines = value.Split('|');
+                    float[,] newValue = new float[Rows, Columns];
+                    for (int r = 0; r < Rows; r++)
+                    {
+                        string[] line = lines[r].Split(';');
+                        for (int c = 0; c < Columns; c++)
+                        {
+                            newValue[r, c] = float.Parse(line[c], Culture);
+                        }
+                    }
+                    Value = newValue;
+                }
+                catch { }
+            }
+        }
+
+        public int Rows { get; private set; }
+        public int Columns { get; private set; }
+        public MatrixSetting(string name, float[,] value)
+        {
+            Type = Types.Matrix;
+            Name = name;
+            Rows = value.GetLength(0);
+            Columns = value.GetLength(1);
+            this.value = value;
+            DefaultValue = new float[Rows, Columns];
+            for (int r = 0; r < Rows; r++)
+                for (int c = 0; c < Columns; c++)
+                    DefaultValue[r, c] = value[r, c];
+        }
+
+        public override bool HasDefaultValue
+        {
+            get 
+            {
+                for (int r = 0; r < Rows; r++)
+                    for (int c = 0; c < Columns; c++)
+                        if(DefaultValue[r, c] != value[r, c]) return false;
+                return true;
+            }
+        }
+
+        public override void ResetValue()
+        {
+            for (int r = 0; r < Rows; r++)
+                for (int c = 0; c < Columns; c++)
+                    value[r, c] = DefaultValue[r, c];
+            OnValueChanged();
         }
     }
 
@@ -148,6 +236,7 @@ namespace Green.Settings
 
         public BooleanSetting(string name, bool value)
         {
+            Type = Types.Boolean;
             Name = name;
             DefaultValue=Value = value;
         }
@@ -195,18 +284,32 @@ namespace Green.Settings
             }
         }
 
+        public int SelectedIndex
+        {
+            get
+            {
+                string strval = StringValue;
+                for (int i = 0; i < StringOptions.Length; i++)
+                {
+                    if (StringOptions[i] == strval)
+                    {
+                        return i;
+                    }
+                }
+                return -1;
+            }
+            set
+            {
+                if (value > 0 && value < StringOptions.Length)
+                    StringValue = StringOptions[value];
+            }
+        }
+
         public string FriendlyValue
         {
             get
             {
-                for (int i = 0; i < StringOptions.Length; i++)
-                {
-                    if (StringOptions[i] == StringValue)
-                    {
-                        return FriendlyOptions[i];
-                    }
-                }
-                return null;
+                return FriendlyOptions[SelectedIndex];
             }
             set
             {
@@ -219,6 +322,12 @@ namespace Green.Settings
                     }
                 }
             }
+        }
+        protected override void OnValueChanged()
+        {
+            OnPropertyChanged("FriendlyValue");
+            OnPropertyChanged("SelectedIndex");
+            base.OnValueChanged();
         }
     }
 
@@ -295,8 +404,15 @@ namespace Green.Settings
             foreach (Setting s in e.NewItems)
             {
                 s.PropertyChanged += Setting_PropertyChanged;
+                s.ValueChanged += Setting_ValueChanged;
                 if (!s.HasDefaultValue) HasDefaultValues = false;
             }
+        }
+
+        public event EventHandler ValueChanged;
+        void Setting_ValueChanged(object sender, EventArgs e)
+        {
+            if (ValueChanged != null) ValueChanged(this, new EventArgs());
         }
 
         void Setting_PropertyChanged(object sender, PropertyChangedEventArgs e)

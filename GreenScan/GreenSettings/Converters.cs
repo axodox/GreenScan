@@ -26,6 +26,8 @@ namespace Green.Settings.UI
                 return new EnumControl();
             if (value is BooleanSetting)
                 return new BooleanControl();
+            if (value is MatrixSetting)
+                return new MatrixControl();
             return null;
         }
 

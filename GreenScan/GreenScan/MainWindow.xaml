@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:s="clr-namespace:Green.Settings.UI;assembly=GreenSettings"
         xmlns:g="clr-namespace:Green.Graphics;assembly=GreenGraphics"
-        xmlns:local="clr-namespace:GreenScan" x:Class="GreenScan.MainWindow"
+        xmlns:local="clr-namespace:Green.Scan" x:Class="Green.Scan.MainWindow"
         Title="MainWindow" Height="1024" Width="768">
     <Window.Resources>
         <local:KinectManagerToDeviceListConverter x:Key="KinectManagerToDeviceListConverter"/>
@@ -16,8 +16,10 @@
         </Grid.RowDefinitions>
         <Menu>
             <MenuItem x:Name="MIDevice" Header="Device" ItemsSource="{Binding Converter={StaticResource KinectManagerToDeviceListConverter}, Mode=OneWay}"/>
+            <MenuItem Header="Settings" Click="Settings_Click"/>
+            <s:EnumMenu x:Name="MIMode" Header="Mode" />
         </Menu>
-        <g:DirectXCanvas Grid.Row="1" x:Name="XC" Width="640" Height="480" />
+        <g:DirectXCanvas x:Name="DXC" Grid.Row="1" Width="640" Height="480" />
         <StatusBar Grid.Row="2">
             <CheckBox IsChecked="{Binding DeviceOpened, Mode=OneWay}" IsEnabled="False" Content="Opened"/>
         </StatusBar>

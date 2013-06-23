@@ -5,7 +5,7 @@
     <Style x:Key="RootContainer" TargetType="Border">
         <Setter Property="Margin">
             <Setter.Value>
-                <Thickness Bottom="3" Left="3" Right="3" Top="3"/>
+                <Thickness Bottom="5" Left="5" Right="5" Top="5"/>
             </Setter.Value>
         </Setter>
     </Style>

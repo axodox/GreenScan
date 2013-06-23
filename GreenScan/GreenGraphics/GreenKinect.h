@@ -35,11 +35,13 @@ namespace Green
 			};
 
 			typedef void (*KinectStartingCallback)(Modes mode, void* obj);
+			typedef void (*Callback)(void* obj);
 			typedef void (*FrameReadyCallback)(void* data, void* obj);
 			
 		private:
 			void* CallbackObject;
 			KinectStartingCallback KinectStarting;
+			Callback KinectStopping;
 			KinectCountChangedCallback KinectCountChanged;
 			FrameReadyCallback ColorFrameReady, DepthFrameReady;
 			INuiSensor* Sensor;
@@ -56,6 +58,7 @@ namespace Green
 			HANDLE* NextFrameEvents;
 			HANDLE ColorStream, DepthStream;
 			bool WorkerThreadOn;
+			HANDLE KinectStopped;
 			static DWORD WINAPI WorkerThread(LPVOID o)
 			{
 				HRESULT hr;
@@ -95,6 +98,8 @@ namespace Green
 						}
 					}
 				}
+
+				SetEvent(device->KinectStopped);
 				return 0;
 			}
 		public:			
@@ -131,6 +136,8 @@ namespace Green
 				if(Sensor == nullptr) return;
 				Sensor->Release();
 				Sensor = nullptr;
+				WaitForSingleObject(KinectStopped, INFINITE);
+				KinectStopping(CallbackObject);
 			}
 
 			void SetCallbackObject(void* obj)
@@ -141,6 +148,11 @@ namespace Green
 			void SetKinectStartingCallback(KinectStartingCallback callback)
 			{
 				KinectStarting = callback;
+			}
+
+			void SetKinectStoppingCallback(Callback callback)
+			{
+				KinectStopping = callback;
 			}
 
 			bool StartKinect(Modes mode)
@@ -203,7 +215,9 @@ namespace Green
 				KinectStarting = nullptr;
 				ColorFrameReady = nullptr;
 				DepthFrameReady = nullptr;
+				KinectStopping = nullptr;
 				NuiSetDeviceStatusCallback(&StatusChangedCallback, this);
+				KinectStopped = CreateEvent(0, 0, 0, 0);
 			}
 
 			~KinectDevice()
