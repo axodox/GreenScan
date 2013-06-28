@@ -72,6 +72,7 @@ namespace Green
 		public:
 			DirectXCanvas()
 			{
+				XWindow = nullptr;
 				DataContextChanged += gcnew DependencyPropertyChangedEventHandler(this, &DirectXCanvas::OnDataContextChanged);
 			}
 
@@ -83,6 +84,21 @@ namespace Green
 			void SetView(float transX, float transY, float transZ, float rotX, float rotY, float rotZ)
 			{
 				XWindow->SetView(transX, transY, transZ, rotX, rotY, rotZ);
+			}
+
+			void SetCameras(array<float, 2>^ infraredIntrinsics, array<float, 2>^ depthToIR)
+			{
+				if(Is3x3(infraredIntrinsics) && Is3x3(depthToIR))
+				{
+					pin_ptr<float> pDepth = &To4x4(infraredIntrinsics)[0, 0];
+					pin_ptr<float> pDepthToIR = &Expand4x4(depthToIR)[0, 0];
+					XWindow->SetCameras(pDepth, pDepthToIR);
+				}
+			}
+
+			void SetShading(float depthLimit)
+			{
+				XWindow->SetShading(depthLimit);
 			}
 
 			void Draw()

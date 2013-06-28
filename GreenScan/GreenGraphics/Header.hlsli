@@ -21,10 +21,11 @@ struct VertexPositionTextureDepth
 
 cbuffer DepthAndColorConstants : register(b0)
 {
-	matrix ReprojectionTransform;
-	matrix ModelTransform;
-	matrix WorldTransform;
-	matrix NormalTransform;
+	float4x4 ReprojectionTransform;
+	float4x4 ModelTransform;
+	float4x4 WorldTransform;
+	float4x4 NormalTransform;
 	float2 ModelScale;
 	int2 DepthSize;
+	float DepthLimit;
 };

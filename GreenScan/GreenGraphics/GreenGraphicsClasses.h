@@ -58,6 +58,7 @@ namespace Green
 				Shader->Release();
 				Context->Release();
 				if(InputLayout != 0) InputLayout->Release();
+				free(Source);
 			}
 		};
 
@@ -181,23 +182,18 @@ namespace Green
 			ID3D11DeviceContext* Context;
 			ID3D11Buffer* Buffer;
 		public:			
-			ConstantBuffer(ID3D11Device* device, T value)
+			ConstantBuffer(ID3D11Device* device)
 			{
 				D3D11_BUFFER_DESC bd;
-				int size = sizeof(value);
+				int size = sizeof(T);
 				bd.ByteWidth = (size % 16 == 0 ? size : size + 16 - size % 16);
-				bd.Usage = D3D11_USAGE_DYNAMIC;				
+				bd.Usage = D3D11_USAGE_DEFAULT;				
 				bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-				bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+				bd.CPUAccessFlags = 0;
 				bd.MiscFlags = 0;
 				bd.StructureByteStride = 0;
-
-				D3D11_SUBRESOURCE_DATA sd;
-				sd.pSysMem = &value;
-				sd.SysMemPitch = 0;
-				sd.SysMemSlicePitch = 0;
 				
-				Error(device->CreateBuffer(&bd, &sd, &Buffer));
+				Error(device->CreateBuffer(&bd, 0, &Buffer));
 				device->GetImmediateContext(&Context);
 			}
 
@@ -229,6 +225,34 @@ namespace Green
 			~ConstantBuffer()
 			{
 				Buffer->Release();
+				Context->Release();
+			}
+		};
+
+		class GeometryShader
+		{
+		private:
+			ID3D11GeometryShader* Shader;
+			ID3D11DeviceContext* Context;
+		public:			
+			GeometryShader(ID3D11Device* device, LPWSTR path)
+			{
+				void* source = 0;
+				int sourceLength = 0;
+				LoadFile(path, source, sourceLength);
+				Error(device->CreateGeometryShader(source, sourceLength, 0, &Shader));
+				free(source);
+				device->GetImmediateContext(&Context);
+			}
+
+			void Apply()
+			{
+				Context->GSSetShader(Shader, 0, 0);
+			}
+
+			~GeometryShader()
+			{
+				Shader->Release();
 				Context->Release();
 			}
 		};

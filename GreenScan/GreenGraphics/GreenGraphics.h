@@ -34,6 +34,7 @@ namespace Green
 			Plane *PMain;
 			Sampler *SLinearWrap;
 			VertexShader *VSSimple, *VSReprojection;
+			GeometryShader *GSReprojection;
 			PixelShader *PSInfrared, *PSColor, *PSSinusoidal;
 			Texture2D *TColor, *TDepth;
 			struct RenderingParameters
@@ -51,6 +52,7 @@ namespace Green
 				XMFLOAT4X4 NormalTransform;
 				XMFLOAT2 ModelScale;
 				XMINT2 DepthSize;
+				float DepthLimit;
 			} DepthAndColorOptions;
 
 			ConstantBuffer<DepthAndColorConstants>* CBDepthAndColor;
@@ -66,6 +68,8 @@ namespace Green
 				VSReprojection = new VertexShader(Device, L"ReprojectionVertexShader.cso");
 				VSReprojection->SetInputLayout(PMain->GetVertexDefinition());
 
+				GSReprojection = new GeometryShader(Device, L"ReprojectionGeometryShader.cso");
+
 				PSInfrared = new PixelShader(Device, L"InfraredPixelShader.cso");
 				PSColor = new PixelShader(Device, L"ColorPixelShader.cso");
 				PSSinusoidal = new PixelShader(Device, L"SinusoidalPixelShader.cso");
@@ -73,7 +77,7 @@ namespace Green
 				SLinearWrap = new Sampler(Device, D3D11_FILTER_MIN_MAG_MIP_LINEAR, D3D11_TEXTURE_ADDRESS_BORDER);
 
 				ZeroMemory(&Params, sizeof(RenderingParameters));				
-				CBDepthAndColor = new ConstantBuffer<DepthAndColorConstants>(Device, DepthAndColorOptions);
+				CBDepthAndColor = new ConstantBuffer<DepthAndColorConstants>(Device);
 				
 				KinectReady = false;
 
@@ -87,6 +91,7 @@ namespace Green
 				delete PMain;
 				delete VSSimple;
 				delete VSReprojection;
+				delete GSReprojection;
 				delete PSInfrared;
 				delete PSColor;
 				delete PSSinusoidal;
@@ -120,6 +125,9 @@ namespace Green
 					CBDepthAndColor->SetForVS();
 					TDepth->SetForVS();
 
+					GSReprojection->Apply();
+					CBDepthAndColor->SetForGS();
+
 					PSSinusoidal->Apply();
 								
 					PMain->Draw();
@@ -142,8 +150,8 @@ namespace Green
 				XMMATRIX DepthIntrinsics = XMLoadFloat4x4(&Params.DepthIntrinsics);
 				XMMATRIX DepthInverseIntrinsics = XMLoadFloat4x4(&Params.DepthInvIntrinsics);
 
-				XMMATRIX T = XMMatrixTranslation(0.f, 0.f, -Params.TransZ);
-				XMMATRIX T2 = XMMatrixTranslation(Params.TransX, Params.TransY, 0.f);
+				XMMATRIX T = XMMatrixTranspose(XMMatrixTranslation(0.f, 0.f, -Params.TransZ));
+				XMMATRIX T2 = XMMatrixTranspose(XMMatrixTranslation(Params.TransX, Params.TransY, 0.f));
 				XMMATRIX Ti = XMMatrixInverse(0, T);
 				XMMATRIX R = 
 					XMMatrixRotationZ(XMConvertToRadians(Params.RotZ)) *
@@ -151,7 +159,7 @@ namespace Green
 					XMMatrixRotationY(XMConvertToRadians(Params.RotY)) *
 					XMMatrixRotationZ(-Params.Rotation * XM_PIDIV2);
 				XMMATRIX world = Ti * R * T * T2;
-				XMMATRIX reproj = DepthIntrinsics * Ti * R * T * T2 * DepthInverseIntrinsics;
+				XMMATRIX reproj = DepthIntrinsics * world * DepthInverseIntrinsics;
 				XMMATRIX reprojModel = DepthIntrinsics * Ti * R *T;
 				XMMATRIX reprojNormals = XMMatrixTranspose(XMMatrixInverse(0, world));
 				XMStoreFloat4x4(&DepthAndColorOptions.ReprojectionTransform, reproj);
@@ -268,7 +276,23 @@ namespace Green
 				Params.TransZ = transZ;
 				Params.RotX = rotX;
 				Params.RotY = rotY;
-				Params.RotZ = rotZ;				
+				Params.RotZ = rotZ;
+				SetDepthAndColorOptions();
+			}
+
+			void SetCameras(float* infraredIntrinsics, float* depthToIRMapping)
+			{
+				XMMATRIX mInfraredIntrinsics = XMLoadFloat4x4(&XMFLOAT4X4(infraredIntrinsics));
+				XMMATRIX mDepthToIRMapping = XMLoadFloat4x4(&XMFLOAT4X4(depthToIRMapping));
+				XMMATRIX mDepthIntrinsics = XMMatrixInverse(0, mDepthToIRMapping) * mInfraredIntrinsics;
+				XMStoreFloat4x4(&Params.DepthIntrinsics, mDepthIntrinsics);
+				Params.DepthInvIntrinsics = Invert(Params.DepthIntrinsics);
+				SetDepthAndColorOptions();
+			}
+
+			void SetShading(float depthLimit)
+			{
+				DepthAndColorOptions.DepthLimit = depthLimit;
 			}
 
 			void InitKinect(KinectDevice* device)

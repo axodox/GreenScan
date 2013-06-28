@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using System;
+using System.Windows;
 using System.Windows.Interop;
 using Green.Graphics;
 using System.Threading;
@@ -18,7 +19,8 @@ namespace Green.Scan
             InitializeComponent();
             KM = new KinectManager();
             SS = new ScanSettings();
-            
+            DXC.Loaded += DXC_Loaded;
+
 
             InitGUI();
             InitSettings();
@@ -36,7 +38,9 @@ namespace Green.Scan
         void InitSettings()
         {
             SS.KinectMode.ValueChanged += KinectMode_ValueChanged;
-            SS.ViewProperties.ValueChanged += ViewProperties_ValueChanged;
+            SS.ViewProperties.ValueChanged += (object sender, EventArgs e) => { SetView(); };
+            SS.CameraProperties.ValueChanged += (object sender, EventArgs e) => { SetCameras(); };
+            SS.ShadingProperties.ValueChanged += (object sender, EventArgs e) => { SetShading(); };
         }
 
         void KinectMode_ValueChanged(object sender, System.EventArgs e)
@@ -47,7 +51,14 @@ namespace Green.Scan
             }
         }
 
-        void ViewProperties_ValueChanged(object sender, System.EventArgs e)
+        void DXC_Loaded(object sender, RoutedEventArgs e)
+        {
+            SetView();
+            SetCameras();
+            SetShading();
+        }
+
+        void SetView()
         {
             DXC.SetView(
                 SS.TranslationX.Value,
@@ -56,6 +67,16 @@ namespace Green.Scan
                 SS.RotationX.Value,
                 SS.RotationY.Value,
                 SS.RotationZ.Value);
+        }
+
+        void SetCameras()
+        {
+            DXC.SetCameras(SS.InfraredCameraMatrix.Value, SS.DepthToIRMapping.Value);
+        }
+
+        void SetShading()
+        {
+            DXC.SetShading(SS.DepthLimit.Value);
         }
         
         void Settings_Click(object sender, RoutedEventArgs e)
