@@ -33,14 +33,27 @@ namespace Green
 			Quad *QMain;
 			Plane *PMain;
 			Sampler *SLinearWrap;
-			VertexShader *VSSimple;
-			PixelShader *PSInfrared, *PSColor;
+			VertexShader *VSSimple, *VSReprojection;
+			PixelShader *PSInfrared, *PSColor, *PSSinusoidal;
 			Texture2D *TColor, *TDepth;
-			struct DepthAndColorData
+			struct RenderingParameters
 			{
 				float TransX, TransY, TransZ, RotX, RotY, RotZ;
-			} DepthAndColorConstants;
-			ConstantBuffer<DepthAndColorData>* CBDepthAndColor;
+				XMFLOAT4X4 DepthIntrinsics, DepthInvIntrinsics;
+				int Rotation;
+			} Params;
+
+			struct DepthAndColorConstants 
+			{
+				XMFLOAT4X4 ReprojectionTransform;
+				XMFLOAT4X4 ModelTransform;
+				XMFLOAT4X4 WorldTransform;
+				XMFLOAT4X4 NormalTransform;
+				XMFLOAT2 ModelScale;
+				XMINT2 DepthSize;
+			} DepthAndColorOptions;
+
+			ConstantBuffer<DepthAndColorConstants>* CBDepthAndColor;
 
 			void CreateResources()
 			{
@@ -49,17 +62,19 @@ namespace Green
 
 				VSSimple = new VertexShader(Device, L"SimpleVertexShader.cso");
 				VSSimple->SetInputLayout(QMain->GetVertexDefinition());
+				
+				VSReprojection = new VertexShader(Device, L"ReprojectionVertexShader.cso");
+				VSReprojection->SetInputLayout(PMain->GetVertexDefinition());
 
 				PSInfrared = new PixelShader(Device, L"InfraredPixelShader.cso");
 				PSColor = new PixelShader(Device, L"ColorPixelShader.cso");
+				PSSinusoidal = new PixelShader(Device, L"SinusoidalPixelShader.cso");
 				
 				SLinearWrap = new Sampler(Device, D3D11_FILTER_MIN_MAG_MIP_LINEAR, D3D11_TEXTURE_ADDRESS_BORDER);
 
-				ZeroMemory(&DepthAndColorConstants, sizeof(DepthAndColorConstants));
-				CBDepthAndColor = new ConstantBuffer<DepthAndColorData>(Device);
-				CBDepthAndColor->Update(&DepthAndColorConstants);
+				ZeroMemory(&Params, sizeof(RenderingParameters));				
+				CBDepthAndColor = new ConstantBuffer<DepthAndColorConstants>(Device, DepthAndColorOptions);
 				
-
 				KinectReady = false;
 
 				TColor = TDepth = 0;
@@ -71,8 +86,10 @@ namespace Green
 				delete QMain;
 				delete PMain;
 				delete VSSimple;
+				delete VSReprojection;
 				delete PSInfrared;
 				delete PSColor;
+				delete PSSinusoidal;
 				delete SLinearWrap;
 				delete CBDepthAndColor;
 			}
@@ -85,30 +102,94 @@ namespace Green
 				case KinectDevice::Depth:
 					VSSimple->Apply();
 					PSInfrared->Apply();
-					TDepth->SetForPS(0);
-					SLinearWrap->SetForPS(0);				
+					TDepth->SetForPS();
+					SLinearWrap->SetForPS();				
 					QMain->Draw();
 					break;
 				case KinectDevice::Color:
 					VSSimple->Apply();
 					PSColor->Apply();
-					TColor->SetForPS(0);
-					SLinearWrap->SetForPS(0);				
+					TColor->SetForPS();
+					SLinearWrap->SetForPS();				
 					QMain->Draw();
 					break;
 				case KinectDevice::DepthAndColor:
+					CBDepthAndColor->Update(&DepthAndColorOptions);
+
+					VSReprojection->Apply();
+					CBDepthAndColor->SetForVS();
+					TDepth->SetForVS();
+
+					PSSinusoidal->Apply();
+								
+					PMain->Draw();
 					break;
 				case KinectDevice::Infrared:
 					VSSimple->Apply();
 					PSInfrared->Apply();
-					TColor->SetForPS(0);
-					SLinearWrap->SetForPS(0);				
+					TColor->SetForPS();
+					SLinearWrap->SetForPS();				
 					QMain->Draw();
 					break;
 				default:
 					break;
 				}
 				
+			}
+
+			void SetDepthAndColorOptions()
+			{
+				XMMATRIX DepthIntrinsics = XMLoadFloat4x4(&Params.DepthIntrinsics);
+				XMMATRIX DepthInverseIntrinsics = XMLoadFloat4x4(&Params.DepthInvIntrinsics);
+
+				XMMATRIX T = XMMatrixTranslation(0.f, 0.f, -Params.TransZ);
+				XMMATRIX T2 = XMMatrixTranslation(Params.TransX, Params.TransY, 0.f);
+				XMMATRIX Ti = XMMatrixInverse(0, T);
+				XMMATRIX R = 
+					XMMatrixRotationZ(XMConvertToRadians(Params.RotZ)) *
+					XMMatrixRotationX(XMConvertToRadians(Params.RotX)) *
+					XMMatrixRotationY(XMConvertToRadians(Params.RotY)) *
+					XMMatrixRotationZ(-Params.Rotation * XM_PIDIV2);
+				XMMATRIX world = Ti * R * T * T2;
+				XMMATRIX reproj = DepthIntrinsics * Ti * R * T * T2 * DepthInverseIntrinsics;
+				XMMATRIX reprojModel = DepthIntrinsics * Ti * R *T;
+				XMMATRIX reprojNormals = XMMatrixTranspose(XMMatrixInverse(0, world));
+				XMStoreFloat4x4(&DepthAndColorOptions.ReprojectionTransform, reproj);
+				XMStoreFloat4x4(&DepthAndColorOptions.ModelTransform, reprojModel);
+				XMStoreFloat4x4(&DepthAndColorOptions.WorldTransform, world);
+				XMStoreFloat4x4(&DepthAndColorOptions.NormalTransform, reprojNormals);
+
+				XMFLOAT2 modelScale;
+				float depthAspectRatio = (float)KinectDevice::DepthWidth / (float)KinectDevice::DepthHeight;
+				float aspectRatio = MainViewport->Width / MainViewport->Height;
+				if(Params.Rotation % 2 == 0)
+				{
+					if(aspectRatio >= depthAspectRatio)
+					{
+						modelScale.y = 1.f;
+						modelScale.x = depthAspectRatio / aspectRatio;
+					}
+					else
+					{
+						modelScale.x = 1.f;
+						modelScale.y = aspectRatio / depthAspectRatio;
+					}
+				}
+				else
+				{
+					if(aspectRatio >= depthAspectRatio)
+					{
+						modelScale.y = 1.f / depthAspectRatio;
+						modelScale.x = 1.f / aspectRatio;
+					}
+					else
+					{
+						modelScale.x = depthAspectRatio;
+						modelScale.y = aspectRatio;
+					}
+				}
+				DepthAndColorOptions.ModelScale = modelScale;
+				DepthAndColorOptions.DepthSize = XMINT2(KinectDevice::DepthWidth, KinectDevice::DepthHeight);
 			}
 
 			static void OnKinectStarting(KinectDevice::Modes mode, void* obj)
@@ -130,7 +211,7 @@ namespace Green
 				case KinectDevice::DepthAndColor:
 					dxw->TDepth = new Texture2D(dxw->Device,
 						KinectDevice::DepthWidth, KinectDevice::DepthHeight,
-						DXGI_FORMAT_R16_UNORM, D3D11_USAGE_DYNAMIC);
+						DXGI_FORMAT_R16_SINT, D3D11_USAGE_DYNAMIC);
 					dxw->TColor = new Texture2D(dxw->Device,
 						KinectDevice::ColorWidth, KinectDevice::ColorHeight,
 						DXGI_FORMAT_R16_UNORM, D3D11_USAGE_DYNAMIC);
@@ -144,16 +225,7 @@ namespace Green
 					break;
 				}
 
-				/*byte* d = new byte[640*480];
-					byte* pd = d;
-					for(int i=0;i <640*480;i++)
-					{
-						*pd = i%100;
-						
-							pd++;
-					}
-					dxw->TColor->Load<byte>(d);
-					delete [640*480] d;*/
+				dxw->SetDepthAndColorOptions();
 				dxw->KinectReady = true;
 			}
 
@@ -191,13 +263,12 @@ namespace Green
 		public:
 			void SetView(float transX, float transY, float transZ, float rotX, float rotY, float rotZ)
 			{
-				DepthAndColorConstants.TransX = transX;
-				DepthAndColorConstants.TransY = transY;
-				DepthAndColorConstants.TransZ = transZ;
-				DepthAndColorConstants.RotX = rotX;
-				DepthAndColorConstants.RotY = rotY;
-				DepthAndColorConstants.RotZ = rotZ;
-				CBDepthAndColor->Update(&DepthAndColorConstants);
+				Params.TransX = transX;
+				Params.TransY = transY;
+				Params.TransZ = transZ;
+				Params.RotX = rotX;
+				Params.RotY = rotY;
+				Params.RotZ = rotZ;				
 			}
 
 			void InitKinect(KinectDevice* device)

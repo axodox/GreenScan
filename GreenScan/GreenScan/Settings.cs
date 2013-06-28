@@ -26,7 +26,7 @@ namespace Green.Scan
             KinectProperties = new SettingGroup("Kinect") { FriendlyName = "Kinect" };
             SettingGroups.Add(KinectProperties);
 
-            KinectMode = new EnumSetting<KinectManager.Modes>("Mode", KinectManager.Modes.Color) { FriendlyName = "Mode" };
+            KinectMode = new EnumSetting<KinectManager.Modes>("Mode", KinectManager.Modes.DepthAndColor) { FriendlyName = "Mode" };
             KinectProperties.Settings.Add(KinectMode);
 
             //Camera

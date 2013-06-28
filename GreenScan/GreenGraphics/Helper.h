@@ -11,7 +11,12 @@ void Error(HRESULT hr)
 	if(FAILED(hr))
 	{
 		_com_error ce = _com_error(hr);
-		MessageBox(NULL, ce.ErrorMessage(), L"Error", MB_OK);
+	    //MessageBox(NULL, ce.ErrorMessage(), L"Error", MB_OK);
+		FILE* hF = nullptr;
+		_wfopen_s(&hF, L"error.txt", L"a");
+		
+		fputws(ce.ErrorMessage(), hF);
+		fclose(hF);
 	}
 }
 

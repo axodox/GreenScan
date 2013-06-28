@@ -181,14 +181,23 @@ namespace Green
 			ID3D11DeviceContext* Context;
 			ID3D11Buffer* Buffer;
 		public:			
-			ConstantBuffer(ID3D11Device* device)
+			ConstantBuffer(ID3D11Device* device, T value)
 			{
 				D3D11_BUFFER_DESC bd;
-				ZeroMemory(&bd, sizeof(bd));
-				bd.Usage = D3D11_USAGE_DYNAMIC;
-				bd.ByteWidth = sizeof(T);
+				int size = sizeof(value);
+				bd.ByteWidth = (size % 16 == 0 ? size : size + 16 - size % 16);
+				bd.Usage = D3D11_USAGE_DYNAMIC;				
 				bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-				Error(device->CreateBuffer(&bd, 0, &Buffer));
+				bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+				bd.MiscFlags = 0;
+				bd.StructureByteStride = 0;
+
+				D3D11_SUBRESOURCE_DATA sd;
+				sd.pSysMem = &value;
+				sd.SysMemPitch = 0;
+				sd.SysMemSlicePitch = 0;
+				
+				Error(device->CreateBuffer(&bd, &sd, &Buffer));
 				device->GetImmediateContext(&Context);
 			}
 
@@ -355,6 +364,11 @@ namespace Green
 					*pTarget++ = 255;
 				}
 				Context->Unmap(Texture, 0);
+			}
+
+			void SetForVS(int slot = 0)
+			{
+				Context->VSSetShaderResources(slot, 1, &ResourceView);
 			}
 
 			void SetForPS(int slot = 0)
