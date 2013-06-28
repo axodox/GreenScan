@@ -5,10 +5,10 @@ void main(
 	inout TriangleStream<VertexPositionTextureDepth> output
 )
 {
-	//for (uint i = 0; i < 3; i++)
-	//{
-	//	if(input[i].Depth <= 0 || input[i].Depth > DepthLimit) return;
-	//}
+	for (uint i = 0; i < 3; i++)
+	{
+		if(input[i].Depth <= 0 || input[i].Depth > DepthLimit) return;
+	}
 
 	for (uint i = 0; i < 3; i++)
 	{

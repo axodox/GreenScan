@@ -14,18 +14,18 @@ VertexPositionTextureDepth main(VertexPositionTextureIn vi)
 		depth, 
 		1);
 
-	posTemp = mul(ReprojectionTransform, posDepth);
-	//posTemp.x = (posTemp.x / posTemp.z / DepthSize.x * 2 - 1) * DepthLimit * ModelScale.x;
-	//posTemp.y = (-posTemp.y / posTemp.z / DepthSize.y * 2 + 1) * DepthLimit * ModelScale.y;
-	//posTemp.z /= 10;
-	//posTemp.w = DepthLimit;
+	posTemp = mul(posDepth, ReprojectionTransform);
+	posTemp.x = (posTemp.x / posTemp.z / DepthSize.x * 2 - 1) * DepthLimit * ModelScale.x;
+	posTemp.y = (-posTemp.y / posTemp.z / DepthSize.y * 2 + 1) * DepthLimit * ModelScale.y;
+	posTemp.z /= 10;
+	posTemp.w = DepthLimit;
 	float4 posScreen = posTemp;
 
 	VertexPositionTextureDepth vo;
-	vo.Position = float4(vi.Position, 1.f);
+	vo.Position = posScreen;
 	vo.WorldPosition = float3(1,1,1);
 	vo.Normal = float3(1,1,1);
-	vo.Depth = ReprojectionTransform._12 == 0 ? 1 : 0;
+	vo.Depth = depth;
 	vo.Texture = vi.Texture;
 	return vo;
 }
