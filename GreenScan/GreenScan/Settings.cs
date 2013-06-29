@@ -19,6 +19,10 @@ namespace Green.Scan
         public NumericSetting<float> RotationX { get; private set; }
         public NumericSetting<float> RotationY { get; private set; }
         public NumericSetting<float> RotationZ { get; private set; }
+        public NumericSetting<float> Scale { get; private set; }
+        public NumericSetting<float> MoveX { get; private set; }
+        public NumericSetting<float> MoveY { get; private set; }
+        public NumericSetting<int> Rotation { get; private set; }
 
         public SettingGroup ShadingProperties { get; private set; }
         public NumericSetting<float> DepthLimit { get; private set; }
@@ -53,12 +57,21 @@ namespace Green.Scan
             ViewProperties.Settings.Add(TranslationY);
             ViewProperties.Settings.Add(TranslationZ); 
 
-            RotationX = new NumericSetting<float>("RotationX", 0f, -45f, 45f, 2) { FriendlyName = "Rotation X (degrees)" };
-            RotationY = new NumericSetting<float>("RotationY", 0f, -45f, 45f, 2) { FriendlyName = "Rotation Y (degrees)" };
-            RotationZ = new NumericSetting<float>("RotationZ", 0f, -45f, 45f, 2) { FriendlyName = "Rotation Z (degrees)" };
+            RotationX = new NumericSetting<float>("RotationX", 0f, -90f, 90f, 2) { FriendlyName = "Rotation X (degrees)" };
+            RotationY = new NumericSetting<float>("RotationY", 0f, -90f, 90f, 2) { FriendlyName = "Rotation Y (degrees)" };
+            RotationZ = new NumericSetting<float>("RotationZ", 0f, -180f, 180f, 2) { FriendlyName = "Rotation Z (degrees)" };
             ViewProperties.Settings.Add(RotationX);
             ViewProperties.Settings.Add(RotationY);
             ViewProperties.Settings.Add(RotationZ);
+
+            Scale = new NumericSetting<float>("Scale", 1f, 0f, 8f, 2) { FriendlyName = "Scale (1)" };
+            MoveX = new NumericSetting<float>("MoveX", 0f, -1f, 1f, 2) { FriendlyName = "Move X (1)" };
+            MoveY = new NumericSetting<float>("MoveY", 0f, -1f, 1f, 2) { FriendlyName = "Move Y (1)" };
+            Rotation = new NumericSetting<int>("Rotation", 0, 0, 3) { FriendlyName = "Rotation (1)" };
+            ViewProperties.Settings.Add(Scale);
+            ViewProperties.Settings.Add(MoveX);
+            ViewProperties.Settings.Add(MoveY);
+            ViewProperties.Settings.Add(Rotation);
 
             //Shading
             ShadingProperties = new SettingGroup("Shading") { FriendlyName = "Shading" };

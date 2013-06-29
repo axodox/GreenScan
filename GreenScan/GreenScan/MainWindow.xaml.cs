@@ -66,7 +66,11 @@ namespace Green.Scan
                 SS.TranslationZ.Value,
                 SS.RotationX.Value,
                 SS.RotationY.Value,
-                SS.RotationZ.Value);
+                SS.RotationZ.Value,
+                SS.Scale.Value,
+                SS.MoveX.Value,
+                SS.MoveY.Value,
+                SS.Rotation.Value);
         }
 
         void SetCameras()

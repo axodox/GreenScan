@@ -19,7 +19,7 @@
             <s:EnumMenu x:Name="MIMode" Header="Mode" />
             <MenuItem Header="Settings" Click="Settings_Click"/>
         </Menu>
-        <g:DirectXCanvas x:Name="DXC" Grid.Row="1" Width="640" Height="480" />
+        <g:DirectXCanvas x:Name="DXC" Grid.Row="1" />
         <StatusBar Grid.Row="2">
             <CheckBox IsChecked="{Binding DeviceOpened, Mode=OneWay}" IsEnabled="False" Content="Opened"/>
         </StatusBar>

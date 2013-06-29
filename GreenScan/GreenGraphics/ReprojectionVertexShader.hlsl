@@ -15,10 +15,13 @@ VertexPositionTextureDepth main(VertexPositionTextureIn vi)
 		1);
 
 	posTemp = mul(posDepth, ReprojectionTransform);
-	posTemp.x = (posTemp.x / posTemp.z / DepthSize.x * 2 - 1) * DepthLimit * ModelScale.x;
-	posTemp.y = (-posTemp.y / posTemp.z / DepthSize.y * 2 + 1) * DepthLimit * ModelScale.y;
+	posTemp.x = (posTemp.x / posTemp.z / DepthSize.x * 2 - 1) * ModelScale.x;
+	posTemp.y = (-posTemp.y / posTemp.z / DepthSize.y * 2 + 1) * ModelScale.y;
+	posTemp = mul(posTemp, SceneRotation);
+	posTemp.xy = (posTemp.xy + Move) * Scale;
 	posTemp.z /= 10;
-	posTemp.w = DepthLimit;
+	posTemp *= DepthLimit;
+	
 	float4 posScreen = posTemp;
 
 	VertexPositionTextureDepth vo;

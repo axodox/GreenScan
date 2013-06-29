@@ -59,6 +59,12 @@ namespace Green
 
 			virtual IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, bool %handled) override
 			{
+				switch (msg)
+				{
+				case WM_SIZE:
+					XWindow->Resize();
+					break;
+				}
 				handled = false;
 				return IntPtr::Zero;
 			}
@@ -81,9 +87,12 @@ namespace Green
 				//delete XWindow;
 			}
 
-			void SetView(float transX, float transY, float transZ, float rotX, float rotY, float rotZ)
+			void SetView(
+				float transX, float transY, float transZ, 
+				float rotX, float rotY, float rotZ, 
+				float scale, float moveX, float moveY, float rotation)
 			{
-				XWindow->SetView(transX, transY, transZ, rotX, rotY, rotZ);
+				XWindow->SetView(transX, transY, transZ, rotX, rotY, rotZ, scale, moveX, moveY, rotation);
 			}
 
 			void SetCameras(array<float, 2>^ infraredIntrinsics, array<float, 2>^ depthToIR)

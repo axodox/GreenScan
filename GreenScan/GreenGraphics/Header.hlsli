@@ -28,4 +28,7 @@ cbuffer DepthAndColorConstants : register(b0)
 	float2 ModelScale;
 	int2 DepthSize;
 	float DepthLimit;
+	float Scale;
+	float2 Move;
+	float4x4 SceneRotation; 
 };

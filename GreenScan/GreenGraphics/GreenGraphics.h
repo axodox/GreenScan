@@ -53,6 +53,9 @@ namespace Green
 				XMFLOAT2 ModelScale;
 				XMINT2 DepthSize;
 				float DepthLimit;
+				float Scale;
+				XMFLOAT2 Move;
+				XMFLOAT4X4 SceneRotation;
 			} DepthAndColorOptions;
 
 			ConstantBuffer<DepthAndColorConstants>* CBDepthAndColor;
@@ -147,6 +150,8 @@ namespace Green
 
 			void SetDepthAndColorOptions()
 			{
+				float halfDepthWidth = KinectDevice::DepthWidth / 2.f;
+				float halfDepthHeight = KinectDevice::DepthHeight / 2.f;
 				XMMATRIX DepthIntrinsics = XMLoadFloat4x4(&Params.DepthIntrinsics);
 				XMMATRIX DepthInverseIntrinsics = XMLoadFloat4x4(&Params.DepthInvIntrinsics);
 
@@ -156,8 +161,8 @@ namespace Green
 				XMMATRIX R = 
 					XMMatrixRotationZ(XMConvertToRadians(Params.RotZ)) *
 					XMMatrixRotationX(XMConvertToRadians(Params.RotX)) *
-					XMMatrixRotationY(XMConvertToRadians(Params.RotY)) *
-					XMMatrixRotationZ(-Params.Rotation * XM_PIDIV2);
+					XMMatrixRotationY(XMConvertToRadians(Params.RotY));
+				XMMATRIX R2 = XMMatrixRotationZ(-Params.Rotation * XM_PIDIV2);
 				XMMATRIX world = Ti * R * T * T2;
 				XMMATRIX reproj = DepthIntrinsics * world * DepthInverseIntrinsics;
 				XMMATRIX reprojModel = DepthIntrinsics * Ti * R *T;
@@ -166,6 +171,7 @@ namespace Green
 				XMStoreFloat4x4(&DepthAndColorOptions.ModelTransform, reprojModel);
 				XMStoreFloat4x4(&DepthAndColorOptions.WorldTransform, world);
 				XMStoreFloat4x4(&DepthAndColorOptions.NormalTransform, reprojNormals);
+				XMStoreFloat4x4(&DepthAndColorOptions.SceneRotation, R2);
 
 				XMFLOAT2 modelScale;
 				float depthAspectRatio = (float)KinectDevice::DepthWidth / (float)KinectDevice::DepthHeight;
@@ -222,7 +228,7 @@ namespace Green
 						DXGI_FORMAT_R16_SINT, D3D11_USAGE_DYNAMIC);
 					dxw->TColor = new Texture2D(dxw->Device,
 						KinectDevice::ColorWidth, KinectDevice::ColorHeight,
-						DXGI_FORMAT_R16_UNORM, D3D11_USAGE_DYNAMIC);
+						DXGI_FORMAT_R8G8B8A8_UNORM, D3D11_USAGE_DYNAMIC);
 					break;
 				case KinectDevice::Infrared:
 					dxw->TColor = new Texture2D(dxw->Device,
@@ -269,7 +275,10 @@ namespace Green
 				dxw->ClearScreen();
 			}
 		public:
-			void SetView(float transX, float transY, float transZ, float rotX, float rotY, float rotZ)
+			void SetView(
+				float transX, float transY, float transZ, 
+				float rotX, float rotY, float rotZ, 
+				float scale, float moveX, float moveY, float rotation)
 			{
 				Params.TransX = transX;
 				Params.TransY = transY;
@@ -277,7 +286,11 @@ namespace Green
 				Params.RotX = rotX;
 				Params.RotY = rotY;
 				Params.RotZ = rotZ;
+				Params.Rotation = rotation;
 				SetDepthAndColorOptions();
+
+				DepthAndColorOptions.Scale = scale;
+				DepthAndColorOptions.Move = XMFLOAT2(moveX, moveY);
 			}
 
 			void SetCameras(float* infraredIntrinsics, float* depthToIRMapping)
@@ -316,6 +329,17 @@ namespace Green
 				BackgroundColor[3] = 1.f;
 			}
 
+			void Resize()
+			{
+				/*LPRECT clientRect;
+				GetClientRect(Window, clientRect);
+
+				Error(SwapChain->ResizeBuffers(1, clientRect->right - clientRect->left, clientRect->bottom - clientRect->top, DXGI_FORMAT_R8G8B8A8_UNORM, 0)); 
+				MainViewport->Width = clientRect->right - clientRect->left;
+				MainViewport->Height = clientRect->bottom - clientRect->top;
+				DeviceContext->RSSetViewports(1, MainViewport);	*/
+			}
+
 			~DirectXWindow()
 			{
 				DestroyResources();
@@ -331,9 +355,11 @@ namespace Green
 			ID3D11DeviceContext *DeviceContext;
 			ID3D11RenderTargetView *BackBuffer;
 			D3D11_VIEWPORT *MainViewport;
+			HWND Window;
 
 			void InitD3D(HWND hWnd)
 			{
+				Window = hWnd;
 				DXGI_SWAP_CHAIN_DESC scd;
 				ZeroMemory(&scd, sizeof(DXGI_SWAP_CHAIN_DESC));
 				scd.BufferCount = 1;
@@ -359,7 +385,7 @@ namespace Green
 
 				LPRECT clientRect;
 				GetClientRect(hWnd, clientRect);
-				
+
 				ID3D11Texture2D *tex;
 				Error(SwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&tex));
 				Error(Device->CreateRenderTargetView(tex, NULL, &BackBuffer));
