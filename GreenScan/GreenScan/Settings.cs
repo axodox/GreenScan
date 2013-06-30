@@ -26,6 +26,7 @@ namespace Green.Scan
 
         public SettingGroup ShadingProperties { get; private set; }
         public NumericSetting<float> DepthLimit { get; private set; }
+        public NumericSetting<float> TriangleRemoveLimit { get; private set; }
 
         public ScanSettings()
             : base()
@@ -78,7 +79,9 @@ namespace Green.Scan
             SettingGroups.Add(ShadingProperties);
 
             DepthLimit = new NumericSetting<float>("DepthLimit", 8, 0, 8, 2) { FriendlyName = "Depth limit (meters)" };
+            TriangleRemoveLimit = new NumericSetting<float>("TriangleRemoveLimit", 0.0024f, 0.0005f, 0.004f, 4) { FriendlyName = "Triangle remove limit (1)" };
             ShadingProperties.Settings.Add(DepthLimit);
+            ShadingProperties.Settings.Add(TriangleRemoveLimit);
         }
     }
 }

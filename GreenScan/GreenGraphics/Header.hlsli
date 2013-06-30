@@ -19,16 +19,24 @@ struct VertexPositionTextureDepth
 	float2 Texture : TEXCOORD0;
 };
 
-cbuffer DepthAndColorConstants : register(b0)
+cbuffer CommonConstants : register(b0)
 {
+	float4x4 SceneRotation;
+	float2 AspectScale;
+	float2 Move;
+	float Scale;
+};
+
+static const int MaxDepth = 10;
+cbuffer DepthAndColorConstants : register(b1)
+{
+	float4x4 DepthInvIntrinsics;
 	float4x4 ReprojectionTransform;
 	float4x4 ModelTransform;
 	float4x4 WorldTransform;
 	float4x4 NormalTransform;
-	float2 ModelScale;
+	float2 DepthStep;
 	int2 DepthSize;
 	float DepthLimit;
-	float Scale;
-	float2 Move;
-	float4x4 SceneRotation; 
+	float TriangleLimit;
 };

@@ -37,12 +37,14 @@ namespace Green
 		protected:
 			virtual HandleRef BuildWindowCore(HandleRef hwndParent) override
 			{
+				HWND parent = (HWND)hwndParent.Handle.ToPointer();
+
 				Host = nullptr;
 				Host = CreateWindowEx(
 					0, L"static", L"",
 					WS_CHILD,
 					0, 0, (int)Width, (int)Height,
-					(HWND)hwndParent.Handle.ToPointer(), 
+					parent, 
 					0, nullptr, 0);
 				String^ root = Path::GetDirectoryName(Assembly::GetExecutingAssembly()->Location);
 				XWindow = new DirectXWindow(Host, StringToLPWSTR(root));
@@ -105,9 +107,9 @@ namespace Green
 				}
 			}
 
-			void SetShading(float depthLimit)
+			void SetShading(float depthLimit, float triangleLimit)
 			{
-				XWindow->SetShading(depthLimit);
+				XWindow->SetShading(depthLimit, triangleLimit);
 			}
 
 			void Draw()

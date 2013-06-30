@@ -80,7 +80,7 @@ namespace Green.Scan
 
         void SetShading()
         {
-            DXC.SetShading(SS.DepthLimit.Value);
+            DXC.SetShading(SS.DepthLimit.Value, SS.TriangleRemoveLimit.Value);
         }
         
         void Settings_Click(object sender, RoutedEventArgs e)

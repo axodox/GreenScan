@@ -408,6 +408,75 @@ namespace Green
 			}
 		};
 
+		class DepthBuffer
+		{
+		private:
+			ID3D11Texture2D* Texture;
+			ID3D11DepthStencilView* DepthStencilView;
+			ID3D11DeviceContext* DeviceContext;
+			ID3D11RenderTargetView* RenderTargetView;
+		public:
+			DepthBuffer(ID3D11RenderTargetView* target)
+			{
+				target->AddRef();
+				ID3D11Device* device;
+				target->GetDevice(&device);
+				RenderTargetView = target;
+
+				ID3D11Resource* resource;
+				target->GetResource(&resource);
+				ID3D11Texture2D* tex2D = (ID3D11Texture2D*)resource;
+				D3D11_TEXTURE2D_DESC tex2Dd;
+				tex2D->GetDesc(&tex2Dd);
+				resource->Release();
+
+				D3D11_TEXTURE2D_DESC td;
+				ZeroMemory(&td, sizeof(td));
+				td.Width = tex2Dd.Width;
+				td.Height = tex2Dd.Height;
+				td.MipLevels = 1;
+				td.ArraySize = 1;
+				td.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+				td.SampleDesc.Count = 1;
+				td.SampleDesc.Quality = 0;
+				td.Usage = D3D11_USAGE_DEFAULT;
+				td.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+				td.CPUAccessFlags = 0;
+				td.MiscFlags = 0;
+				
+				Error(device->CreateTexture2D(&td, 0, &Texture));
+
+				D3D11_DEPTH_STENCIL_VIEW_DESC dsvd;
+				ZeroMemory(&dsvd, sizeof(dsvd));
+				dsvd.Format = td.Format;
+				dsvd.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+				dsvd.Texture2D.MipSlice = 0;
+
+				Error(device->CreateDepthStencilView(Texture, &dsvd, &DepthStencilView));
+				
+				device->GetImmediateContext(&DeviceContext);	
+				device->Release();
+			}
+
+			void Set()
+			{
+				DeviceContext->OMSetRenderTargets(1, &RenderTargetView, DepthStencilView);
+			}
+
+			void Clear()
+			{
+				DeviceContext->ClearDepthStencilView(DepthStencilView, D3D11_CLEAR_DEPTH, 1.f, 0);
+			}
+
+			~DepthBuffer()
+			{
+				DeviceContext->Release();
+				DepthStencilView->Release();
+				Texture->Release();
+				RenderTargetView->Release();
+			}
+		};
+
 		class Quad
 		{
 		private:
@@ -418,13 +487,13 @@ namespace Green
 			{	
 				VertexPositionTexture* vertices = new VertexPositionTexture[4];
 				vertices[0].Position = XMFLOAT3(-1.f, -1.f, 0.f);
-				vertices[0].Texture = XMFLOAT2(0.f, 1.f);
+				vertices[0].Texture = XMFLOAT2(1.f, 1.f);
 				vertices[1].Position = XMFLOAT3(-1.f, 1.f, 0.f);
-				vertices[1].Texture = XMFLOAT2(0.f, 0.f);
+				vertices[1].Texture = XMFLOAT2(1.f, 0.f);
 				vertices[2].Position = XMFLOAT3(1.f, -1.f, 0.f);
-				vertices[2].Texture = XMFLOAT2(1.f, 1.f);
+				vertices[2].Texture = XMFLOAT2(0.f, 1.f);
 				vertices[3].Position = XMFLOAT3(1.f, 1.f, 0.f);
-				vertices[3].Texture = XMFLOAT2(1.f, 0.f);
+				vertices[3].Texture = XMFLOAT2(0.f, 0.f);
 				VB = new VertexBuffer<VertexPositionTexture>(device, 4, VertexDefinition::VertexPositionTexture, vertices);
 				delete [4] vertices;
 				device->GetImmediateContext(&Context);
