@@ -1,3 +1,6 @@
+#define Pi 3.14159f
+#define MaxDepth 10.f
+
 struct VertexPositionTextureIn
 {
 	float3 Position : POSITION0;
@@ -27,7 +30,6 @@ cbuffer CommonConstants : register(b0)
 	float Scale;
 };
 
-static const int MaxDepth = 10;
 cbuffer DepthAndColorConstants : register(b1)
 {
 	float4x4 DepthInvIntrinsics;
@@ -38,5 +40,7 @@ cbuffer DepthAndColorConstants : register(b1)
 	float2 DepthStep;
 	int2 DepthSize;
 	float DepthLimit;
+	float ShadingPeriode;
+	float ShadingPhase;
 	float TriangleLimit;
 };

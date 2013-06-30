@@ -13,13 +13,14 @@ float3 PosOf(float x, float y)
 	return mul(float4(DepthSize.x * x * depth, DepthSize.y * y * depth, depth, 1), DepthInvIntrinsics).xyz;
 }
 
-bool VertexRemove(float2 uv)
+bool CalculateWorldNormal(float2 uv, out float3 posx, out float3 normal)
 {
-	float3 posx = PosOf(uv.x, uv.y);
+	posx = PosOf(uv.x, uv.y);
 	float3 posu = PosOf(uv.x, uv.y + DepthStep.y);
 	float3 posd = PosOf(uv.x, uv.y - DepthStep.y);
 	float3 posl = PosOf(uv.x - DepthStep.x, uv.y);
 	float3 posr = PosOf(uv.x + DepthStep.x, uv.y);
+	normal = normalize(cross(posu - posd, posr - posl));
 	return pow(length(posu - posd) / posx.z, 2) + pow(length(posr - posl) / posx.z, 2) > TriangleLimit;
 }
 
@@ -36,20 +37,23 @@ VertexPositionTextureDepth main(VertexPositionTextureIn vi)
 		depth, 
 		1);
 
+	float screenDepth;
 	posTemp = mul(posDepth, ReprojectionTransform);
-	posTemp.xy = (posTemp.xy / (posTemp.z * DepthSize) * 2 - 1) * AspectScale * float2(1.f, -1.f);
+	screenDepth = posTemp.z;
+	posTemp.xy = (posTemp.xy / (posTemp.z * DepthSize) * 2.f - 1.f) * AspectScale * float2(1.f, -1.f);
 	posTemp = mul(posTemp, SceneRotation);
 	posTemp.xy = (posTemp.xy + Move) * Scale;
 	posTemp.z /= MaxDepth;
 	posTemp *= DepthLimit;	
 	float4 posScreen = posTemp;
 	
-	if(VertexRemove(vi.Texture)) depth = 0.f;
+	float3 posWorld, normal;
+	if(CalculateWorldNormal(vi.Texture, posWorld, normal)) depth = 0.f;
 
 	VertexPositionTextureDepth vo;
 	vo.Position = posScreen;
-	vo.WorldPosition = float3(1,1,1);
-	vo.Normal = float3(1,1,1);
+	vo.WorldPosition = posWorld;
+	vo.Normal = normalize(mul(normal, NormalTransform));
 	vo.Depth = depth;
 	vo.Texture = vi.Texture;
 	return vo;

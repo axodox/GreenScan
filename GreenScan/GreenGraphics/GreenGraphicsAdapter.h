@@ -107,9 +107,19 @@ namespace Green
 				}
 			}
 
-			void SetShading(float depthLimit, float triangleLimit)
+			enum class ShadingModes {
+				Zebra,
+				Rainbow,
+				ShadedRainbow,
+				Scale,
+				ShadedScale,
+				Blinn,
+				Textured
+			};
+
+			void SetShading(ShadingModes mode, float depthLimit, float shadingPeriode, float shadingPhase, float triangleLimit)
 			{
-				XWindow->SetShading(depthLimit, triangleLimit);
+				XWindow->SetShading((DirectXWindow::ShadingModes)mode, depthLimit, shadingPeriode, shadingPhase, triangleLimit);
 			}
 
 			void Draw()

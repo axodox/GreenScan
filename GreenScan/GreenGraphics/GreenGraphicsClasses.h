@@ -4,6 +4,7 @@
 #include "Helper.h"
 #include "GreenGraphicsVertexDefinitions.h"
 using namespace DirectX;
+using namespace Gdiplus;
 
 namespace Green
 {
@@ -285,13 +286,13 @@ namespace Green
 			}
 		};
 
-		class Sampler
+		class SamplerState
 		{
 		private:
-			ID3D11SamplerState *SamplerState;
+			ID3D11SamplerState *State;
 			ID3D11DeviceContext *Context;
 		public:
-			Sampler(ID3D11Device* device, D3D11_FILTER filter, D3D11_TEXTURE_ADDRESS_MODE addressMode)
+			SamplerState(ID3D11Device* device, D3D11_FILTER filter, D3D11_TEXTURE_ADDRESS_MODE addressMode)
 			{
 				D3D11_SAMPLER_DESC sd;
 				ZeroMemory(&sd, sizeof(sd));
@@ -306,23 +307,111 @@ namespace Green
 				sd.ComparisonFunc = D3D11_COMPARISON_NEVER;
 				for(int i = 0; i < 4; i++)
 					sd.BorderColor[i] = 0.f;
-				Error(device->CreateSamplerState(&sd, &SamplerState));
+				Error(device->CreateSamplerState(&sd, &State));
 				device->GetImmediateContext(&Context);
 			}
 
 			void SetForVS(int slot = 0)
 			{
-				Context->VSSetSamplers(slot, 1, &SamplerState);
+				Context->VSSetSamplers(slot, 1, &State);
 			}
 
 			void SetForPS(int slot = 0)
 			{
-				Context->PSSetSamplers(slot, 1, &SamplerState);
+				Context->PSSetSamplers(slot, 1, &State);
 			}
 
-			~Sampler()
+			~SamplerState()
 			{
-				SamplerState->Release();
+				State->Release();
+				Context->Release();
+			}
+		};
+
+		class Texture1D
+		{
+		private:
+			ID3D11Texture1D* Texture;
+			ID3D11ShaderResourceView* ResourceView;
+			ID3D11DeviceContext* Context;
+			int Length;
+		public:
+			Texture1D(ID3D11Device* device, int length, DXGI_FORMAT format, void* data = 0, int stride = 0) : Length(length)
+			{
+				D3D11_TEXTURE1D_DESC desc;
+				ZeroMemory(&desc, sizeof(desc));
+				desc.Width = length;
+				desc.MipLevels = 1;
+				desc.ArraySize = 1;
+				desc.Format = format;
+				desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;				
+				desc.MiscFlags = 0;
+				if(data == 0)
+				{
+					desc.Usage = D3D11_USAGE_DYNAMIC;
+					desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+					Error(device->CreateTexture1D(&desc, 0, &Texture));
+				}
+				else
+				{
+					desc.Usage = D3D11_USAGE_IMMUTABLE;
+					desc.CPUAccessFlags = 0;
+
+					D3D11_SUBRESOURCE_DATA sd;
+					ZeroMemory(&sd, sizeof(sd));
+					sd.pSysMem = data;
+					sd.SysMemPitch = stride;
+					sd.SysMemSlicePitch = 0;
+					Error(device->CreateTexture1D(&desc, &sd, &Texture));
+				}				
+
+				D3D11_SHADER_RESOURCE_VIEW_DESC textureViewDesc;
+				ZeroMemory(&textureViewDesc, sizeof(textureViewDesc));
+				textureViewDesc.Format = format; 
+				textureViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE1D; 
+				textureViewDesc.Texture2D.MipLevels = 1; 
+				textureViewDesc.Texture2D.MostDetailedMip = 0; 
+
+				Error(device->CreateShaderResourceView(Texture, &textureViewDesc, &ResourceView));
+
+				device->GetImmediateContext(&Context);
+			}
+
+			static Texture1D* FromFile(ID3D11Device* device, LPWSTR path)
+			{
+				Bitmap bitmap(path);
+				int width = bitmap.GetWidth();
+				int height = bitmap.GetHeight();
+				Gdiplus::Rect lockRect(0, 0, width, height);
+				BitmapData bitmapData;
+				bitmap.LockBits(&lockRect, Gdiplus::ImageLockMode::ImageLockModeRead, PixelFormat32bppARGB, &bitmapData);
+				Texture1D* texture = new Texture1D(device, width, DXGI_FORMAT_B8G8R8A8_UNORM, bitmapData.Scan0, bitmapData.Stride);
+				bitmap.UnlockBits(&bitmapData);
+				return texture;
+			}
+
+			template <class T> void Load(T* data)
+			{
+				D3D11_MAPPED_SUBRESOURCE ms;
+				Error(Context->Map(Texture, 0, D3D11_MAP_WRITE_DISCARD, 0, &ms));
+				memcpy(ms.pData, data, Length * sizeof(T));
+				Context->Unmap(Texture, 0);
+			}
+
+			void SetForVS(int slot = 0)
+			{
+				Context->VSSetShaderResources(slot, 1, &ResourceView);
+			}
+
+			void SetForPS(int slot = 0)
+			{
+				Context->PSSetShaderResources(slot, 1, &ResourceView);
+			}
+
+			~Texture1D()
+			{
+				Texture->Release();
+				ResourceView->Release();
 				Context->Release();
 			}
 		};
@@ -335,7 +424,7 @@ namespace Green
 			ID3D11DeviceContext* Context;
 			int Width, Height;
 		public:
-			Texture2D(ID3D11Device* device, int width, int height, DXGI_FORMAT format, D3D11_USAGE usage) : Width(width), Height(height)
+			Texture2D(ID3D11Device* device, int width, int height, DXGI_FORMAT format, void* data = 0, int stride = 0) : Width(width), Height(height)
 			{
 				D3D11_TEXTURE2D_DESC desc;
 				ZeroMemory(&desc, sizeof(desc));
@@ -346,12 +435,26 @@ namespace Green
 				desc.Format = format;
 				desc.SampleDesc.Count = 1;
 				desc.SampleDesc.Quality = 0;
-				desc.Usage = usage;
-				desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-				desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+				desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;				
 				desc.MiscFlags = 0;
+				if(data == 0)
+				{
+					desc.Usage = D3D11_USAGE_DYNAMIC;
+					desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+					Error(device->CreateTexture2D(&desc, 0, &Texture));
+				}
+				else
+				{
+					desc.Usage = D3D11_USAGE_IMMUTABLE;
+					desc.CPUAccessFlags = 0;
 
-				Error(device->CreateTexture2D(&desc, 0, &Texture));
+					D3D11_SUBRESOURCE_DATA sd;
+					ZeroMemory(&sd, sizeof(sd));
+					sd.pSysMem = data;
+					sd.SysMemPitch = stride;
+					sd.SysMemSlicePitch = 0;
+					Error(device->CreateTexture2D(&desc, &sd, &Texture));
+				}				
 
 				D3D11_SHADER_RESOURCE_VIEW_DESC textureViewDesc;
 				ZeroMemory(&textureViewDesc, sizeof(textureViewDesc));
@@ -363,6 +466,19 @@ namespace Green
 				Error(device->CreateShaderResourceView(Texture, &textureViewDesc, &ResourceView));
 
 				device->GetImmediateContext(&Context);
+			}
+
+			static Texture2D* FromFile(ID3D11Device* device, LPWSTR path)
+			{
+				Bitmap bitmap(path);
+				int width = bitmap.GetWidth();
+				int height = bitmap.GetHeight();
+				Gdiplus::Rect lockRect(0, 0, width, height);
+				BitmapData bitmapData;
+				bitmap.LockBits(&lockRect, Gdiplus::ImageLockMode::ImageLockModeRead, PixelFormat32bppARGB, &bitmapData);
+				Texture2D* texture = new Texture2D(device, width, height, DXGI_FORMAT_R8G8B8A8_UNORM, bitmapData.Scan0, bitmapData.Stride);
+				bitmap.UnlockBits(&bitmapData);
+				return texture;
 			}
 
 			template <class T> void Load(T* data)

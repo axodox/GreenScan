@@ -6,9 +6,9 @@
 #include "GreenGraphicsClasses.h"
 #include "GreenKinect.h"
 
-#pragma comment (lib, "d3d11.lib")
 using namespace std;
 using namespace DirectX;
+using namespace Gdiplus;
 using namespace Green::Kinect;
 
 namespace Green
@@ -17,6 +17,16 @@ namespace Green
 	{
 		class DirectXWindow
 		{
+		public:
+			enum class ShadingModes {
+				Zebra,
+				Rainbow,
+				ShadedRainbow,
+				Scale,
+				ShadedScale,
+				Blinn,
+				Textured
+			} ShadingMode;
 		private:
 			LPWSTR Root;
 			LPWSTR ToRoot(LPCWSTR path)
@@ -27,16 +37,18 @@ namespace Green
 				wcscat(tempPath, path);
 				return tempPath;
 			}
+			ULONG_PTR GdiPlusToken;
 
 			bool KinectReady, ResizeNeeded;
 			KinectDevice::Modes KinectMode;
 			Quad *QMain;
 			Plane *PMain;
-			Sampler *SLinearWrap;
+			SamplerState *SLinearWrap;
 			VertexShader *VSSimple, *VSCommon, *VSReprojection;
 			GeometryShader *GSReprojection;
-			PixelShader *PSInfrared, *PSColor, *PSSinusoidal;
+			PixelShader *PSInfrared, *PSDepth, *PSColor, *PSSine, *PSPeriodicScale, *PSPeriodicShadedScale, *PSScale, *PSShadedScale, *PSBlinn;
 			Texture2D *TColor, *TDepth;
+			Texture1D *THueMap, *TScaleMap;
 			
 			struct RenderingParameters
 			{
@@ -63,6 +75,8 @@ namespace Green
 				XMFLOAT2 DepthStep;
 				XMINT2 DepthSize;
 				float DepthLimit;
+				float ShadingPeriode;
+				float ShadingPhase;
 				float TriangleLimit;
 			} DepthAndColorOptions;
 
@@ -87,9 +101,15 @@ namespace Green
 
 				PSInfrared = new PixelShader(Device, L"InfraredPixelShader.cso");
 				PSColor = new PixelShader(Device, L"ColorPixelShader.cso");
-				PSSinusoidal = new PixelShader(Device, L"SinusoidalPixelShader.cso");
-				
-				SLinearWrap = new Sampler(Device, D3D11_FILTER_MIN_MAG_MIP_LINEAR, D3D11_TEXTURE_ADDRESS_BORDER);
+				PSDepth = new PixelShader(Device, L"DepthPixelShader.cso");
+				PSSine = new PixelShader(Device, L"SinePixelShader.cso");
+				PSPeriodicScale = new PixelShader(Device, L"PeriodicScalePixelShader.cso");
+				PSPeriodicShadedScale = new PixelShader(Device, L"PeriodicShadedScalePixelShader.cso");
+				PSScale = new PixelShader(Device, L"ScalePixelShader.cso");
+				PSShadedScale = new PixelShader(Device, L"ShadedScalePixelShader.cso");
+				PSBlinn = new PixelShader(Device, L"BlinnPixelShader.cso");
+								
+				SLinearWrap = new SamplerState(Device, D3D11_FILTER_MIN_MAG_MIP_LINEAR, D3D11_TEXTURE_ADDRESS_WRAP);
 
 				ZeroMemory(&Params, sizeof(RenderingParameters));				
 				CBDepthAndColor = new ConstantBuffer<DepthAndColorConstants>(Device);
@@ -98,6 +118,8 @@ namespace Green
 				KinectReady = false;
 
 				TColor = TDepth = 0;
+				THueMap = Texture1D::FromFile(Device, L"hueMap.png");
+				TScaleMap = Texture1D::FromFile(Device, L"scaleMap.png");
 			}
 
 			void DestroyResources()
@@ -111,10 +133,18 @@ namespace Green
 				delete GSReprojection;
 				delete PSInfrared;
 				delete PSColor;
-				delete PSSinusoidal;
+				delete PSDepth;
+				delete PSSine;
+				delete PSPeriodicScale;
+				delete PSPeriodicShadedScale;
+				delete PSScale;
+				delete PSShadedScale;
+				delete PSBlinn;
 				delete SLinearWrap;
 				delete CBDepthAndColor;
 				delete CBCommon;
+				delete THueMap;
+				delete TScaleMap;
 			}
 
 			void DrawScene()
@@ -122,12 +152,14 @@ namespace Green
 				if(!KinectReady) return;
 				CBCommon->Update(&CommonOptions);
 				CBCommon->SetForVS(0);
+				CBDepthAndColor->Update(&DepthAndColorOptions);
 
 				switch (KinectMode)
 				{
 				case KinectDevice::Depth:
 					VSCommon->Apply();
-					PSInfrared->Apply();
+					PSDepth->Apply();
+					THueMap->SetForPS(1);
 					TDepth->SetForPS();
 					SLinearWrap->SetForPS();				
 					QMain->Draw();
@@ -140,17 +172,49 @@ namespace Green
 					QMain->Draw();
 					break;
 				case KinectDevice::DepthAndColor:
-					
-					CBDepthAndColor->Update(&DepthAndColorOptions);
 					VSReprojection->Apply();
-					
 					CBDepthAndColor->SetForVS(1);
 					TDepth->SetForVS();
 
 					GSReprojection->Apply();
 					CBDepthAndColor->SetForGS(1);
 
-					PSSinusoidal->Apply();
+					switch (ShadingMode)
+					{
+					case ShadingModes::Zebra:
+						PSSine->Apply();
+						break;
+					case ShadingModes::Rainbow:
+						PSPeriodicScale->Apply();
+						SLinearWrap->SetForPS();
+						THueMap->SetForPS();
+						break;
+					case ShadingModes::ShadedRainbow:
+						PSPeriodicShadedScale->Apply();
+						SLinearWrap->SetForPS();
+						THueMap->SetForPS();
+						break;
+					case ShadingModes::Scale:
+						PSScale->Apply();
+						SLinearWrap->SetForPS();
+						TScaleMap->SetForPS();
+						break;
+					case ShadingModes::ShadedScale:
+						PSShadedScale->Apply();
+						SLinearWrap->SetForPS();
+						TScaleMap->SetForPS();
+						break;
+					case ShadingModes::Blinn:
+						PSBlinn->Apply();
+						break;
+					
+					/*case ShadingModes::Textured:
+						break;*/
+					default:
+						PSSine->Apply();
+						break;
+					}
+					CBDepthAndColor->SetForPS(1);
 								
 					PMain->Draw();
 					break;
@@ -224,25 +288,25 @@ namespace Green
 				case KinectDevice::Depth:
 					dxw->TDepth = new Texture2D(dxw->Device,
 						KinectDevice::DepthWidth, KinectDevice::DepthHeight,
-						DXGI_FORMAT_R16_UNORM, D3D11_USAGE_DYNAMIC);
+						DXGI_FORMAT_R16_UNORM);
 					break;
 				case KinectDevice::Color:
 					dxw->TColor = new Texture2D(dxw->Device,
 						KinectDevice::ColorWidth, KinectDevice::ColorHeight,
-						DXGI_FORMAT_R8G8B8A8_UNORM, D3D11_USAGE_DYNAMIC);
+						DXGI_FORMAT_R8G8B8A8_UNORM);
 					break;
 				case KinectDevice::DepthAndColor:
 					dxw->TDepth = new Texture2D(dxw->Device,
 						KinectDevice::DepthWidth, KinectDevice::DepthHeight,
-						DXGI_FORMAT_R16_SINT, D3D11_USAGE_DYNAMIC);
+						DXGI_FORMAT_R16_SINT);
 					dxw->TColor = new Texture2D(dxw->Device,
 						KinectDevice::ColorWidth, KinectDevice::ColorHeight,
-						DXGI_FORMAT_R8G8B8A8_UNORM, D3D11_USAGE_DYNAMIC);
+						DXGI_FORMAT_R8G8B8A8_UNORM);
 					break;
 				case KinectDevice::Infrared:
 					dxw->TColor = new Texture2D(dxw->Device,
 						KinectDevice::ColorWidth, KinectDevice::ColorHeight,
-						DXGI_FORMAT_R16_UNORM, D3D11_USAGE_DYNAMIC);
+						DXGI_FORMAT_R16_UNORM);
 					break;
 				default:
 					break;
@@ -314,9 +378,12 @@ namespace Green
 				SetDepthAndColorOptions();
 			}
 
-			void SetShading(float depthLimit, float triangleLimit)
+			void SetShading(ShadingModes mode, float depthLimit, float shadingPeriode, float shadingPhase, float triangleLimit)
 			{
+				ShadingMode = mode;
 				DepthAndColorOptions.DepthLimit = depthLimit;
+				DepthAndColorOptions.ShadingPeriode = shadingPeriode;
+				DepthAndColorOptions.ShadingPhase = shadingPhase;
 				DepthAndColorOptions.TriangleLimit = triangleLimit;
 			}
 
@@ -333,6 +400,8 @@ namespace Green
 			DirectXWindow(HWND hWnd, LPWSTR root)
 			{
 				Root = root;
+				GdiplusStartupInput gsi;
+				GdiplusStartup(&GdiPlusToken, &gsi, 0);
 				InitD3D(hWnd);
 				CreateResources();
 				BackgroundColor[0] = 1.f;
@@ -373,6 +442,8 @@ namespace Green
 				SwapChain->Release();
 				delete DepthBackBuffer;
 				delete MainViewport;
+				GdiplusShutdown(GdiPlusToken);
+
 			}
 		private:
 			IDXGISwapChain *SwapChain;
@@ -382,6 +453,7 @@ namespace Green
 			DepthBuffer *DepthBackBuffer;
 			D3D11_VIEWPORT *MainViewport;
 			HWND Window;
+			
 
 			void InitD3D(HWND hWnd)
 			{

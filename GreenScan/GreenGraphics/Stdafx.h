@@ -13,3 +13,6 @@
 #include <string.h>
 #include <math.h>
 #include <DirectXMath.h>
+#include <gdiplus.h>
+#pragma comment (lib, "Gdiplus.lib")
+#pragma comment (lib, "d3d11.lib")

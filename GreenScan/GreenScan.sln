@@ -9,9 +9,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GreenGraphics", "GreenGraph
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GreenTest", "GreenTest\GreenTest.csproj", "{DE10109E-3B53-4933-B07F-48EFD7165F67}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MakePalettes", "MakePalettes\MakePalettes.csproj", "{1F69FAE4-7EBD-47F2-9A85-F25784765F0F}"
+EndProject
 Global
 	GlobalSection(TeamFoundationVersionControl) = preSolution
-		SccNumberOfProjects = 5
+		SccNumberOfProjects = 6
 		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
 		SccTeamFoundationServer = https://axodox.visualstudio.com/defaultcollection
 		SccLocalPath0 = .
@@ -27,6 +29,9 @@ Global
 		SccProjectUniqueName4 = GreenTest\\GreenTest.csproj
 		SccProjectName4 = GreenTest
 		SccLocalPath4 = GreenTest
+		SccProjectUniqueName5 = MakePalettes\\MakePalettes.csproj
+		SccProjectName5 = MakePalettes
+		SccLocalPath5 = MakePalettes
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -77,6 +82,16 @@ Global
 		{DE10109E-3B53-4933-B07F-48EFD7165F67}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{DE10109E-3B53-4933-B07F-48EFD7165F67}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{DE10109E-3B53-4933-B07F-48EFD7165F67}.Release|Win32.ActiveCfg = Release|Any CPU
+		{1F69FAE4-7EBD-47F2-9A85-F25784765F0F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1F69FAE4-7EBD-47F2-9A85-F25784765F0F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1F69FAE4-7EBD-47F2-9A85-F25784765F0F}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{1F69FAE4-7EBD-47F2-9A85-F25784765F0F}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{1F69FAE4-7EBD-47F2-9A85-F25784765F0F}.Debug|Win32.ActiveCfg = Debug|Any CPU
+		{1F69FAE4-7EBD-47F2-9A85-F25784765F0F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1F69FAE4-7EBD-47F2-9A85-F25784765F0F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1F69FAE4-7EBD-47F2-9A85-F25784765F0F}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{1F69FAE4-7EBD-47F2-9A85-F25784765F0F}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{1F69FAE4-7EBD-47F2-9A85-F25784765F0F}.Release|Win32.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

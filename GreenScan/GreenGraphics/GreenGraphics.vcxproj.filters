@@ -91,13 +91,31 @@
     <FxCompile Include="ReprojectionVertexShader.hlsl">
       <Filter>Source Files\Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="SinusoidalPixelShader.hlsl">
-      <Filter>Source Files\Shaders</Filter>
-    </FxCompile>
     <FxCompile Include="ReprojectionGeometryShader.hlsl">
       <Filter>Source Files\Shaders</Filter>
     </FxCompile>
     <FxCompile Include="CommonVertexShader.hlsl">
+      <Filter>Source Files\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="SinePixelShader.hlsl">
+      <Filter>Source Files\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="PeriodicScalePixelShader.hlsl">
+      <Filter>Source Files\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="PeriodicShadedScalePixelShader.hlsl">
+      <Filter>Source Files\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="DepthPixelShader.hlsl">
+      <Filter>Source Files\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="BlinnPixelShader.hlsl">
+      <Filter>Source Files\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="ScalePixelShader.hlsl">
+      <Filter>Source Files\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="ShadedScalePixelShader.hlsl">
       <Filter>Source Files\Shaders</Filter>
     </FxCompile>
   </ItemGroup>

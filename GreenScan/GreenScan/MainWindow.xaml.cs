@@ -75,12 +75,17 @@ namespace Green.Scan
 
         void SetCameras()
         {
-            DXC.SetCameras(SS.InfraredCameraMatrix.Value, SS.DepthToIRMapping.Value);
+            DXC.SetCameras(SS.InfraredIntrinsics.Value, SS.DepthToIRMapping.Value);
         }
 
         void SetShading()
         {
-            DXC.SetShading(SS.DepthLimit.Value, SS.TriangleRemoveLimit.Value);
+            DXC.SetShading(
+                SS.ShadingMode.Value, 
+                SS.DepthLimit.Value, 
+                SS.ShadingPeriode.Value, 
+                SS.ShadingPhase.Value, 
+                SS.TriangleRemoveLimit.Value);
         }
         
         void Settings_Click(object sender, RoutedEventArgs e)
