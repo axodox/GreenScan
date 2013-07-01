@@ -16,10 +16,10 @@ namespace Green.Scan
         public MatrixSetting ColorIntrinsics { get; private set; }
         public MatrixSetting ColorRemapping { get; private set; }
         public MatrixSetting ColorExtrinsics { get; private set; }
-        public NumericSetting<int> DepthDispositionX { get; private set; }
-        public NumericSetting<int> DepthDispositionY { get; private set; }
-        public NumericSetting<float> DepthScaleX { get; private set; }
-        public NumericSetting<float> DepthScaleY { get; private set; }
+        public NumericSetting<int> ColorDispositionX { get; private set; }
+        public NumericSetting<int> ColorDispositionY { get; private set; }
+        public NumericSetting<float> ColorScaleX { get; private set; }
+        public NumericSetting<float> ColorScaleY { get; private set; }
 
         public SettingGroup ViewProperties { get; private set; }
         public NumericSetting<float> TranslationX { get; private set; }
@@ -66,14 +66,14 @@ namespace Green.Scan
             CameraProperties.Settings.Add(ColorRemapping);
             CameraProperties.Settings.Add(ColorExtrinsics);
 
-            DepthDispositionX = new NumericSetting<int>("DepthDispositionX", -1, -32, 32) { FriendlyName = "Depth X disposition (pixels)" };
-            DepthDispositionY = new NumericSetting<int>("DepthDispositionY", -8, -32, 32) { FriendlyName = "Depth Y disposition (pixels)" };
-            DepthScaleX = new NumericSetting<float>("DepthScaleX", 1.02f, 0.8f, 1.2f, 2) { FriendlyName = "Depth X scale (1)" };
-            DepthScaleY = new NumericSetting<float>("DepthScaleY", 1f, 0.8f, 1.2f, 2) { FriendlyName = "Depth Y scale (1)" };
-            CameraProperties.Settings.Add(DepthDispositionX);
-            CameraProperties.Settings.Add(DepthDispositionY);
-            CameraProperties.Settings.Add(DepthScaleX);
-            CameraProperties.Settings.Add(DepthScaleY);
+            ColorDispositionX = new NumericSetting<int>("ColorDispositionX", -9, -32, 32) { FriendlyName = "Color X disposition (pixels)" };
+            ColorDispositionY = new NumericSetting<int>("ColorDispositionY", 12, -32, 32) { FriendlyName = "Color Y disposition (pixels)" };
+            ColorScaleX = new NumericSetting<float>("ColorScaleX", 1.01f, 0.8f, 1.2f, 2) { FriendlyName = "Color X scale (1)" };
+            ColorScaleY = new NumericSetting<float>("ColorScaleY", 1f, 0.8f, 1.2f, 2) { FriendlyName = "Color Y scale (1)" };
+            CameraProperties.Settings.Add(ColorDispositionX);
+            CameraProperties.Settings.Add(ColorDispositionY);
+            CameraProperties.Settings.Add(ColorScaleX);
+            CameraProperties.Settings.Add(ColorScaleY);
 
             //View
             ViewProperties = new SettingGroup("View") { FriendlyName = "View" };
@@ -106,7 +106,7 @@ namespace Green.Scan
             ShadingProperties = new SettingGroup("Shading") { FriendlyName = "Shading" };
             SettingGroups.Add(ShadingProperties);
 
-            ShadingMode = new EnumSetting<DirectXCanvas.ShadingModes>("ShadingMode", DirectXCanvas.ShadingModes.ShadedScale) { FriendlyName = "Mode" };
+            ShadingMode = new EnumSetting<DirectXCanvas.ShadingModes>("ShadingMode", DirectXCanvas.ShadingModes.Textured) { FriendlyName = "Mode" };
             DepthLimit = new NumericSetting<float>("DepthLimit", 8f, 0f, 8f, 2) { FriendlyName = "Depth limit (meters)" };
             ShadingPeriode = new NumericSetting<float>("ShadingPeriode", 1f, 0f, 2f, 2) { FriendlyName = "Shading periode (meters)" };
             ShadingPhase = new NumericSetting<float>("ShadingPhase", 0f, 0f, 1f, 2) { FriendlyName = "Shading phase (radians)" };

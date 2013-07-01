@@ -75,7 +75,16 @@ namespace Green.Scan
 
         void SetCameras()
         {
-            DXC.SetCameras(SS.InfraredIntrinsics.Value, SS.DepthToIRMapping.Value);
+            DXC.SetCameras(
+                SS.InfraredIntrinsics.Value, 
+                SS.DepthToIRMapping.Value,
+                SS.ColorIntrinsics.Value,
+                SS.ColorRemapping.Value,
+                SS.ColorExtrinsics.Value,
+                SS.ColorDispositionX.Value,
+                SS.ColorDispositionY.Value,
+                SS.ColorScaleX.Value,
+                SS.ColorScaleY.Value);
         }
 
         void SetShading()

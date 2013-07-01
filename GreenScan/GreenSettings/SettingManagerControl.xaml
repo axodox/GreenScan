@@ -16,7 +16,7 @@
         </Grid.RowDefinitions>
         <ScrollViewer>
             <StackPanel>
-                <ItemsControl ItemsSource="{Binding SettingGroups}">
+                <ItemsControl x:Name="SettingGroups" ItemsSource="{Binding SettingGroups}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <ContentPresenter Content="{Binding Converter={StaticResource SettingGroupToUIConverter}}"/>
@@ -28,6 +28,7 @@
         <Menu x:Name="SettingsMenu" Grid.Row="2" Padding="3">
             <MenuItem Header="Import" Click="Import_Click"/>
             <MenuItem Header="Export" Click="Export_Click"/>
+            <MenuItem Header="Reset" Click="Reset_Click"/>
         </Menu>
     </Grid>
 </UserControl>

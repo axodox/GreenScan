@@ -46,7 +46,7 @@ namespace Green
 			SamplerState *SLinearWrap;
 			VertexShader *VSSimple, *VSCommon, *VSReprojection;
 			GeometryShader *GSReprojection;
-			PixelShader *PSInfrared, *PSDepth, *PSColor, *PSSine, *PSPeriodicScale, *PSPeriodicShadedScale, *PSScale, *PSShadedScale, *PSBlinn;
+			PixelShader *PSInfrared, *PSDepth, *PSColor, *PSSine, *PSPeriodicScale, *PSPeriodicShadedScale, *PSScale, *PSShadedScale, *PSBlinn, *PSTextured;
 			Texture2D *TColor, *TDepth;
 			Texture1D *THueMap, *TScaleMap;
 			
@@ -72,7 +72,10 @@ namespace Green
 				XMFLOAT4X4 ModelTransform;
 				XMFLOAT4X4 WorldTransform;
 				XMFLOAT4X4 NormalTransform;
+				XMFLOAT4X4 DepthToColorTransform;
 				XMFLOAT2 DepthStep;
+				XMFLOAT2 ColorMove;
+				XMFLOAT2 ColorScale;
 				XMINT2 DepthSize;
 				float DepthLimit;
 				float ShadingPeriode;
@@ -108,6 +111,7 @@ namespace Green
 				PSScale = new PixelShader(Device, L"ScalePixelShader.cso");
 				PSShadedScale = new PixelShader(Device, L"ShadedScalePixelShader.cso");
 				PSBlinn = new PixelShader(Device, L"BlinnPixelShader.cso");
+				PSTextured = new PixelShader(Device, L"TexturedPixelShader.cso");
 								
 				SLinearWrap = new SamplerState(Device, D3D11_FILTER_MIN_MAG_MIP_LINEAR, D3D11_TEXTURE_ADDRESS_WRAP);
 
@@ -140,6 +144,7 @@ namespace Green
 				delete PSScale;
 				delete PSShadedScale;
 				delete PSBlinn;
+				delete PSTextured;
 				delete SLinearWrap;
 				delete CBDepthAndColor;
 				delete CBCommon;
@@ -207,9 +212,11 @@ namespace Green
 					case ShadingModes::Blinn:
 						PSBlinn->Apply();
 						break;
-					
-					/*case ShadingModes::Textured:
-						break;*/
+					case ShadingModes::Textured:
+						PSTextured->Apply();
+						SLinearWrap->SetForPS();
+						TColor->SetForPS();
+						break;
 					default:
 						PSSine->Apply();
 						break;
@@ -325,6 +332,7 @@ namespace Green
 					dxw->TColor->Load<short>((short*)data);
 					break;
 				case KinectDevice::Color:
+				case KinectDevice::DepthAndColor:
 					dxw->TColor->Load<int>((int*)data);
 				default:
 					break;
@@ -368,13 +376,28 @@ namespace Green
 				XMStoreFloat4x4(&CommonOptions.SceneRotation, R);
 			}
 
-			void SetCameras(float* infraredIntrinsics, float* depthToIRMapping)
+			void SetCameras(
+				float* infraredIntrinsics, float* depthToIRMapping,
+				float* colorIntrinsics, float* colorRemapping, float* colorExtrinsics,
+				int colorDispX, int colorDispY, float colorScaleX, float colorScaleY)
 			{
-				XMMATRIX mInfraredIntrinsics = XMLoadFloat4x4(&XMFLOAT4X4(infraredIntrinsics));
-				XMMATRIX mDepthToIRMapping = XMLoadFloat4x4(&XMFLOAT4X4(depthToIRMapping));
+				XMMATRIX mInfraredIntrinsics = Load4x4(infraredIntrinsics);
+				XMMATRIX mDepthToIRMapping = Load4x4(depthToIRMapping);
 				XMMATRIX mDepthIntrinsics = XMMatrixInverse(0, mDepthToIRMapping) * mInfraredIntrinsics;
+				XMMATRIX mDepthInvIntrinsics = XMMatrixInverse(0, mDepthIntrinsics);
+				
+				XMMATRIX mColorIntrinsics = Load4x4(colorIntrinsics);
+				XMMATRIX mColorRemapping = Load4x4(colorRemapping);
+				XMMATRIX mColorRemappedIntrinsics = XMMatrixInverse(0, mColorRemapping) * mColorIntrinsics;
+
+				XMMATRIX mColorExtrinsics = Load4x4(colorExtrinsics);
+				XMMATRIX mDepthToColor = mColorIntrinsics * mColorExtrinsics * mDepthInvIntrinsics;
+
 				XMStoreFloat4x4(&Params.DepthIntrinsics, mDepthIntrinsics);
+				XMStoreFloat4x4(&DepthAndColorOptions.DepthToColorTransform, mDepthToColor);
 				Params.DepthInvIntrinsics = Invert(Params.DepthIntrinsics);
+				DepthAndColorOptions.ColorMove = XMFLOAT2((float)colorDispX / KinectDevice::ColorWidth, (float)colorDispY / KinectDevice::ColorHeight);
+				DepthAndColorOptions.ColorScale = XMFLOAT2(colorScaleX, colorScaleY);
 				SetDepthAndColorOptions();
 			}
 

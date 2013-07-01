@@ -46,6 +46,11 @@ VertexPositionTextureDepth main(VertexPositionTextureIn vi)
 	posTemp.z /= MaxDepth;
 	posTemp *= DepthLimit;	
 	float4 posScreen = posTemp;
+
+	posTemp = mul(posDepth, DepthToColorTransform);
+	posTemp.xyz /= posTemp.z;
+	posTemp.xy /= DepthSize;
+	float2 tex = posTemp.xy;
 	
 	float3 posWorld, normal;
 	if(CalculateWorldNormal(vi.Texture, posWorld, normal)) depth = 0.f;
@@ -55,6 +60,6 @@ VertexPositionTextureDepth main(VertexPositionTextureIn vi)
 	vo.WorldPosition = posWorld;
 	vo.Normal = normalize(mul(normal, NormalTransform));
 	vo.Depth = depth;
-	vo.Texture = vi.Texture;
+	vo.Texture = tex/2;
 	return vo;
 }

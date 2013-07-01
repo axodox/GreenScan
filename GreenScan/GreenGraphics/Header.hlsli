@@ -37,7 +37,10 @@ cbuffer DepthAndColorConstants : register(b1)
 	float4x4 ModelTransform;
 	float4x4 WorldTransform;
 	float4x4 NormalTransform;
+	float4x4 DepthToColorTransform;
 	float2 DepthStep;
+	float2 ColorMove;
+	float2 ColorScale;
 	int2 DepthSize;
 	float DepthLimit;
 	float ShadingPeriode;

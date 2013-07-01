@@ -25,6 +25,16 @@ namespace Green.Settings.UI
             InitializeComponent();
         }
 
+        public void Expand()
+        {
+            SP.Visibility = Visibility.Visible;
+        }
+
+        public void Collapse()
+        {
+            SP.Visibility = Visibility.Collapsed;
+        }
+
         private void Button_Click(object sender, RoutedEventArgs e)
         {
             if (SP.Visibility == System.Windows.Visibility.Collapsed)

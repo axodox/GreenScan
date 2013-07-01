@@ -97,13 +97,23 @@ namespace Green
 				XWindow->SetView(transX, transY, transZ, rotX, rotY, rotZ, scale, moveX, moveY, rotation);
 			}
 
-			void SetCameras(array<float, 2>^ infraredIntrinsics, array<float, 2>^ depthToIR)
+			void SetCameras(
+				array<float, 2>^ infraredIntrinsics, array<float, 2>^ depthToIRMapping,
+				array<float, 2>^ colorIntrinsics, array<float, 2>^ colorRemapping,
+				array<float, 2>^ colorExtrinsics, int colorDispX, int colorDispY, 
+				float colorScaleX, float colorScaleY)
 			{
-				if(Is3x3(infraredIntrinsics) && Is3x3(depthToIR))
+				if(Is3x3(infraredIntrinsics) && Is3x3(depthToIRMapping))
 				{
-					pin_ptr<float> pDepth = &To4x4(infraredIntrinsics)[0, 0];
-					pin_ptr<float> pDepthToIR = &Expand4x4(depthToIR)[0, 0];
-					XWindow->SetCameras(pDepth, pDepthToIR);
+					pin_ptr<float> pInfraredIntrinsics = &To4x4(infraredIntrinsics)[0, 0];
+					pin_ptr<float> pDepthToIRMapping = &Expand4x4(depthToIRMapping)[0, 0];
+					pin_ptr<float> pColorIntrinsics = &To4x4(colorIntrinsics)[0, 0];
+					pin_ptr<float> pColorRemapping = &Expand4x4(colorRemapping)[0, 0];
+					pin_ptr<float> pColorExtrinsics = &colorExtrinsics[0, 0];
+					XWindow->SetCameras(
+						pInfraredIntrinsics, pDepthToIRMapping,
+						pColorIntrinsics, pColorRemapping, pColorExtrinsics,
+						colorDispX, colorDispY, colorScaleX, colorScaleY);
 				}
 			}
 

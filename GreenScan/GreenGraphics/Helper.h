@@ -33,6 +33,8 @@ void LoadFile(LPWSTR path, void* &data, int& length)
 	fclose(hF);
 }
 
+#define Load4x4(matrix) XMLoadFloat4x4(&XMFLOAT4X4(matrix))
+
 XMFLOAT4X4 Invert(XMFLOAT4X4 matrix)
 {
 	XMFLOAT4X4 matrixInverse;
@@ -48,6 +50,7 @@ XMFLOAT4X4 md(XMMATRIX* matrix)
 	XMStoreFloat4x4(&s, *matrix);
 	return s;
 }
+
 
 #pragma managed
 #include <vcclr.h>

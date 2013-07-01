@@ -448,6 +448,11 @@ namespace Green.Settings
                 friendlyName = value;
             }
         }
+
+        internal void ResetToDefault()
+        {
+            foreach (Setting s in Settings) s.ResetValue();
+        }
     }
 
     public class SettingManager

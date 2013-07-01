@@ -75,5 +75,10 @@ namespace Green.Settings.UI
                 SM = DataContext as SettingManager;
             }
         }
+
+        private void Reset_Click(object sender, RoutedEventArgs e)
+        {
+            foreach (SettingGroup sg in SettingGroups.Items) sg.ResetToDefault();
+        }
     }
 }
