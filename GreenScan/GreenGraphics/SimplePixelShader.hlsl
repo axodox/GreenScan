@@ -1,4 +1,8 @@
-float4 main() : SV_TARGET
+#include "Header.hlsli"
+Texture2D Texture  : register(t0);
+SamplerState Sampler : register(s0);
+
+float4 main(VertexPositionTextureOut v) : SV_TARGET
 {
-	return float4(1.0f, 1.0f, 1.0f, 1.0f);
+	return Texture.Sample(Sampler, v.Texture);
 }

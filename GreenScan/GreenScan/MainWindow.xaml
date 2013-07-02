@@ -4,6 +4,7 @@
         xmlns:s="clr-namespace:Green.Settings.UI;assembly=GreenSettings"
         xmlns:g="clr-namespace:Green.Graphics;assembly=GreenGraphics"
         xmlns:local="clr-namespace:Green.Scan" x:Class="Green.Scan.MainWindow"
+        Closing="Window_Closing"
         Title="MainWindow" Height="1024" Width="768">
     <Window.Resources>
         <local:KinectManagerToDeviceListConverter x:Key="KinectManagerToDeviceListConverter"/>
@@ -18,6 +19,7 @@
             <MenuItem x:Name="MIDevice" Header="Device" ItemsSource="{Binding Converter={StaticResource KinectManagerToDeviceListConverter}, Mode=OneWay}"/>
             <s:EnumMenu x:Name="MIMode" Header="Mode" />
             <MenuItem Header="Settings" Click="Settings_Click"/>
+            <MenuItem Header="Stop" Click="Stop_Click"/>
         </Menu>
         <g:DirectXCanvas x:Name="DXC" Grid.Row="1" />
         <StatusBar Grid.Row="2">

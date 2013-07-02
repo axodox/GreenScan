@@ -103,5 +103,15 @@ namespace Green.Scan
             SW.DataContext = SS;
             SW.Show();
         }
+
+        private void Stop_Click(object sender, RoutedEventArgs e)
+        {
+            KM.StopKinect();
+        }
+
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            KM.CloseKinect();
+        }
     }
 }

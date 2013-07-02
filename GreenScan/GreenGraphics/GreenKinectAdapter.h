@@ -76,6 +76,7 @@ namespace Green
 
 			void StopKinect()
 			{
+				if(!processing) return;
 				processing = false;
 				OnPropertyChanged("Processing");
 				Device->StopKinect();				
@@ -90,13 +91,15 @@ namespace Green
 				Device->SetCountChangedCallback((KinectCountChangedCallback)Marshal::GetFunctionPointerForDelegate(KinectCountChanged).ToPointer());
 			}
 
-			~KinectManager()
+			void CloseKinect()
 			{
-				Device->StopKinect();
-				delete Device;
+				SafeDelete(Device);
 			}
 
-		private:
+			~KinectManager()
+			{
+				CloseKinect();
+			}
 
 		};
 	}

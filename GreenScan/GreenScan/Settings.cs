@@ -106,7 +106,7 @@ namespace Green.Scan
             ShadingProperties = new SettingGroup("Shading") { FriendlyName = "Shading" };
             SettingGroups.Add(ShadingProperties);
 
-            ShadingMode = new EnumSetting<DirectXCanvas.ShadingModes>("ShadingMode", DirectXCanvas.ShadingModes.Textured) { FriendlyName = "Mode" };
+            ShadingMode = new EnumSetting<DirectXCanvas.ShadingModes>("ShadingMode", DirectXCanvas.ShadingModes.Rainbow) { FriendlyName = "Mode" };
             DepthLimit = new NumericSetting<float>("DepthLimit", 8f, 0f, 8f, 2) { FriendlyName = "Depth limit (meters)" };
             ShadingPeriode = new NumericSetting<float>("ShadingPeriode", 1f, 0f, 2f, 2) { FriendlyName = "Shading periode (meters)" };
             ShadingPhase = new NumericSetting<float>("ShadingPhase", 0f, 0f, 1f, 2) { FriendlyName = "Shading phase (radians)" };

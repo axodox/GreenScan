@@ -86,7 +86,7 @@ namespace Green
 
 			~DirectXCanvas()
 			{
-				//delete XWindow;
+				delete XWindow;
 			}
 
 			void SetView(
