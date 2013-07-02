@@ -645,6 +645,39 @@ namespace Green
 			}
 		};
 
+		class RenderTargetPair
+		{
+		private:
+			int Tick;
+			RenderTarget **Targets;
+		public:
+			RenderTargetPair(ID3D11Device* device, int width, int height, DXGI_FORMAT format)
+			{
+				Targets = new RenderTarget*[2];
+				for(int i = 0; i < 2; i++)
+					Targets[i] = new RenderTarget(device, width, height, format);
+				Tick = 0;
+			}
+
+			void SetAsRenderTarget()
+			{
+				Targets[Tick++]->SetAsRenderTarget();
+				if (Tick == 2) Tick = 0;
+			}
+
+			void SetForPS(int slot = 0)
+			{
+				Targets[Tick]->SetForPS(slot);
+			}
+
+			~RenderTargetPair()
+			{
+				for(int i = 0; i < 2; i++)
+					delete Targets[i];
+				delete [2] Targets;
+			}
+		};
+
 		class ReadableRenderTarget : RenderTarget
 		{
 		private:

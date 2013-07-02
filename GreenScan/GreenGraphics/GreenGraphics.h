@@ -100,7 +100,7 @@ namespace Green
 			void CreateResources()
 			{
 				QMain = new Quad(Device);
-				PMain = new Plane(Device, 180, 120);
+				PMain = new Plane(Device, 640, 480);
 
 				VSSimple = new VertexShader(Device, L"SimpleVertexShader.cso");
 				VSSimple->SetInputLayout(QMain->GetVertexDefinition());
@@ -208,6 +208,7 @@ namespace Green
 					QMain->Draw();
 					break;
 				case KinectDevice::DepthAndColor:
+					//UseMainRenderTarget();
 					RTDepthSum->SetAsRenderTarget();
 					RTDepthSum->Clear();
 					VSSimple->Apply();
@@ -224,6 +225,7 @@ namespace Green
 						QMain->Draw();
 						TDBDepth->EndTextureUse();
 					}
+					//SwapChain->Present(0, 0);
 					RTDepthAverage->SetAsRenderTarget();
 					PSDepthAverage->Apply();
 					BOpaque->Apply();
@@ -594,7 +596,7 @@ namespace Green
 					ResizeNeeded = false;
 					SetAspectRatio();
 				}
-				float bgcolor[4] = { 1.f, 1.f, 1.f, 1.f };
+				float bgcolor[4] = { 0.f, 0.f, 0.f, 0.f };
 				DepthBackBuffer->Clear();
 				DeviceContext->ClearRenderTargetView(BackBuffer, bgcolor);
 				DrawScene();
