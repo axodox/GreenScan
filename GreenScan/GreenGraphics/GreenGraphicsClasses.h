@@ -648,7 +648,7 @@ namespace Green
 		class RenderTargetPair
 		{
 		private:
-			int Tick;
+			byte Tick;
 			RenderTarget **Targets;
 		public:
 			RenderTargetPair(ID3D11Device* device, int width, int height, DXGI_FORMAT format)
@@ -659,15 +659,26 @@ namespace Green
 				Tick = 0;
 			}
 
+			void Clear()
+			{
+				for(int i = 0; i < 2; i++)
+					Targets[i]->Clear();
+			}
+
 			void SetAsRenderTarget()
 			{
-				Targets[Tick++]->SetAsRenderTarget();
-				if (Tick == 2) Tick = 0;
+				Targets[Tick]->SetAsRenderTarget();
 			}
 
 			void SetForPS(int slot = 0)
 			{
-				Targets[Tick]->SetForPS(slot);
+				Targets[(Tick == 0 ? 1 : 0)]->SetForPS(slot);
+			}
+
+			void Swap()
+			{
+				Tick++;
+				if(Tick == 2) Tick = 0;
 			}
 
 			~RenderTargetPair()
@@ -678,7 +689,7 @@ namespace Green
 			}
 		};
 
-		class ReadableRenderTarget : RenderTarget
+		class ReadableRenderTarget : public RenderTarget
 		{
 		private:
 			ID3D11Texture2D* StagingTexture;
@@ -808,6 +819,11 @@ namespace Green
 				device->GetImmediateContext(&DeviceContext);
 			}
 
+			int GetSlotCount()
+			{
+				return TextureCount;
+			}
+
 			template <class T> void Load(T* data)
 			{
 				if(TextureInWrite != -1) return;
@@ -882,13 +898,13 @@ namespace Green
 			{	
 				VertexPositionTexture* vertices = new VertexPositionTexture[4];
 				vertices[0].Position = XMFLOAT3(-1.f, -1.f, 0.f);
-				vertices[0].Texture = XMFLOAT2(1.f, 1.f);
+				vertices[0].Texture = XMFLOAT2(0.f, 1.f);
 				vertices[1].Position = XMFLOAT3(-1.f, 1.f, 0.f);
-				vertices[1].Texture = XMFLOAT2(1.f, 0.f);
+				vertices[1].Texture = XMFLOAT2(0.f, 0.f);
 				vertices[2].Position = XMFLOAT3(1.f, -1.f, 0.f);
-				vertices[2].Texture = XMFLOAT2(0.f, 1.f);
+				vertices[2].Texture = XMFLOAT2(1.f, 1.f);
 				vertices[3].Position = XMFLOAT3(1.f, 1.f, 0.f);
-				vertices[3].Texture = XMFLOAT2(0.f, 0.f);
+				vertices[3].Texture = XMFLOAT2(1.f, 0.f);
 				VB = new VertexBuffer<VertexPositionTexture>(device, 4, VertexDefinition::VertexPositionTexture, vertices);
 				delete [4] vertices;
 				device->GetImmediateContext(&Context);

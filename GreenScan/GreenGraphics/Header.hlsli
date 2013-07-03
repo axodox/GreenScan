@@ -1,5 +1,6 @@
 #define Pi 3.14159f
 #define MaxDepth 10.f
+#define GaussCoeffCount 9
 
 struct VertexPositionTextureIn
 {
@@ -46,4 +47,16 @@ cbuffer DepthAndColorConstants : register(b1)
 	float ShadingPeriode;
 	float ShadingPhase;
 	float TriangleLimit;
+	int GaussDispos[GaussCoeffCount];
+	float GaussCoeffs[GaussCoeffCount];
 };
+
+float ToDepth(int raw)
+{
+	return raw / 8000.f;
+}
+
+int3 DepthCoords(float2 uv)
+{
+	return int3((int)(uv.x * DepthSize.x), (int)(uv.y * DepthSize.y), 0);
+}

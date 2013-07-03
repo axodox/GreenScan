@@ -21,7 +21,6 @@ namespace Green.Scan
             SS = new ScanSettings();
             DXC.Loaded += DXC_Loaded;
 
-
             InitGUI();
             InitSettings();
         }
@@ -38,9 +37,11 @@ namespace Green.Scan
         void InitSettings()
         {
             SS.KinectMode.ValueChanged += KinectMode_ValueChanged;
+            SS.PreprocessingProperties.ValueChanged += (object sender, EventArgs e) => { SetPreprocessing(); };
             SS.ViewProperties.ValueChanged += (object sender, EventArgs e) => { SetView(); };
             SS.CameraProperties.ValueChanged += (object sender, EventArgs e) => { SetCameras(); };
             SS.ShadingProperties.ValueChanged += (object sender, EventArgs e) => { SetShading(); };
+
         }
 
         void KinectMode_ValueChanged(object sender, System.EventArgs e)
@@ -53,9 +54,19 @@ namespace Green.Scan
 
         void DXC_Loaded(object sender, RoutedEventArgs e)
         {
+            SetPreprocessing();
             SetView();
             SetCameras();
             SetShading();
+        }
+
+        void SetPreprocessing()
+        {
+            DXC.SetPreprocessing(
+                SS.DepthAveraging.Value,
+                SS.DepthGaussIterations.Value,
+                SS.DepthGaussSigma.Value,
+                SS.DepthGaussSpacing.Value);
         }
 
         void SetView()

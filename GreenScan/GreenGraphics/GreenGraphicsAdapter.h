@@ -117,6 +117,11 @@ namespace Green
 				}
 			}
 
+			void SetPreprocessing(int depthAveraging, int depthGaussIterations, float depthGaussSigma, int depthGaussSpacing)
+			{
+				XWindow->SetPreprocessing(depthAveraging, depthGaussIterations, depthGaussSigma, depthGaussSpacing);
+			}
+
 			enum class ShadingModes {
 				Zebra,
 				Rainbow,

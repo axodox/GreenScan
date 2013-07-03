@@ -10,6 +10,12 @@ namespace Green.Scan
         public SettingGroup KinectProperties { get; private set; }
         public EnumSetting<KinectManager.Modes> KinectMode { get; private set; }
 
+        public SettingGroup PreprocessingProperties { get; private set; }
+        public NumericSetting<int> DepthAveraging { get; private set; }
+        public NumericSetting<int> DepthGaussIterations { get; private set; }
+        public NumericSetting<float> DepthGaussSigma { get; private set; }
+        public NumericSetting<int> DepthGaussSpacing { get; private set; }
+
         public SettingGroup CameraProperties { get; private set; }
         public MatrixSetting InfraredIntrinsics { get; private set; }
         public MatrixSetting DepthToIRMapping { get; private set; }
@@ -50,6 +56,19 @@ namespace Green.Scan
             KinectMode = new EnumSetting<KinectManager.Modes>("Mode", KinectManager.Modes.DepthAndColor) { FriendlyName = "Mode" };
             KinectProperties.Settings.Add(KinectMode);
 
+            //Preprocessing
+            PreprocessingProperties = new SettingGroup("Preprocessing") { FriendlyName = "Preprocessing" };
+            SettingGroups.Add(PreprocessingProperties);
+
+            DepthAveraging = new NumericSetting<int>("DepthAveraging", 1, 1, 32) { FriendlyName = "Depth averaging buffer size (slots)" };
+            DepthGaussIterations = new NumericSetting<int>("DepthGaussIterations", 0, 0, 16) { FriendlyName = "Depth Gauss filtering (iterations)" };
+            DepthGaussSigma = new NumericSetting<float>("DepthGaussSigma", 1, 0.1f, 4f, 2) { FriendlyName = "Depth Gauss filtering sigma (units)" };
+            DepthGaussSpacing = new NumericSetting<int>("DepthSpacingSpacing", 1, 1, 8) { FriendlyName = "Depth Gauss filter spacing (pixels)" };
+            PreprocessingProperties.Settings.Add(DepthAveraging);
+            PreprocessingProperties.Settings.Add(DepthGaussIterations);
+            PreprocessingProperties.Settings.Add(DepthGaussSigma);
+            PreprocessingProperties.Settings.Add(DepthGaussSpacing);
+
             //Camera
             CameraProperties = new SettingGroup("Camera") { FriendlyName = "Camera" };
             SettingGroups.Add(CameraProperties);
@@ -68,8 +87,8 @@ namespace Green.Scan
 
             ColorDispositionX = new NumericSetting<int>("ColorDispositionX", -9, -32, 32) { FriendlyName = "Color X disposition (pixels)" };
             ColorDispositionY = new NumericSetting<int>("ColorDispositionY", 12, -32, 32) { FriendlyName = "Color Y disposition (pixels)" };
-            ColorScaleX = new NumericSetting<float>("ColorScaleX", 1.01f, 0.8f, 1.2f, 2) { FriendlyName = "Color X scale (1)" };
-            ColorScaleY = new NumericSetting<float>("ColorScaleY", 1f, 0.8f, 1.2f, 2) { FriendlyName = "Color Y scale (1)" };
+            ColorScaleX = new NumericSetting<float>("ColorScaleX", 1.01f, 0.8f, 1.2f, 2) { FriendlyName = "Color X scale (units)" };
+            ColorScaleY = new NumericSetting<float>("ColorScaleY", 1f, 0.8f, 1.2f, 2) { FriendlyName = "Color Y scale (units)" };
             CameraProperties.Settings.Add(ColorDispositionX);
             CameraProperties.Settings.Add(ColorDispositionY);
             CameraProperties.Settings.Add(ColorScaleX);
@@ -93,10 +112,10 @@ namespace Green.Scan
             ViewProperties.Settings.Add(RotationY);
             ViewProperties.Settings.Add(RotationZ);
 
-            Scale = new NumericSetting<float>("Scale", 1f, 0f, 8f, 2) { FriendlyName = "Scale (1)" };
-            MoveX = new NumericSetting<float>("MoveX", 0f, -1f, 1f, 2) { FriendlyName = "Move X (1)" };
-            MoveY = new NumericSetting<float>("MoveY", 0f, -1f, 1f, 2) { FriendlyName = "Move Y (1)" };
-            Rotation = new NumericSetting<int>("Rotation", 0, 0, 3) { FriendlyName = "Rotation (1)" };
+            Scale = new NumericSetting<float>("Scale", 1f, 0f, 8f, 2) { FriendlyName = "Scale (units)" };
+            MoveX = new NumericSetting<float>("MoveX", 0f, -1f, 1f, 2) { FriendlyName = "Move X (units)" };
+            MoveY = new NumericSetting<float>("MoveY", 0f, -1f, 1f, 2) { FriendlyName = "Move Y (units)" };
+            Rotation = new NumericSetting<int>("Rotation", 0, 0, 3) { FriendlyName = "Rotation (units)" };
             ViewProperties.Settings.Add(Scale);
             ViewProperties.Settings.Add(MoveX);
             ViewProperties.Settings.Add(MoveY);
@@ -110,7 +129,7 @@ namespace Green.Scan
             DepthLimit = new NumericSetting<float>("DepthLimit", 8f, 0f, 8f, 2) { FriendlyName = "Depth limit (meters)" };
             ShadingPeriode = new NumericSetting<float>("ShadingPeriode", 1f, 0f, 2f, 2) { FriendlyName = "Shading periode (meters)" };
             ShadingPhase = new NumericSetting<float>("ShadingPhase", 0f, 0f, 1f, 2) { FriendlyName = "Shading phase (radians)" };
-            TriangleRemoveLimit = new NumericSetting<float>("TriangleRemoveLimit", 0.0024f, 0.0005f, 0.004f, 4) { FriendlyName = "Triangle remove limit (1)" };
+            TriangleRemoveLimit = new NumericSetting<float>("TriangleRemoveLimit", 0.0024f, 0.0005f, 0.004f, 4) { FriendlyName = "Triangle remove limit (units)" };
             ShadingProperties.Settings.Add(ShadingMode);
             ShadingProperties.Settings.Add(DepthLimit);
             ShadingProperties.Settings.Add(ShadingPeriode);

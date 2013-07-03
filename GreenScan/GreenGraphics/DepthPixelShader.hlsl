@@ -1,13 +1,14 @@
 #include "Header.hlsli"
-Texture2D InfraredTexture  : register(t0);
+Texture2D<int> Texture  : register(t0);
 Texture1D ScaleTexture : register(t1);
 SamplerState Sampler : register(s0);
 
 float4 main(VertexPositionTextureOut v) : SV_TARGET
 {
-	float i = InfraredTexture.Sample(Sampler, v.Texture).r;
-	if (i == 0.f) 
+	int3 id = DepthCoords(v.Texture);
+	int depth = Texture.Load(id);
+	if (depth == 0) 
 		return 1.f;
 	else 
-		return ScaleTexture.Sample(Sampler, i / ShadingPeriode + ShadingPhase);
+		return ScaleTexture.Sample(Sampler, ToDepth(depth) / ShadingPeriode + ShadingPhase);
 }
