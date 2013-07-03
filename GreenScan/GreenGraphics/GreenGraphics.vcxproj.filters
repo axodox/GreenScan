@@ -127,7 +127,10 @@
     <FxCompile Include="DepthAveragePixelShader.hlsl">
       <Filter>Source Files\Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="DepthGaussPixelShader.hlsl">
+    <FxCompile Include="DepthGaussHPixelShader.hlsl">
+      <Filter>Source Files\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="DepthGaussVPixelShader.hlsl">
       <Filter>Source Files\Shaders</Filter>
     </FxCompile>
   </ItemGroup>

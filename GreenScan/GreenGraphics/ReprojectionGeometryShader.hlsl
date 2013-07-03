@@ -7,7 +7,7 @@ void main(
 {
 	for (uint i = 0; i < 3; i++)
 	{
-		if(input[i].Depth <= 0 || input[i].Depth > DepthLimit) return;
+		if(input[i].Depth < MinDepth || input[i].Depth > DepthLimit) return;
 	}
 
 	for (uint i = 0; i < 3; i++)

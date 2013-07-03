@@ -117,9 +117,9 @@ namespace Green
 				}
 			}
 
-			void SetPreprocessing(int depthAveraging, int depthGaussIterations, float depthGaussSigma, int depthGaussSpacing)
+			void SetPreprocessing(int depthAveraging, int depthGaussIterations, float depthGaussSigma)
 			{
-				XWindow->SetPreprocessing(depthAveraging, depthGaussIterations, depthGaussSigma, depthGaussSpacing);
+				XWindow->SetPreprocessing(depthAveraging, depthGaussIterations, depthGaussSigma);
 			}
 
 			enum class ShadingModes {

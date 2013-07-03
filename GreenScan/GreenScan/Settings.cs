@@ -14,7 +14,6 @@ namespace Green.Scan
         public NumericSetting<int> DepthAveraging { get; private set; }
         public NumericSetting<int> DepthGaussIterations { get; private set; }
         public NumericSetting<float> DepthGaussSigma { get; private set; }
-        public NumericSetting<int> DepthGaussSpacing { get; private set; }
 
         public SettingGroup CameraProperties { get; private set; }
         public MatrixSetting InfraredIntrinsics { get; private set; }
@@ -61,13 +60,11 @@ namespace Green.Scan
             SettingGroups.Add(PreprocessingProperties);
 
             DepthAveraging = new NumericSetting<int>("DepthAveraging", 1, 1, 32) { FriendlyName = "Depth averaging buffer size (slots)" };
-            DepthGaussIterations = new NumericSetting<int>("DepthGaussIterations", 0, 0, 16) { FriendlyName = "Depth Gauss filtering (iterations)" };
+            DepthGaussIterations = new NumericSetting<int>("DepthGaussIterations", 0, 0, 4) { FriendlyName = "Depth Gauss filtering (iterations)" };
             DepthGaussSigma = new NumericSetting<float>("DepthGaussSigma", 1, 0.1f, 4f, 2) { FriendlyName = "Depth Gauss filtering sigma (units)" };
-            DepthGaussSpacing = new NumericSetting<int>("DepthSpacingSpacing", 1, 1, 8) { FriendlyName = "Depth Gauss filter spacing (pixels)" };
             PreprocessingProperties.Settings.Add(DepthAveraging);
             PreprocessingProperties.Settings.Add(DepthGaussIterations);
             PreprocessingProperties.Settings.Add(DepthGaussSigma);
-            PreprocessingProperties.Settings.Add(DepthGaussSpacing);
 
             //Camera
             CameraProperties = new SettingGroup("Camera") { FriendlyName = "Camera" };
@@ -127,7 +124,7 @@ namespace Green.Scan
 
             ShadingMode = new EnumSetting<DirectXCanvas.ShadingModes>("ShadingMode", DirectXCanvas.ShadingModes.Rainbow) { FriendlyName = "Mode" };
             DepthLimit = new NumericSetting<float>("DepthLimit", 8f, 0f, 8f, 2) { FriendlyName = "Depth limit (meters)" };
-            ShadingPeriode = new NumericSetting<float>("ShadingPeriode", 1f, 0f, 2f, 2) { FriendlyName = "Shading periode (meters)" };
+            ShadingPeriode = new NumericSetting<float>("ShadingPeriode", 1f, 0.01f, 2f, 2) { FriendlyName = "Shading periode (meters)" };
             ShadingPhase = new NumericSetting<float>("ShadingPhase", 0f, 0f, 1f, 2) { FriendlyName = "Shading phase (radians)" };
             TriangleRemoveLimit = new NumericSetting<float>("TriangleRemoveLimit", 0.0024f, 0.0005f, 0.004f, 4) { FriendlyName = "Triangle remove limit (units)" };
             ShadingProperties.Settings.Add(ShadingMode);

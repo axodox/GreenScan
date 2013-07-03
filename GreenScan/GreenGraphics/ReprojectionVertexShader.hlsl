@@ -1,10 +1,10 @@
 #include "Header.hlsli"
-Texture2D<int> DepthTexture : register(t0);
+Texture2D<float> DepthTexture : register(t0);
 
 float3 PosOf(float x, float y)
 {
 	int3 id = DepthCoords(float2(x, y));
-	float depth = ToDepth(DepthTexture.Load(id));
+	float depth = DepthTexture.Load(id);
 	return mul(float4(DepthSize.x * x * depth, DepthSize.y * y * depth, depth, 1), DepthInvIntrinsics).xyz;
 }
 
@@ -22,7 +22,7 @@ bool CalculateWorldNormal(float2 uv, out float3 posx, out float3 normal)
 VertexPositionTextureDepth main(VertexPositionTextureIn vi)
 {
 	int3 id = DepthCoords(vi.Texture);
-	float depth = ToDepth(DepthTexture.Load(id));
+	float depth = DepthTexture.Load(id);
 
 	float4 posTemp;
 

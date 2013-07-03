@@ -45,7 +45,7 @@ namespace Green
 				DeviceContext->RSSetViewports(1, MainViewport);
 			}
 
-			bool KinectReady, ResizeNeeded;
+			bool KinectReady, ResizeNeeded, PreprocessingChanged;
 			KinectDevice::Modes KinectMode;
 			Quad *QMain;
 			Plane *PMain;
@@ -53,11 +53,11 @@ namespace Green
 			VertexShader *VSSimple, *VSCommon, *VSReprojection;
 			GeometryShader *GSReprojection;
 			PixelShader *PSSimple, *PSInfrared, *PSDepth, *PSColor, *PSSine, *PSPeriodicScale, *PSPeriodicShadedScale, *PSScale, *PSShadedScale, *PSBlinn, *PSTextured;
-			PixelShader *PSDepthSum, *PSDepthAverage, *PSDepthGauss;
+			PixelShader *PSDepthSum, *PSDepthAverage, *PSDepthGaussH, *PSDepthGaussV;
 			Texture2D *TColor;
-			Texture1D *THueMap, *TScaleMap;
+			Texture1D *THueMap, *TScaleMap, *TGauss;
 			Texture2DDoubleBuffer *TDBDepth;
-			RenderTarget *RTDepthSum, *RTDepthAverage;
+			RenderTarget *RTDepthSum;
 			RenderTargetPair *RTPDepth;
 			Blend *BAdditive, *BOpaque;
 			int NextDepthBufferSize, DepthBufferSize;
@@ -66,7 +66,8 @@ namespace Green
 			{
 				float TransX, TransY, TransZ, RotX, RotY, RotZ;
 				XMFLOAT4X4 DepthIntrinsics, DepthInvIntrinsics;
-				int Rotation;
+				int Rotation, DepthGaussIterations;
+				float GaussCoeffs[GaussCoeffCount];
 			} Params;
 
 			struct CommonConstants
@@ -93,8 +94,6 @@ namespace Green
 				float ShadingPeriode;
 				float ShadingPhase;
 				float TriangleLimit;
-				int GaussDispos[GaussCoeffCount];
-				float GaussCoeffs[GaussCoeffCount];
 			} DepthAndColorOptions;
 
 			ConstantBuffer<DepthAndColorConstants>* CBDepthAndColor;
@@ -130,8 +129,9 @@ namespace Green
 
 				PSDepthSum = new PixelShader(Device, L"DepthSumPixelShader.cso");
 				PSDepthAverage = new PixelShader(Device, L"DepthAveragePixelShader.cso");
-				PSDepthGauss = new PixelShader(Device, L"DepthGaussPixelShader.cso");
-								
+				PSDepthGaussH = new PixelShader(Device, L"DepthGaussHPixelShader.cso");
+				PSDepthGaussV = new PixelShader(Device, L"DepthGaussVPixelShader.cso");
+
 				SLinearWrap = new SamplerState(Device, D3D11_FILTER_MIN_MAG_MIP_LINEAR, D3D11_TEXTURE_ADDRESS_WRAP);
 
 				ZeroMemory(&Params, sizeof(RenderingParameters));				
@@ -143,15 +143,17 @@ namespace Green
 				TColor = 0;
 				THueMap = Texture1D::FromFile(Device, L"hueMap.png");
 				TScaleMap = Texture1D::FromFile(Device, L"scaleMap.png");
+				TGauss = new Texture1D(Device, GaussCoeffCount, DXGI_FORMAT_R32_FLOAT);
 				
 				TDBDepth = nullptr;
 				RTDepthSum = nullptr;
-				RTDepthAverage = nullptr;
 				RTPDepth = nullptr;
 				NextDepthBufferSize = 1;
 
 				BAdditive = new Blend(Device, Blend::Additive);
 				BOpaque = new Blend(Device, Blend::Opaque);
+
+				PreprocessingChanged = false;
 			}
 
 			void DestroyResources()
@@ -176,12 +178,14 @@ namespace Green
 				delete PSTextured;
 				delete PSDepthSum;
 				delete PSDepthAverage;
-				delete PSDepthGauss;
+				delete PSDepthGaussH;
+				delete PSDepthGaussV;
 				delete SLinearWrap;
 				delete CBDepthAndColor;
 				delete CBCommon;
 				delete THueMap;
 				delete TScaleMap;
+				delete TGauss;
 				
 				delete BAdditive;
 				delete BOpaque;
@@ -222,7 +226,7 @@ namespace Green
 					RTDepthSum->Clear();
 					VSSimple->Apply();
 					PSDepthSum->Apply();
-					CBDepthAndColor->SetForPS(1);					
+					CBDepthAndColor->SetForPS(1);
 					BAdditive->Apply();
 					Texture2D *depthTex;
 					for(int i = 0; i < DepthBufferSize; i++)
@@ -234,23 +238,43 @@ namespace Green
 						QMain->Draw();
 						TDBDepth->EndTextureUse();
 					}
-					RTDepthAverage->SetAsRenderTarget();
+					RTPDepth->SetAsRenderTarget();
 					PSDepthAverage->Apply();
 					BOpaque->Apply();
 					RTDepthSum->SetForPS();
 					QMain->Draw();
 
+					
 					//Depth Gauss filtering
-					/*RTPDepth->SetAsRenderTarget();
-					PSDepthGauss->Apply();
-					RTPDepth->SetForPS();*/
+					if(PreprocessingChanged)
+					{
+						TGauss->Load<float>(Params.GaussCoeffs);
+						PreprocessingChanged = false;
+					}
+					SLinearWrap->SetForPS();
+					TGauss->SetForPS(1);
+					for(int i = 0; i < Params.DepthGaussIterations; i++)
+					{
+						RTPDepth->Swap();
+						RTPDepth->SetAsRenderTarget();
+						PSDepthGaussH->Apply();
+						RTPDepth->SetForPS(0);
+						QMain->Draw();
+
+						RTPDepth->Swap();
+						RTPDepth->SetAsRenderTarget();
+						PSDepthGaussV->Apply();
+						RTPDepth->SetForPS(0);
+						QMain->Draw();
+					}
 
 					//Reprojection
+					RTPDepth->Swap();
 					UseMainRenderTarget();
 					
 					VSReprojection->Apply();
 					CBDepthAndColor->SetForVS(1);
-					RTDepthAverage->SetForVS();
+					RTPDepth->SetForVS();
 					
 					GSReprojection->Apply();
 					CBDepthAndColor->SetForGS(1);
@@ -356,7 +380,7 @@ namespace Green
 				CommonOptions.AspectScale = aspectScale;
 			}
 
-			void GaussCoeffs(int count, float sigma, int spacing, int* dispos, float* coeffs)
+			void GaussCoeffs(int count, float sigma, float* coeffs)
 			{
 				int pos;
 				float coeff;
@@ -365,10 +389,9 @@ namespace Green
 				int ibase = count / 2;
 				for (int i = 0; i < count; i++)
 				{
-					pos = (i - ibase) * spacing;
+					pos = (i - ibase);
 					coeff = a * exp(pos * pos * b);
 					coeffs[i] = coeff;
-					dispos[i] = pos;
 				}
 			}
 			
@@ -392,8 +415,7 @@ namespace Green
 						DXGI_FORMAT_R8G8B8A8_UNORM);
 					dxw->TDBDepth = new Texture2DDoubleBuffer(dxw->Device, KinectDevice::DepthWidth, KinectDevice::DepthHeight, DXGI_FORMAT_R16_SINT, dxw->NextDepthBufferSize);
 					dxw->RTDepthSum = new RenderTarget(dxw->Device, KinectDevice::DepthWidth, KinectDevice::DepthHeight, DXGI_FORMAT_R32G32_FLOAT);
-					dxw->RTDepthAverage = new RenderTarget(dxw->Device, KinectDevice::DepthWidth, KinectDevice::DepthHeight, DXGI_FORMAT_R16_SINT);
-					dxw->RTPDepth = new RenderTargetPair(dxw->Device, KinectDevice::DepthWidth, KinectDevice::DepthHeight, DXGI_FORMAT_R16_SINT);
+					dxw->RTPDepth = new RenderTargetPair(dxw->Device, KinectDevice::DepthWidth, KinectDevice::DepthHeight, DXGI_FORMAT_R16_FLOAT);
 					break;
 				case KinectDevice::Infrared:
 					dxw->TColor = new Texture2D(dxw->Device,
@@ -440,17 +462,16 @@ namespace Green
 				SafeDelete(dxw->TColor);
 				SafeDelete(dxw->TDBDepth);				
 				SafeDelete(dxw->RTDepthSum);
-				SafeDelete(dxw->RTDepthAverage);
 				SafeDelete(dxw->RTPDepth);
 				dxw->ClearScreen();
 			}
 		public:
-			void SetPreprocessing(int depthAveraging, int depthGaussIterations, float depthGaussSigma, int depthGaussSpacing)
+			void SetPreprocessing(int depthAveraging, int depthGaussIterations, float depthGaussSigma)
 			{
 				NextDepthBufferSize = depthAveraging;
-				GaussCoeffs(
-					GaussCoeffCount, depthGaussSigma, depthGaussSpacing, 
-					DepthAndColorOptions.GaussDispos, DepthAndColorOptions.GaussCoeffs);
+				GaussCoeffs(GaussCoeffCount, depthGaussSigma, Params.GaussCoeffs);
+				Params.DepthGaussIterations = depthGaussIterations;
+				PreprocessingChanged = true;
 			}
 
 			void SetView(

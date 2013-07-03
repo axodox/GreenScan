@@ -65,8 +65,7 @@ namespace Green.Scan
             DXC.SetPreprocessing(
                 SS.DepthAveraging.Value,
                 SS.DepthGaussIterations.Value,
-                SS.DepthGaussSigma.Value,
-                SS.DepthGaussSpacing.Value);
+                SS.DepthGaussSigma.Value);
         }
 
         void SetView()

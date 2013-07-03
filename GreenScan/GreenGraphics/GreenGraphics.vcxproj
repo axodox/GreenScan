@@ -172,6 +172,11 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Remote|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
     </FxCompile>
+    <FxCompile Include="DepthGaussVPixelShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Remote|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+    </FxCompile>
     <FxCompile Include="DepthPixelShader.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Remote|Win32'">Pixel</ShaderType>
@@ -182,7 +187,7 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Remote|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
     </FxCompile>
-    <FxCompile Include="DepthGaussPixelShader.hlsl">
+    <FxCompile Include="DepthGaussHPixelShader.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Remote|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>

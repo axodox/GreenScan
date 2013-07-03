@@ -1,4 +1,5 @@
 #define Pi 3.14159f
+#define MinDepth 0.4f
 #define MaxDepth 10.f
 #define GaussCoeffCount 9
 
@@ -33,6 +34,7 @@ cbuffer CommonConstants : register(b0)
 
 cbuffer DepthAndColorConstants : register(b1)
 {
+	
 	float4x4 DepthInvIntrinsics;
 	float4x4 ReprojectionTransform;
 	float4x4 ModelTransform;
@@ -47,13 +49,15 @@ cbuffer DepthAndColorConstants : register(b1)
 	float ShadingPeriode;
 	float ShadingPhase;
 	float TriangleLimit;
-	int GaussDispos[GaussCoeffCount];
-	float GaussCoeffs[GaussCoeffCount];
 };
 
-float ToDepth(int raw)
+float ToDepth(float raw)
 {
-	return raw / 8000.f;
+	float depth = raw / 8000.f;
+	if(depth < MaxDepth)
+		return depth;
+	else
+		return 0.f;
 }
 
 int3 DepthCoords(float2 uv)

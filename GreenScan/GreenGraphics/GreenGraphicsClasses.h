@@ -257,9 +257,9 @@ namespace Green
 				D3D11_BUFFER_DESC bd;
 				int size = sizeof(T);
 				bd.ByteWidth = (size % 16 == 0 ? size : size + 16 - size % 16);
-				bd.Usage = D3D11_USAGE_DEFAULT;				
+				bd.Usage = D3D11_USAGE_DYNAMIC;//DEFAULT;				
 				bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-				bd.CPUAccessFlags = 0;
+				bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;//0;
 				bd.MiscFlags = 0;
 				bd.StructureByteStride = 0;
 				
@@ -269,7 +269,12 @@ namespace Green
 
 			void Update(T* data)
 			{
-				Context->UpdateSubresource(Buffer, 0, 0, data, 0, 0);
+				D3D11_MAPPED_SUBRESOURCE ms;
+				Context->Map(Buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &ms);
+				memcpy(ms.pData, data, sizeof(T));
+				Context->Unmap(Buffer, 0);
+
+				//Context->UpdateSubresource(Buffer, 0, 0, data, 0, 0);
 			}
 
 			void SetForVS(int slot = 0)
@@ -673,6 +678,11 @@ namespace Green
 			void SetForPS(int slot = 0)
 			{
 				Targets[(Tick == 0 ? 1 : 0)]->SetForPS(slot);
+			}
+
+			void SetForVS(int slot = 0)
+			{
+				Targets[(Tick == 0 ? 1 : 0)]->SetForVS(slot);
 			}
 
 			void Swap()
