@@ -45,6 +45,14 @@ namespace Green.Scan
         public NumericSetting<float> ShadingPhase { get; private set; }
         public NumericSetting<float> TriangleRemoveLimit { get; private set; }
 
+        public SettingGroup PerformanceProperties { get; private set; }
+        public NumericSetting<int> TriangleGridWidth { get; private set; }
+        public NumericSetting<int> TriangleGridHeight { get; private set; }
+
+        public SettingGroup SaveProperties { get; private set; }
+        public PathSetting SaveDirectory { get; private set; }
+        public StringSetting SaveLabel { get; private set; }
+
         public ScanSettings()
             : base()
         {
@@ -126,12 +134,30 @@ namespace Green.Scan
             DepthLimit = new NumericSetting<float>("DepthLimit", 8f, 0f, 8f, 2) { FriendlyName = "Depth limit (meters)" };
             ShadingPeriode = new NumericSetting<float>("ShadingPeriode", 1f, 0.01f, 2f, 2) { FriendlyName = "Shading periode (meters)" };
             ShadingPhase = new NumericSetting<float>("ShadingPhase", 0f, 0f, 1f, 2) { FriendlyName = "Shading phase (radians)" };
-            TriangleRemoveLimit = new NumericSetting<float>("TriangleRemoveLimit", 0.0024f, 0.0005f, 0.004f, 4) { FriendlyName = "Triangle remove limit (units)" };
+            TriangleRemoveLimit = new NumericSetting<float>("TriangleRemoveLimit", 0.0024f, 0.0001f, 0.004f, 4) { FriendlyName = "Triangle remove limit (units)" };
             ShadingProperties.Settings.Add(ShadingMode);
             ShadingProperties.Settings.Add(DepthLimit);
             ShadingProperties.Settings.Add(ShadingPeriode);
             ShadingProperties.Settings.Add(ShadingPhase);
             ShadingProperties.Settings.Add(TriangleRemoveLimit);
+
+            //Performance
+            PerformanceProperties = new SettingGroup("Performance") { FriendlyName = "Performance" };
+            SettingGroups.Add(PerformanceProperties);
+
+            TriangleGridWidth = new NumericSetting<int>("TriangleGridWidth", 640, 16, 640) { FriendlyName = "Triangle grid width (count)" };
+            TriangleGridHeight = new NumericSetting<int>("TriangleGridHeight", 480, 12, 480) { FriendlyName = "Triangle grid height (count)" };
+            PerformanceProperties.Settings.Add(TriangleGridWidth);
+            PerformanceProperties.Settings.Add(TriangleGridHeight);
+
+            //Save
+            SaveProperties = new SettingGroup("Save") { FriendlyName = "Saving" };
+            SettingGroups.Add(SaveProperties);
+
+            SaveDirectory = new PathSetting("Directory", "") { FriendlyName = "Directory" };
+            SaveLabel = new StringSetting("Label", "") { FriendlyName = "Label" };
+            SaveProperties.Settings.Add(SaveDirectory);
+            SaveProperties.Settings.Add(SaveLabel);
         }
     }
 }

@@ -9,6 +9,20 @@
             </Setter.Value>
         </Setter>
     </Style>
+    <Style x:Key="ComboBox" TargetType="ComboBox">
+        <Setter Property="Padding">
+            <Setter.Value>
+                <Thickness Bottom="3" Left="3" Right="3" Top="3"/>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style x:Key="Button" TargetType="Button">
+        <Setter Property="Padding">
+            <Setter.Value>
+                <Thickness Bottom="3" Left="3" Right="3" Top="3"/>
+            </Setter.Value>
+        </Setter>
+    </Style>
     <Thickness x:Key="ContentMargin" Top="3"/>
     <local:SettingToUIConverter x:Key="SettingUIConverter"/>
     <local:SettingGroupToUIConverter x:Key="SettingGroupToUIConverter"/>

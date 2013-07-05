@@ -16,7 +16,7 @@ namespace Green
 {
 	namespace Graphics
 	{
-		public ref class DirectXCanvas : HwndHost
+		public ref class DirectXCanvas : public HwndHost
 		{
 		private:
 			DirectXWindow* XWindow;
@@ -61,9 +61,13 @@ namespace Green
 
 			virtual IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, bool %handled) override
 			{
+				static int resizeTimer = 0;
 				switch (msg)
 				{
 				case WM_SIZE:
+					resizeTimer = SetTimer((HWND)hwnd.ToPointer(), resizeTimer, 100, 0);
+					break;
+				case WM_TIMER:
 					XWindow->Resize();
 					break;
 				}
@@ -120,6 +124,11 @@ namespace Green
 			void SetPreprocessing(int depthAveraging, int depthGaussIterations, float depthGaussSigma)
 			{
 				XWindow->SetPreprocessing(depthAveraging, depthGaussIterations, depthGaussSigma);
+			}
+
+			void SetPerformance(int triangleGridWidth, int triangleGridHeight)
+			{
+				XWindow->SetPerformance(triangleGridWidth, triangleGridHeight);
 			}
 
 			enum class ShadingModes {

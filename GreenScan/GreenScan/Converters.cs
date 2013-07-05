@@ -10,7 +10,6 @@ using Green.Settings;
 
 namespace Green.Scan
 {
-
     [ValueConversion(typeof(KinectManager), typeof(MenuItem[]))]
     class KinectManagerToDeviceListConverter:IValueConverter
     {

@@ -61,6 +61,8 @@ namespace Green
 			RenderTargetPair *RTPDepth;
 			Blend *BAdditive, *BOpaque;
 			int NextDepthBufferSize, DepthBufferSize;
+			int NextTriangleGridWidth, NextTriangleGridHeight;
+			bool StaticInput;
 			
 			struct RenderingParameters
 			{
@@ -102,7 +104,9 @@ namespace Green
 			void CreateResources()
 			{
 				QMain = new Quad(Device);
-				PMain = new Plane(Device, 640, 480);
+				PMain = nullptr;
+				NextTriangleGridWidth = KinectDevice::DepthWidth;
+				NextTriangleGridHeight = KinectDevice::DepthHeight;
 
 				VSSimple = new VertexShader(Device, L"SimpleVertexShader.cso");
 				VSSimple->SetInputLayout(QMain->GetVertexDefinition());
@@ -111,7 +115,7 @@ namespace Green
 				VSCommon->SetInputLayout(QMain->GetVertexDefinition());
 
 				VSReprojection = new VertexShader(Device, L"ReprojectionVertexShader.cso");
-				VSReprojection->SetInputLayout(PMain->GetVertexDefinition());
+				VSReprojection->SetInputLayout(VertexDefinition::VertexPositionTexture);
 
 				GSReprojection = new GeometryShader(Device, L"ReprojectionGeometryShader.cso");
 
@@ -394,41 +398,46 @@ namespace Green
 					coeffs[i] = coeff;
 				}
 			}
-			
-			static void OnKinectStarting(KinectDevice::Modes mode, void* obj)
+
+			void PrepareProcessing(KinectDevice::Modes mode)
 			{
-				DirectXWindow* dxw = (DirectXWindow*)obj;
-				dxw->KinectMode = mode;
-				switch (mode)
+				KinectMode = (KinectDevice::Modes)(mode & KinectDevice::NonFlags);
+				switch (KinectMode)
 				{
 				case KinectDevice::Depth:
-					dxw->TDBDepth = new Texture2DDoubleBuffer(dxw->Device, KinectDevice::DepthWidth, KinectDevice::DepthHeight, DXGI_FORMAT_R16_SINT, dxw->NextDepthBufferSize);
+					TDBDepth = new Texture2DDoubleBuffer(Device, KinectDevice::DepthWidth, KinectDevice::DepthHeight, DXGI_FORMAT_R16_SINT, NextDepthBufferSize);
 					break;
 				case KinectDevice::Color:
-					dxw->TColor = new Texture2D(dxw->Device,
+					TColor = new Texture2D(Device,
 						KinectDevice::ColorWidth, KinectDevice::ColorHeight,
 						DXGI_FORMAT_R8G8B8A8_UNORM);
 					break;
 				case KinectDevice::DepthAndColor:
-					dxw->TColor = new Texture2D(dxw->Device,
+					TColor = new Texture2D(Device,
 						KinectDevice::ColorWidth, KinectDevice::ColorHeight,
 						DXGI_FORMAT_R8G8B8A8_UNORM);
-					dxw->TDBDepth = new Texture2DDoubleBuffer(dxw->Device, KinectDevice::DepthWidth, KinectDevice::DepthHeight, DXGI_FORMAT_R16_SINT, dxw->NextDepthBufferSize);
-					dxw->RTDepthSum = new RenderTarget(dxw->Device, KinectDevice::DepthWidth, KinectDevice::DepthHeight, DXGI_FORMAT_R32G32_FLOAT);
-					dxw->RTPDepth = new RenderTargetPair(dxw->Device, KinectDevice::DepthWidth, KinectDevice::DepthHeight, DXGI_FORMAT_R16_FLOAT);
+					TDBDepth = new Texture2DDoubleBuffer(Device, KinectDevice::DepthWidth, KinectDevice::DepthHeight, DXGI_FORMAT_R16_SINT, NextDepthBufferSize);
+					RTDepthSum = new RenderTarget(Device, KinectDevice::DepthWidth, KinectDevice::DepthHeight, DXGI_FORMAT_R32G32_FLOAT);
+					RTPDepth = new RenderTargetPair(Device, KinectDevice::DepthWidth, KinectDevice::DepthHeight, DXGI_FORMAT_R16_FLOAT);
+					PMain = new Plane(Device, NextTriangleGridWidth, NextTriangleGridHeight);
 					break;
 				case KinectDevice::Infrared:
-					dxw->TColor = new Texture2D(dxw->Device,
+					TColor = new Texture2D(Device,
 						KinectDevice::ColorWidth, KinectDevice::ColorHeight,
 						DXGI_FORMAT_R16_UNORM);
 					break;
-				default:
-					break;
 				}
-
-				dxw->DepthBufferSize = dxw->NextDepthBufferSize;
-				dxw->SetDepthAndColorOptions();
-				dxw->KinectReady = true;
+				
+				DepthBufferSize = NextDepthBufferSize;
+				SetDepthAndColorOptions();
+				KinectReady = true;
+				StaticInput = mode & KinectDevice::Virtual;
+			}
+			
+			static void OnKinectStarting(KinectDevice::Modes mode, void* obj)
+			{
+				DirectXWindow* dxw = (DirectXWindow*)obj;
+				dxw->PrepareProcessing(mode);				
 			}
 
 			static void OnColorFrameReady(void* data, void* obj)
@@ -455,15 +464,21 @@ namespace Green
 				dxw->Draw();
 			}
 
+			void ShutdownProcessing()
+			{
+				KinectReady = false;
+				SafeDelete(TColor);
+				SafeDelete(TDBDepth);				
+				SafeDelete(RTDepthSum);
+				SafeDelete(RTPDepth);
+				SafeDelete(PMain);
+				ClearScreen();
+			}
+
 			static void OnKinectStopping(void* obj)
 			{
 				DirectXWindow* dxw = (DirectXWindow*)obj;
-				dxw->KinectReady = false;
-				SafeDelete(dxw->TColor);
-				SafeDelete(dxw->TDBDepth);				
-				SafeDelete(dxw->RTDepthSum);
-				SafeDelete(dxw->RTPDepth);
-				dxw->ClearScreen();
+				dxw->ShutdownProcessing();
 			}
 		public:
 			void SetPreprocessing(int depthAveraging, int depthGaussIterations, float depthGaussSigma)
@@ -472,6 +487,7 @@ namespace Green
 				GaussCoeffs(GaussCoeffCount, depthGaussSigma, Params.GaussCoeffs);
 				Params.DepthGaussIterations = depthGaussIterations;
 				PreprocessingChanged = true;
+				if(StaticInput) Draw();
 			}
 
 			void SetView(
@@ -492,6 +508,7 @@ namespace Green
 				CommonOptions.Move = XMFLOAT2(moveX, moveY);
 				XMMATRIX R = XMMatrixRotationZ(-Params.Rotation * XM_PIDIV2);
 				XMStoreFloat4x4(&CommonOptions.SceneRotation, R);
+				if(StaticInput) Draw();
 			}
 
 			void SetCameras(
@@ -517,6 +534,7 @@ namespace Green
 				DepthAndColorOptions.ColorMove = XMFLOAT2((float)colorDispX / KinectDevice::ColorWidth, (float)colorDispY / KinectDevice::ColorHeight);
 				DepthAndColorOptions.ColorScale = XMFLOAT2(colorScaleX, colorScaleY);
 				SetDepthAndColorOptions();
+				if(StaticInput) Draw();
 			}
 
 			void SetShading(ShadingModes mode, float depthLimit, float shadingPeriode, float shadingPhase, float triangleLimit)
@@ -526,6 +544,13 @@ namespace Green
 				DepthAndColorOptions.ShadingPeriode = shadingPeriode;
 				DepthAndColorOptions.ShadingPhase = shadingPhase;
 				DepthAndColorOptions.TriangleLimit = triangleLimit;
+				if(StaticInput) Draw();
+			}
+
+			void SetPerformance(int triangleGridWidth, int triangleGridHeight)
+			{
+				NextTriangleGridWidth = triangleGridWidth;
+				NextTriangleGridHeight = triangleGridHeight;
 			}
 
 			void InitKinect(KinectDevice* device)
@@ -550,6 +575,7 @@ namespace Green
 				BackgroundColor[2] = 1.f;
 				BackgroundColor[3] = 1.f;
 				ResizeNeeded = false;
+				StaticInput = false;
 			}
 
 			void QueryBackBuffer()
@@ -572,8 +598,8 @@ namespace Green
 			void Resize()
 			{
 				ResizeNeeded = true;
+				if(StaticInput) Draw();
 			}
-
 
 			~DirectXWindow()
 			{
@@ -594,7 +620,6 @@ namespace Green
 			DepthBuffer *DepthBackBuffer;
 			D3D11_VIEWPORT *MainViewport;
 			HWND Window;
-			
 
 			void InitD3D(HWND hWnd)
 			{

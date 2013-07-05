@@ -20,10 +20,15 @@ namespace Green.Settings
             Culture = new CultureInfo("en-US");
         }
 
+        public Setting(string name)
+        {
+            Name = name;
+        }
+
         public string Name { get; protected set; }
         
         [Flags]
-        public enum Types : uint { Unknown = 0, Boolean = 1, Enum = 2, SByte = 4, Int16 = 8, Int32 = 16, Int64 = 32, Byte = 64, UInt16 = 128, UInt32 = 256, UInt64 = 512, Single = 1024, Double = 2048, Matrix = 4096, Numeric = 4092, Integer = 1020 };
+        public enum Types : uint { Unknown = 0, Boolean = 1, Enum = 2, SByte = 4, Int16 = 8, Int32 = 16, Int64 = 32, Byte = 64, UInt16 = 128, UInt32 = 256, UInt64 = 512, Single = 1024, Double = 2048, Matrix = 4096, String = 8192, Path = 16384, Numeric = 4092, Integer = 1020 };
         public Types Type { get; protected set; }
         
         public event PropertyChangedEventHandler PropertyChanged;
@@ -124,10 +129,9 @@ namespace Green.Settings
 
         public int Rows { get; private set; }
         public int Columns { get; private set; }
-        public MatrixSetting(string name, float[,] value)
+        public MatrixSetting(string name, float[,] value) : base(name)
         {
             Type = Types.Matrix;
-            Name = name;
             Rows = value.GetLength(0);
             Columns = value.GetLength(1);
             this.value = value;
@@ -160,6 +164,7 @@ namespace Green.Settings
     public abstract class NumericSetting : Setting 
     {
         public int Decimals { get; protected set; }
+        public NumericSetting(string name) : base(name) { }
     }
 
     public class NumericSetting<T> : NumericSetting where T : struct
@@ -168,8 +173,14 @@ namespace Green.Settings
         public T Value 
         {
             get { return value; }
-            set { 
-                this.value = value;
+            set
+            {
+                if ((int)typeof(T).InvokeMember("CompareTo", BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.Instance, null, value, new object[] { Maximum }) > 0)
+                    this.value = Maximum;
+                else if ((int)typeof(T).InvokeMember("CompareTo", BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.Instance, null, value, new object[] { Minimum }) < 0)
+                    this.value = Minimum;
+                else
+                    this.value = value;
                 OnValueChanged();
             }
         }
@@ -177,7 +188,7 @@ namespace Green.Settings
         public T Minimum { get; private set; }
         public T DefaultValue { get; private set; }        
         
-        public NumericSetting(string name, T value, T min, T max, int decimals = 0)
+        public NumericSetting(string name, T value, T min, T max, int decimals = 0) : base(name)
         {
             Types type;
             if (Enum.TryParse<Types>(typeof(T).Name, out type) && Types.Numeric.HasFlag(type))
@@ -185,10 +196,9 @@ namespace Green.Settings
             else
                 throw new NotSupportedException("The given datatype is not supported!");
 
-            Name = name;
-            DefaultValue = Value = value;
             Maximum = max;
             Minimum = min;
+            DefaultValue = Value = value;
             Decimals = decimals;
         }
 
@@ -219,6 +229,89 @@ namespace Green.Settings
         }
     }
 
+    public class StringSetting : Setting
+    {
+        public char[] InvalidChars { get; private set; }
+        public string DefaultValue { get; private set; }
+        private string value;
+        public string Value
+        {
+            get { return value; }
+            set 
+            {
+                if (InvalidChars != null)
+                {
+                    for (int i = 0; i < value.Length; i++)
+                    {
+                        if (InvalidChars.Contains(value[i]))
+                            return;
+                    }
+                }
+                this.value = value;
+                OnValueChanged();
+            }
+        }
+
+        public override string StringValue
+        {
+            get { return value; }
+            set { Value = value; }
+        }
+
+        public override bool HasDefaultValue
+        {
+            get { return DefaultValue == value; }
+        }
+
+        public override void ResetValue()
+        {
+            Value = DefaultValue;
+        }
+
+        public StringSetting(string name, string value, char[] invalidChars = null) : base(name)
+        {
+            DefaultValue = Value = value;
+            Type = Types.String;
+            InvalidChars = invalidChars;
+        }
+    }
+
+    public class PathSetting : StringSetting
+    {
+        public PathSetting(string name, string value)
+            : base(name, value, Path.GetInvalidPathChars())
+        {
+            Type = Types.Path;
+        }
+
+        public string AbsolutePath
+        {
+            get
+            {
+                if (Path.IsPathRooted(Value))
+                    return Value;
+                else
+                {
+                    string cd = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                    if (!cd.EndsWith("\\")) cd += "\\";
+                    string value = Value;
+                    if (value.StartsWith("\\")) value = Value.Substring(1);
+                    return cd + value;
+                }
+            }
+        }
+
+        public bool Exists
+        {
+            get
+            {
+                return Directory.Exists(AbsolutePath);
+            }
+        }
+    }
+
+    
+
     public class BooleanSetting : Setting
     {
         private bool value;
@@ -234,10 +327,9 @@ namespace Green.Settings
 
         public bool DefaultValue { get; private set; }
 
-        public BooleanSetting(string name, bool value)
+        public BooleanSetting(string name, bool value) : base(name)
         {
             Type = Types.Boolean;
-            Name = name;
             DefaultValue=Value = value;
         }
 
@@ -267,6 +359,7 @@ namespace Green.Settings
 
     public abstract class EnumSetting : Setting
     {
+        public EnumSetting(string name) : base(name) { }
         public string[] StringOptions { get; protected set; }
 
         private string[] friendlyOptions = null;
@@ -357,11 +450,10 @@ namespace Green.Settings
             }
         }
 
-        public EnumSetting(string name, T value)
+        public EnumSetting(string name, T value) : base(name)
         {
             if (!typeof(T).IsEnum) throw new NotSupportedException("The given datatype is not an enumeration!");
             Type = Types.Enum;
-            Name = name;
             DefaultValue = Value = value;
             StringOptions = Enum.GetNames(typeof(T));
         }
@@ -449,7 +541,7 @@ namespace Green.Settings
             }
         }
 
-        internal void ResetToDefault()
+        public void ResetToDefault()
         {
             foreach (Setting s in Settings) s.ResetValue();
         }

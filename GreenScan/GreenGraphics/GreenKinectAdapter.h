@@ -29,7 +29,7 @@ namespace Green
 			virtual event PropertyChangedEventHandler^ PropertyChanged;
 			property int DeviceCount { int get() { return deviceCount; }}
 			property bool DeviceOpened { bool get()	{ return deviceOpened; }}
-			property bool Processing { bool get()	{ return processing; }}
+			property bool Processing { bool get() { return processing; }}
 			KinectDevice* Device;
 		private:
 			void OnPropertyChanged(String^ name)
@@ -72,6 +72,32 @@ namespace Green
 				OnPropertyChanged("Mode");
 				processing = true;
 				OnPropertyChanged("Processing");
+			}
+
+			bool SaveRaw(String^ path)
+			{
+				if(processing)
+				{
+					LPWSTR npath = StringToLPWSTR(path);
+					bool ok = Device->SaveRaw(npath);
+					LPWSTRDelete(npath);
+					return ok;
+				}
+				else
+					return false;
+			}
+
+			bool OpenRaw(String^ path)
+			{
+				if(processing)
+					return false;
+				else
+				{
+					LPWSTR npath = StringToLPWSTR(path);
+					bool ok = Device->OpenRaw(npath);
+					LPWSTRDelete(npath);
+					return ok;
+				}
 			}
 
 			void StopKinect()

@@ -5,6 +5,7 @@
 #include <comdef.h>
 #include <DirectXMath.h>
 #define SafeDelete(p) { if(p) { delete (p); (p)=NULL; } }
+#define LPWSTRDelete(str) { if(str) { delete [wcslen(str) + 1] (str); (str)=NULL; } }
 using namespace DirectX;
 
 void Error(HRESULT hr)
@@ -50,7 +51,6 @@ XMFLOAT4X4 md(XMMATRIX* matrix)
 	XMStoreFloat4x4(&s, *matrix);
 	return s;
 }
-
 
 #pragma managed
 #include <vcclr.h>

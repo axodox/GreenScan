@@ -5,7 +5,7 @@
         xmlns:g="clr-namespace:Green.Graphics;assembly=GreenGraphics"
         xmlns:local="clr-namespace:Green.Scan" x:Class="Green.Scan.MainWindow"
         Closing="Window_Closing"
-        Title="MainWindow" Height="1024" Width="768">
+        Title="GreenScan" Width="640" Height="480" Icon="icon.ico" MouseWheel="Window_MouseWheel" MouseDown="Window_MouseDown" MouseDoubleClick="Window_MouseDoubleClick">
     <Window.Resources>
         <local:KinectManagerToDeviceListConverter x:Key="KinectManagerToDeviceListConverter"/>
     </Window.Resources>
@@ -16,14 +16,25 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <Menu>
-            <MenuItem x:Name="MIDevice" Header="Device" ItemsSource="{Binding Converter={StaticResource KinectManagerToDeviceListConverter}, Mode=OneWay}"/>
-            <s:EnumMenu x:Name="MIMode" Header="Mode" />
-            <MenuItem Header="Settings" Click="Settings_Click"/>
-            <MenuItem Header="Stop" Click="Stop_Click"/>
+            <MenuItem Header="File">
+                <MenuItem Header="Open..." Click="Open_Click"/>
+                <MenuItem Header="Save as">
+                    <MenuItem Header="Raw" Click="SaveRaw_Click"/>
+                </MenuItem>
+            </MenuItem>
+            <MenuItem Header="Device">
+                <MenuItem Header="Start" ItemsSource="{Binding Converter={StaticResource KinectManagerToDeviceListConverter}, Mode=OneWay}"/>
+                <MenuItem Header="Stop" Click="Stop_Click" IsEnabled="{Binding Processing, Mode=OneWay}" SnapsToDevicePixels="True"/>
+                <s:EnumMenu x:Name="MIMode" Header="Mode" />
+            </MenuItem>
+            <s:EnumMenu x:Name="MIShading" Header="Shading"/>
+            <MenuItem Header="Reset view" Click="ResetView_Click"/>
+            <MenuItem Header="Settings" Click="Settings_Click"/>   
         </Menu>
-        <g:DirectXCanvas x:Name="DXC" Grid.Row="1" />
+        <g:DirectXCanvas x:Name="DXC" Grid.Row="1"/>
         <StatusBar Grid.Row="2">
             <CheckBox IsChecked="{Binding DeviceOpened, Mode=OneWay}" IsEnabled="False" Content="Opened"/>
+            <CheckBox IsChecked="{Binding Processing, Mode=OneWay}" IsEnabled="False" Content="Processing"/>
         </StatusBar>
     </Grid>
 </Window>

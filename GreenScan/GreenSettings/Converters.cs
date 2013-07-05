@@ -28,6 +28,10 @@ namespace Green.Settings.UI
                 return new BooleanControl();
             if (value is MatrixSetting)
                 return new MatrixControl();
+            if (value is PathSetting)
+                return new PathControl();
+            if (value is StringSetting)
+                return new StringControl();
             return null;
         }
 
