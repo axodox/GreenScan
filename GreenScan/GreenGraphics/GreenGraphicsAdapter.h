@@ -16,12 +16,12 @@ namespace Green
 {
 	namespace Graphics
 	{
-		public ref class DirectXCanvas : public HwndHost
+		public ref class GraphicsCanvas : public HwndHost
 		{
 		private:
 			DirectXWindow* XWindow;
 			HWND Host, Canvas;
-			static DirectXCanvas()
+			static GraphicsCanvas()
 			{
 				VertexDefinition::Init();
 			}
@@ -82,15 +82,23 @@ namespace Green
 			}
 
 		public:
-			DirectXCanvas()
+			GraphicsCanvas()
 			{
 				XWindow = nullptr;
-				DataContextChanged += gcnew DependencyPropertyChangedEventHandler(this, &DirectXCanvas::OnDataContextChanged);
+				DataContextChanged += gcnew DependencyPropertyChangedEventHandler(this, &GraphicsCanvas::OnDataContextChanged);
 			}
 
-			~DirectXCanvas()
+			~GraphicsCanvas()
 			{
 				delete XWindow;
+			}
+
+			bool SaveImage(String^ path)
+			{
+				LPWSTR npath = StringToLPWSTR(path);
+				bool ok = XWindow->SaveImage(npath);
+				LPWSTRDelete(npath);
+				return ok;
 			}
 
 			void SetView(

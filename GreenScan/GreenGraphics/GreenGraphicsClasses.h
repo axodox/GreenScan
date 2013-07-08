@@ -79,6 +79,56 @@ namespace Green
 			}
 		};
 
+		class Rasterizer
+		{
+		private:
+			ID3D11RasterizerState* RasterizerState;
+			ID3D11DeviceContext* DeviceContext;
+		public:
+			enum RasterizerType
+			{
+				Default,
+				CullNone
+			};
+
+			Rasterizer(ID3D11Device* device, RasterizerType type)
+			{
+				D3D11_RASTERIZER_DESC rd;
+				ZeroMemory(&rd, sizeof(rd));
+				rd.FillMode = D3D11_FILL_SOLID;
+				rd.CullMode = D3D11_CULL_BACK;
+				rd.FrontCounterClockwise = false;
+				rd.DepthBias = 0;
+				rd.SlopeScaledDepthBias = 0.f;
+				rd.DepthBiasClamp = 0.f;
+				rd.DepthClipEnable = true;
+				rd.ScissorEnable = false;
+				rd.MultisampleEnable = false;
+				rd.AntialiasedLineEnable = false;
+				
+				switch(type)
+				{
+				case RasterizerType::CullNone:
+					rd.CullMode = D3D11_CULL_NONE;
+					break;
+				}
+
+				Error(device->CreateRasterizerState(&rd, &RasterizerState));
+				device->GetImmediateContext(&DeviceContext);
+			}
+
+			void Set()
+			{
+				DeviceContext->RSSetState(RasterizerState);
+			}
+
+			~Rasterizer()
+			{
+				RasterizerState->Release();
+				DeviceContext->Release();
+			}
+		};
+
 		class VertexBufferBase
 		{
 		protected:
@@ -721,6 +771,21 @@ namespace Green
 				desc.Usage = D3D11_USAGE_STAGING;
 				desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
 				Error(device->CreateTexture2D(&desc, 0, &StagingTexture));
+			}
+
+			static ReadableRenderTarget* FromRenderTargetView(ID3D11RenderTargetView* target)
+			{
+				ID3D11Resource* resource;
+				target->GetResource(&resource);
+				ID3D11Texture2D* tex2D = (ID3D11Texture2D*)resource;
+				D3D11_TEXTURE2D_DESC tex2Dd;
+				tex2D->GetDesc(&tex2Dd);
+				ID3D11Device* device;
+				resource->GetDevice(&device);
+				resource->Release();
+				ReadableRenderTarget* rrt = new ReadableRenderTarget(device, tex2Dd.Width, tex2Dd.Height, tex2Dd.Format);
+				device->Release();
+				return rrt;
 			}
 
 			void CopyToStage()

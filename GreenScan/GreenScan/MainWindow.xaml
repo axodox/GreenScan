@@ -20,6 +20,7 @@
                 <MenuItem Header="Open..." Click="Open_Click"/>
                 <MenuItem Header="Save as">
                     <MenuItem Header="Raw" Click="SaveRaw_Click"/>
+                    <MenuItem Header="Image" Click="SaveImage_Click"/>
                 </MenuItem>
             </MenuItem>
             <MenuItem Header="Device">
@@ -31,7 +32,7 @@
             <MenuItem Header="Reset view" Click="ResetView_Click"/>
             <MenuItem Header="Settings" Click="Settings_Click"/>   
         </Menu>
-        <g:DirectXCanvas x:Name="DXC" Grid.Row="1"/>
+        <g:GraphicsCanvas x:Name="GC" Grid.Row="1"/>
         <StatusBar Grid.Row="2">
             <CheckBox IsChecked="{Binding DeviceOpened, Mode=OneWay}" IsEnabled="False" Content="Opened"/>
             <CheckBox IsChecked="{Binding Processing, Mode=OneWay}" IsEnabled="False" Content="Processing"/>

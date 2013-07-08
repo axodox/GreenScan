@@ -307,6 +307,7 @@ namespace Green
 			bool OpenRaw(LPWSTR path)
 			{
 				if(KinectWorking) return false;
+				if(KinectStopping != nullptr) KinectStopping(CallbackObject);
 				bool ok = false;
 				FILE* file = nullptr;
 				if(_wfopen_s(&file, path, L"rb") == 0)

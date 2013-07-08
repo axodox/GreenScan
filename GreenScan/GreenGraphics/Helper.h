@@ -1,12 +1,37 @@
 #pragma once
 #pragma unmanaged
-#define WIN32_LEAN_AND_MEAN
-#include <Windows.h>
-#include <comdef.h>
-#include <DirectXMath.h>
-#define SafeDelete(p) { if(p) { delete (p); (p)=NULL; } }
-#define LPWSTRDelete(str) { if(str) { delete [wcslen(str) + 1] (str); (str)=NULL; } }
+#include "Stdafx.h"
+#define SafeDelete(p) { if(p) { delete (p); (p)=nullptr; } }
+#define SafeRelease(p) { if(p) { (p)->Release(); (p)=nullptr; } }
+#define LPWSTRDelete(str) { if(str) { delete [wcslen(str) + 1] (str); (str)=nullptr; } }
 using namespace DirectX;
+using namespace Gdiplus;
+int GetEncoderClsid(const WCHAR* form, CLSID* pClsid)
+{
+	UINT num;
+	UINT size;
+	ImageCodecInfo* pImageCodecInfo=NULL;
+	GetImageEncodersSize(&num,&size);
+	if(size==0)
+		return -1;
+	
+	pImageCodecInfo=(ImageCodecInfo*)(malloc(size));
+	if(pImageCodecInfo==NULL)
+		return -1;
+	GetImageEncoders(num,size,pImageCodecInfo);
+	for(UINT j=0;j<num;j++)
+	{
+		if(wcscmp(pImageCodecInfo[j].MimeType,form)==0)
+		{
+			*pClsid = pImageCodecInfo[j].Clsid;
+			free(pImageCodecInfo);
+			return j;
+		}
+	}
+	free(pImageCodecInfo);
+	return -1;
+}
+
 
 void Error(HRESULT hr)
 {

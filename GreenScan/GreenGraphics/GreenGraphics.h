@@ -59,7 +59,9 @@ namespace Green
 			Texture2DDoubleBuffer *TDBDepth;
 			RenderTarget *RTDepthSum;
 			RenderTargetPair *RTPDepth;
+			ReadableRenderTarget *RRTSave;
 			Blend *BAdditive, *BOpaque;
+			Rasterizer *RDefault, *RCullNone;
 			int NextDepthBufferSize, DepthBufferSize;
 			int NextTriangleGridWidth, NextTriangleGridHeight;
 			bool StaticInput;
@@ -157,6 +159,9 @@ namespace Green
 				BAdditive = new Blend(Device, Blend::Additive);
 				BOpaque = new Blend(Device, Blend::Opaque);
 
+				RDefault = new Rasterizer(Device, Rasterizer::Default);
+				RCullNone = new Rasterizer(Device, Rasterizer::CullNone);
+
 				PreprocessingChanged = false;
 			}
 
@@ -190,9 +195,10 @@ namespace Green
 				delete THueMap;
 				delete TScaleMap;
 				delete TGauss;
-				
 				delete BAdditive;
 				delete BOpaque;
+				delete RDefault;
+				delete RCullNone;
 			}
 
 			void DrawScene()
@@ -211,11 +217,10 @@ namespace Green
 					VSCommon->Apply();
 					PSDepth->Apply();
 					THueMap->SetForPS(1);
-					TDBDepth->SetForPS();
+					TColor->SetForPS();
 					SLinearWrap->SetForPS();	
 					CBDepthAndColor->SetForPS(1);
 					QMain->Draw();
-					TDBDepth->EndTextureUse();
 					break;
 				case KinectDevice::Color:
 					VSCommon->Apply();
@@ -405,12 +410,14 @@ namespace Green
 				switch (KinectMode)
 				{
 				case KinectDevice::Depth:
-					TDBDepth = new Texture2DDoubleBuffer(Device, KinectDevice::DepthWidth, KinectDevice::DepthHeight, DXGI_FORMAT_R16_SINT, NextDepthBufferSize);
+					TColor = new Texture2D(Device, KinectDevice::DepthWidth, KinectDevice::DepthHeight, DXGI_FORMAT_R16_SINT);
+					RDefault->Set();
 					break;
 				case KinectDevice::Color:
 					TColor = new Texture2D(Device,
 						KinectDevice::ColorWidth, KinectDevice::ColorHeight,
 						DXGI_FORMAT_R8G8B8A8_UNORM);
+					RDefault->Set();
 					break;
 				case KinectDevice::DepthAndColor:
 					TColor = new Texture2D(Device,
@@ -420,11 +427,13 @@ namespace Green
 					RTDepthSum = new RenderTarget(Device, KinectDevice::DepthWidth, KinectDevice::DepthHeight, DXGI_FORMAT_R32G32_FLOAT);
 					RTPDepth = new RenderTargetPair(Device, KinectDevice::DepthWidth, KinectDevice::DepthHeight, DXGI_FORMAT_R16_FLOAT);
 					PMain = new Plane(Device, NextTriangleGridWidth, NextTriangleGridHeight);
+					RCullNone->Set();
 					break;
 				case KinectDevice::Infrared:
 					TColor = new Texture2D(Device,
 						KinectDevice::ColorWidth, KinectDevice::ColorHeight,
 						DXGI_FORMAT_R16_UNORM);
+					RDefault->Set();
 					break;
 				}
 				
@@ -447,21 +456,33 @@ namespace Green
 				{
 				case KinectDevice::Infrared:
 					dxw->TColor->Load<short>((short*)data);
+					dxw->Draw();
 					break;
 				case KinectDevice::Color:
+					dxw->TColor->Load<int>((int*)data);
+					dxw->Draw();
+					break;
 				case KinectDevice::DepthAndColor:
 					dxw->TColor->Load<int>((int*)data);
 				default:
 					break;
 				}
-				dxw->Draw();
 			}
 
 			static void OnDepthFrameReady(void* data, void* obj)
 			{
 				DirectXWindow* dxw = (DirectXWindow*)obj;
-				dxw->TDBDepth->Load<short>((short*)data);
-				dxw->Draw();
+				switch (dxw->KinectMode)
+				{
+				case KinectDevice::Depth:
+					dxw->TColor->Load<short>((short*)data);
+					dxw->Draw();
+					break;
+				case KinectDevice::DepthAndColor:
+					dxw->TDBDepth->Load<short>((short*)data);
+					dxw->Draw();
+					break;
+				}
 			}
 
 			void ShutdownProcessing()
@@ -576,6 +597,9 @@ namespace Green
 				BackgroundColor[3] = 1.f;
 				ResizeNeeded = false;
 				StaticInput = false;
+				SaveTexture = nullptr;
+				SaveTextureReady = true;
+				SaveEvent = CreateEvent(0, 0, 0, 0);
 			}
 
 			void QueryBackBuffer()
@@ -589,10 +613,14 @@ namespace Green
 				DepthBackBuffer = new DepthBuffer(BackBuffer);
 				DepthBackBuffer->Set();
 				
+				BackBufferWidth = td.Width;
+				BackBufferHeight = td.Height;
+
 				MainViewport->Width = td.Width;
 				MainViewport->Height = td.Height;
 				DeviceContext->RSSetViewports(1, MainViewport);
-				tex->Release();
+				//tex->Release();
+				BackBufferTexture = tex;
 			}
 
 			void Resize()
@@ -604,6 +632,7 @@ namespace Green
 			~DirectXWindow()
 			{
 				DestroyResources();
+				BackBufferTexture->Release();
 				BackBuffer->Release();
 				DeviceContext->Release();
 				Device->Release();
@@ -611,15 +640,20 @@ namespace Green
 				delete DepthBackBuffer;
 				delete MainViewport;
 				GdiplusShutdown(GdiPlusToken);
+				CloseHandle(SaveEvent);
 			}
 		private:
 			IDXGISwapChain *SwapChain;
 			ID3D11Device *Device;
 			ID3D11DeviceContext *DeviceContext;
 			ID3D11RenderTargetView *BackBuffer;
+			ID3D11Texture2D *SaveTexture, *BackBufferTexture;
 			DepthBuffer *DepthBackBuffer;
 			D3D11_VIEWPORT *MainViewport;
 			HWND Window;
+			HANDLE SaveEvent;
+			bool SaveTextureReady;
+			unsigned int BackBufferWidth, BackBufferHeight;
 
 			void InitD3D(HWND hWnd)
 			{
@@ -664,10 +698,79 @@ namespace Green
 				SwapChain->Present(0, 0);
 			}
 
+			bool SaveImage(LPWSTR path)
+			{
+				bool ok = false;
+				SaveTextureReady = true;
+				D3D11_TEXTURE2D_DESC desc;
+				ZeroMemory(&desc, sizeof(desc));
+				desc.Width = BackBufferWidth;
+				desc.Height = BackBufferHeight;
+				desc.MipLevels = 1;
+				desc.ArraySize = 1;
+				desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+				desc.SampleDesc.Count = 1;
+				desc.SampleDesc.Quality = 0;
+				desc.BindFlags = 0;				
+				desc.MiscFlags = 0;
+				desc.Usage = D3D11_USAGE_STAGING;
+				desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+				Error(Device->CreateTexture2D(&desc, 0, &SaveTexture));				
+				
+				if(StaticInput)
+				{
+					SaveTextureReady = false;
+					Draw();
+					ok = true;
+				}
+				else
+				{
+					SaveTextureReady = false;
+					ok = WaitForSingleObject(SaveEvent, 1000) == WAIT_OBJECT_0;	
+				}
+				
+				if(ok)
+				{
+					Bitmap bitmap(BackBufferWidth, BackBufferHeight, PixelFormat24bppRGB);
+					Gdiplus::Rect lockRect(0, 0, BackBufferWidth, BackBufferHeight);
+					BitmapData bitmapData;
+					bitmap.LockBits(&lockRect, Gdiplus::ImageLockMode::ImageLockModeWrite, PixelFormat24bppRGB, &bitmapData);
+					
+					byte *target, *source;
+					D3D11_MAPPED_SUBRESOURCE ms;
+					Error(DeviceContext->Map(SaveTexture, 0, D3D11_MAP_READ, 0, &ms));
+					for(int row = 0; row < BackBufferHeight; row++)
+					{
+						source = (byte*)ms.pData + ms.RowPitch * row + 2;
+						target = (byte*)bitmapData.Scan0 + bitmapData.Stride * row;
+						for(int col = 0; col < BackBufferWidth; col++)
+						{
+							*target++ = *source--;
+							*target++ = *source--;
+							*target++ = *source;
+							source += 6;
+						}
+					}
+					DeviceContext->Unmap(SaveTexture, 0);
+					SaveTexture->Release();
+					SaveTexture = nullptr;
+
+					CLSID pngClsid;
+					GetEncoderClsid(L"image/png", &pngClsid);
+					bitmap.UnlockBits(&bitmapData);
+					ok = bitmap.Save(path, &pngClsid, NULL) == Ok;
+				}
+				else
+					SafeRelease(SaveTexture);
+
+				return ok;
+			}
+
 			void Draw()
 			{
 				if(ResizeNeeded)
 				{
+					BackBufferTexture->Release();
 					BackBuffer->Release();
 					SafeDelete(DepthBackBuffer);
 					Error(SwapChain->ResizeBuffers(2, 0, 0, DXGI_FORMAT_UNKNOWN, 0));
@@ -679,6 +782,12 @@ namespace Green
 				DeviceContext->ClearRenderTargetView(BackBuffer, BackgroundColor);
 				DrawScene();
 				SwapChain->Present(0, 0);
+				if(SaveTexture != nullptr && !SaveTextureReady)
+				{
+					DeviceContext->CopyResource(SaveTexture, BackBufferTexture);
+					SaveTextureReady = true;
+					SetEvent(SaveEvent);
+				}
 			}
 		};
 	}

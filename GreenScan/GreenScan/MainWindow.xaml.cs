@@ -25,7 +25,7 @@ namespace Green.Scan
             SS = new ScanSettings();
             
 
-            DXC.Loaded += DXC_Loaded;
+            GC.Loaded += GC_Loaded;
 
             InitGUI();
             InitSettings();
@@ -63,7 +63,7 @@ namespace Green.Scan
             }
         }
 
-        void DXC_Loaded(object sender, RoutedEventArgs e)
+        void GC_Loaded(object sender, RoutedEventArgs e)
         {
             SetPreprocessing();
             SetView();
@@ -74,7 +74,7 @@ namespace Green.Scan
 
         void SetPreprocessing()
         {
-            DXC.SetPreprocessing(
+            GC.SetPreprocessing(
                 SS.DepthAveraging.Value,
                 SS.DepthGaussIterations.Value,
                 SS.DepthGaussSigma.Value);
@@ -82,7 +82,7 @@ namespace Green.Scan
 
         void SetView()
         {
-            DXC.SetView(
+            GC.SetView(
                 SS.TranslationX.Value,
                 SS.TranslationY.Value,
                 SS.TranslationZ.Value,
@@ -97,7 +97,7 @@ namespace Green.Scan
 
         void SetCameras()
         {
-            DXC.SetCameras(
+            GC.SetCameras(
                 SS.InfraredIntrinsics.Value, 
                 SS.DepthToIRMapping.Value,
                 SS.ColorIntrinsics.Value,
@@ -111,7 +111,7 @@ namespace Green.Scan
 
         void SetShading()
         {
-            DXC.SetShading(
+            GC.SetShading(
                 SS.ShadingMode.Value, 
                 SS.DepthLimit.Value, 
                 SS.ShadingPeriode.Value, 
@@ -121,7 +121,7 @@ namespace Green.Scan
 
         void SetPerformance()
         {
-            DXC.SetPerformance(
+            GC.SetPerformance(
                 SS.TriangleGridWidth.Value,
                 SS.TriangleGridHeight.Value);
         }
@@ -210,13 +210,23 @@ namespace Green.Scan
             SS.ViewProperties.ResetToDefault();
         }
 
-        private void SaveRaw_Click(object sender, RoutedEventArgs e)
+        private string GenerateFilename(string ext)
         {
             string fileName = "";
             if (SS.SaveLabel.Value != "")
                 fileName += SS.SaveLabel.Value + "_";
-            fileName += DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss") + ".gsr";
-            SaveDialog(KM.SaveRaw(SS.SaveDirectory.AbsolutePath + fileName));
+            fileName += DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss") + ext;
+            return SS.SaveDirectory.AbsolutePath + fileName;
+        }
+
+        private void SaveRaw_Click(object sender, RoutedEventArgs e)
+        {
+            SaveDialog(KM.SaveRaw(GenerateFilename(".gsr")));
+        }
+
+        private void SaveImage_Click(object sender, RoutedEventArgs e)
+        {
+            SaveDialog(GC.SaveImage(GenerateFilename(".png")));
         }
 
         private void SaveDialog(bool ok)
@@ -241,5 +251,7 @@ namespace Green.Scan
         {
             if (!ok) MessageBox.Show("Opening was unsuccessful.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
+
+
     }
 }
