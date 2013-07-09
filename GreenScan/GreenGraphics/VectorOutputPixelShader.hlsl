@@ -23,7 +23,7 @@ float4 main(VertexPositionTextureOut v) : SV_TARGET
 {
 	float3 pos;
 	if(CalculateWorld(v.Texture, pos))	
-		return float4(pos, 1);
+		return 0.f;
 	else
-		return 0;
+		return float4(pos.x, -pos.y, pos.z, 1.f);
 }

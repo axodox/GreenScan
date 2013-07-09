@@ -307,9 +307,9 @@ namespace Green
 				D3D11_BUFFER_DESC bd;
 				int size = sizeof(T);
 				bd.ByteWidth = (size % 16 == 0 ? size : size + 16 - size % 16);
-				bd.Usage = D3D11_USAGE_DYNAMIC;//DEFAULT;				
+				bd.Usage = D3D11_USAGE_DYNAMIC;				
 				bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-				bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;//0;
+				bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 				bd.MiscFlags = 0;
 				bd.StructureByteStride = 0;
 				
@@ -323,8 +323,6 @@ namespace Green
 				Context->Map(Buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &ms);
 				memcpy(ms.pData, data, sizeof(T));
 				Context->Unmap(Buffer, 0);
-
-				//Context->UpdateSubresource(Buffer, 0, 0, data, 0, 0);
 			}
 
 			void SetForVS(int slot = 0)
@@ -797,7 +795,8 @@ namespace Green
 			{
 				D3D11_MAPPED_SUBRESOURCE ms;
 				Error(DeviceContext->Map(StagingTexture, 0, D3D11_MAP_READ, 0, &ms));
-				memcpy(data, ms.pData, Width * Height * sizeof(T));
+				for(int row = 0; row < Height; row++)
+					memcpy(data + row * Width, (byte*)ms.pData + row * ms.RowPitch, Width * sizeof(T));
 				DeviceContext->Unmap(Texture, 0);
 			}
 

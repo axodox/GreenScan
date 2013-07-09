@@ -101,6 +101,23 @@ namespace Green
 				return ok;
 			}
 
+			enum class SaveFormats {
+				STL = 0
+			};
+
+			bool SaveModel(String^ path, SaveFormats format)
+			{
+				LPWSTR npath = StringToLPWSTR(path);
+				bool ok = XWindow->SaveModel(npath, (DirectXWindow::SaveFormats)format);
+				LPWSTRDelete(npath);
+				return ok;
+			}
+
+			void SetSave(int width, int height)
+			{
+				XWindow->SetSave(width, height);
+			}
+
 			void SetView(
 				float transX, float transY, float transZ, 
 				float rotX, float rotY, float rotZ, 

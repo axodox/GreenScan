@@ -52,6 +52,8 @@ namespace Green.Scan
         public SettingGroup SaveProperties { get; private set; }
         public PathSetting SaveDirectory { get; private set; }
         public StringSetting SaveLabel { get; private set; }
+        public NumericSetting<int> SaveWidth { get; private set; }
+        public NumericSetting<int> SaveHeight { get; private set; }
 
         public ScanSettings()
             : base()
@@ -156,8 +158,12 @@ namespace Green.Scan
 
             SaveDirectory = new PathSetting("Directory", "") { FriendlyName = "Directory" };
             SaveLabel = new StringSetting("Label", "") { FriendlyName = "Label" };
+            SaveWidth = new NumericSetting<int>("Width", 640, 8, 640) { FriendlyName = "Horizontal divisions (count)" };
+            SaveHeight = new NumericSetting<int>("Height", 480, 8, 480) { FriendlyName = "Vertical divisions (count)" };
             SaveProperties.Settings.Add(SaveDirectory);
             SaveProperties.Settings.Add(SaveLabel);
+            SaveProperties.Settings.Add(SaveWidth);
+            SaveProperties.Settings.Add(SaveHeight);
         }
     }
 }

@@ -53,6 +53,7 @@ namespace Green.Scan
             SS.CameraProperties.ValueChanged += (object sender, EventArgs e) => { SetCameras(); };
             SS.ShadingProperties.ValueChanged += (object sender, EventArgs e) => { SetShading(); };
             SS.PerformanceProperties.ValueChanged += (object sender, EventArgs e) => { SetPerformance(); };
+            SS.SaveProperties.ValueChanged += (object sender, EventArgs e) => { SetSave(); };
         }
 
         void KinectMode_ValueChanged(object sender, System.EventArgs e)
@@ -70,6 +71,7 @@ namespace Green.Scan
             SetCameras();
             SetShading();
             SetPerformance();
+            SetSave();
         }
 
         void SetPreprocessing()
@@ -124,6 +126,13 @@ namespace Green.Scan
             GC.SetPerformance(
                 SS.TriangleGridWidth.Value,
                 SS.TriangleGridHeight.Value);
+        }
+
+        void SetSave()
+        {
+            GC.SetSave(
+                SS.SaveWidth.Value,
+                SS.SaveHeight.Value);
         }
         
         void Settings_Click(object sender, RoutedEventArgs e)
@@ -229,6 +238,11 @@ namespace Green.Scan
             SaveDialog(GC.SaveImage(GenerateFilename(".png")));
         }
 
+        private void STL_Click(object sender, RoutedEventArgs e)
+        {
+            SaveDialog(GC.SaveModel(GenerateFilename(""), GraphicsCanvas.SaveFormats.STL));
+        }
+
         private void SaveDialog(bool ok)
         {
             if (!ok) MessageBox.Show("Saving was unsuccessful.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -251,7 +265,5 @@ namespace Green.Scan
         {
             if (!ok) MessageBox.Show("Opening was unsuccessful.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
-
-
     }
 }
