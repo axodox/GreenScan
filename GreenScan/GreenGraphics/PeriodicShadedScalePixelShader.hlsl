@@ -8,5 +8,9 @@ float4 main(VertexPositionTextureDepth v) : SV_TARGET
 	if(shade < 0.f || shade > 1.f)
 		return 0.f;
 	else
-		return ScaleTexture.Sample(ScaleSampler, v.Depth / ShadingPeriode + ShadingPhase) * (0.5f + shade / 4.f);
+	{
+		float4 color = ScaleTexture.Sample(ScaleSampler, v.Depth / ShadingPeriode + ShadingPhase) * (0.5f + shade / 4.f);
+		color.a = 1.f;
+		return color;
+	}
 }

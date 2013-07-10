@@ -1,5 +1,5 @@
 #include "Header.hlsli"
-Texture2D<int> DepthTexture  : register(t0);
+Texture2D<float> DepthTexture  : register(t0);
 
 float3 PosOf(float x, float y)
 {
@@ -15,7 +15,7 @@ bool CalculateWorld(float2 uv, out float3 posx)
 	float3 posd = PosOf(uv.x, uv.y - DepthStep.y);
 	float3 posl = PosOf(uv.x - DepthStep.x, uv.y);
 	float3 posr = PosOf(uv.x + DepthStep.x, uv.y);
-	return pow(length(posu - posd) / posx.z, 2) + pow(length(posr - posl) / posx.z, 2) > TriangleLimit;
+	return pow(length(posu - posd) / posx.z, 2) + pow(length(posr - posl) / posx.z, 2) > TriangleLimit || posx.z == 0.f;
 }
 
 

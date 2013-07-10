@@ -41,10 +41,13 @@ cbuffer DepthAndColorConstants : register(b1)
 	float4x4 WorldTransform;
 	float4x4 NormalTransform;
 	float4x4 DepthToColorTransform;
+	float4x4 WorldToColorTransform;
 	float2 DepthStep;
 	float2 ColorMove;
 	float2 ColorScale;
 	int2 DepthSize;
+	int2 ColorSize;
+	int2 SaveSize;
 	float DepthLimit;
 	float ShadingPeriode;
 	float ShadingPhase;
@@ -63,4 +66,9 @@ float ToDepth(float raw)
 int3 DepthCoords(float2 uv)
 {
 	return int3((int)(uv.x * DepthSize.x), (int)(uv.y * DepthSize.y), 0);
+}
+
+int3 SaveCoords(float2 uv)
+{
+	return int3((int)(uv.x * SaveSize.x), (int)(uv.y * SaveSize.y), 0);
 }

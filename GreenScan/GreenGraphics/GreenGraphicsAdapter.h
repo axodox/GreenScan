@@ -102,7 +102,8 @@ namespace Green
 			}
 
 			enum class SaveFormats {
-				STL = 0
+				STL = 0,
+				FBX
 			};
 
 			bool SaveModel(String^ path, SaveFormats format)
@@ -113,9 +114,9 @@ namespace Green
 				return ok;
 			}
 
-			void SetSave(int width, int height)
+			void SetSave(int width, int height, int texWidth, int texHeight)
 			{
-				XWindow->SetSave(width, height);
+				XWindow->SetSave(width, height, texWidth, texHeight);
 			}
 
 			void SetView(

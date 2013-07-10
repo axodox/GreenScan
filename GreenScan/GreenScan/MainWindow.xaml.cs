@@ -132,7 +132,9 @@ namespace Green.Scan
         {
             GC.SetSave(
                 SS.SaveWidth.Value,
-                SS.SaveHeight.Value);
+                SS.SaveHeight.Value,
+                SS.SaveTextureWidth.Value,
+                SS.SaveTextureHeight.Value);
         }
         
         void Settings_Click(object sender, RoutedEventArgs e)
@@ -238,9 +240,14 @@ namespace Green.Scan
             SaveDialog(GC.SaveImage(GenerateFilename(".png")));
         }
 
-        private void STL_Click(object sender, RoutedEventArgs e)
+        private void SaveSTL_Click(object sender, RoutedEventArgs e)
         {
             SaveDialog(GC.SaveModel(GenerateFilename(""), GraphicsCanvas.SaveFormats.STL));
+        }
+
+        private void SaveFBX_Click(object sender, RoutedEventArgs e)
+        {
+            SaveDialog(GC.SaveModel(GenerateFilename(""), GraphicsCanvas.SaveFormats.FBX));
         }
 
         private void SaveDialog(bool ok)

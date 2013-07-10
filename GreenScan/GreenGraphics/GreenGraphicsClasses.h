@@ -791,6 +791,11 @@ namespace Green
 				DeviceContext->CopyResource(StagingTexture, Texture);
 			}
 
+			ID3D11Texture2D* GetStagingTexture()
+			{
+				return StagingTexture;
+			}
+
 			template <class T> void GetData(T* data)
 			{
 				D3D11_MAPPED_SUBRESOURCE ms;

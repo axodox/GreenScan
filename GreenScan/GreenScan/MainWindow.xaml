@@ -21,7 +21,8 @@
                 <MenuItem Header="Save as">
                     <MenuItem Header="Raw" Click="SaveRaw_Click"/>
                     <MenuItem Header="Image" Click="SaveImage_Click"/>
-                    <MenuItem Header="STL" Click="STL_Click"/>
+                    <MenuItem Header="STL" Click="SaveSTL_Click"/>
+                    <MenuItem Header="Autodesk FBX" Click="SaveFBX_Click"/>
                 </MenuItem>
             </MenuItem>
             <MenuItem Header="Device">

@@ -4,5 +4,7 @@ SamplerState Sampler : register(s0);
 
 float4 main(VertexPositionTextureDepth v) : SV_TARGET
 {
-	return Texture.Sample(Sampler, (v.Texture + ColorMove) * ColorScale).bgra;
+	float4 color = Texture.Sample(Sampler, (v.Texture + ColorMove) * ColorScale).bgra;
+	color.a = 1.f;
+	return color;
 }

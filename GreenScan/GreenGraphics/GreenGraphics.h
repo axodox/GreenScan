@@ -54,13 +54,13 @@ namespace Green
 			VertexShader *VSSimple, *VSCommon, *VSReprojection;
 			GeometryShader *GSReprojection;
 			PixelShader *PSSimple, *PSInfrared, *PSDepth, *PSColor, *PSSine, *PSPeriodicScale, *PSPeriodicShadedScale, *PSScale, *PSShadedScale, *PSBlinn, *PSTextured;
-			PixelShader *PSDepthSum, *PSDepthAverage, *PSDepthGaussH, *PSDepthGaussV, *PSVectorOutput;
+			PixelShader *PSDepthSum, *PSDepthAverage, *PSDepthGaussH, *PSDepthGaussV, *PSVectorOutput, *PSTextureOutput;
 			Texture2D *TColor;
 			Texture1D *THueMap, *TScaleMap, *TGauss;
 			Texture2DDoubleBuffer *TDBDepth;
 			RenderTarget *RTDepthSum;
 			RenderTargetPair *RTPDepth;
-			ReadableRenderTarget *RRTSave;
+			ReadableRenderTarget *RRTSaveVertices, *RRTSaveTexture;
 			Blend *BAdditive, *BOpaque;
 			Rasterizer *RDefault, *RCullNone;
 			int NextDepthBufferSize, DepthBufferSize;
@@ -71,7 +71,7 @@ namespace Green
 			{
 				float TransX, TransY, TransZ, RotX, RotY, RotZ;
 				XMFLOAT4X4 DepthIntrinsics, DepthInvIntrinsics;
-				int Rotation, DepthGaussIterations, SaveWidth, SaveHeight;
+				int Rotation, DepthGaussIterations, SaveWidth, SaveHeight, SaveTextureWidth, SaveTextureHeight;
 				float GaussCoeffs[GaussCoeffCount];
 			} Params;
 
@@ -91,10 +91,13 @@ namespace Green
 				XMFLOAT4X4 WorldTransform;
 				XMFLOAT4X4 NormalTransform;
 				XMFLOAT4X4 DepthToColorTransform;
+				XMFLOAT4X4 WorldToColorTransform;
 				XMFLOAT2 DepthStep;
 				XMFLOAT2 ColorMove;
 				XMFLOAT2 ColorScale;
 				XMINT2 DepthSize;
+				XMINT2 ColorSize;
+				XMINT2 SaveSize;
 				float DepthLimit;
 				float ShadingPeriode;
 				float ShadingPhase;
@@ -139,6 +142,7 @@ namespace Green
 				PSDepthGaussH = new PixelShader(Device, L"DepthGaussHPixelShader.cso");
 				PSDepthGaussV = new PixelShader(Device, L"DepthGaussVPixelShader.cso");
 				PSVectorOutput = new PixelShader(Device, L"VectorOutputPixelShader.cso");
+				PSTextureOutput = new PixelShader(Device, L"TextureOutputPixelShader.cso");
 
 				SLinearWrap = new SamplerState(Device, D3D11_FILTER_MIN_MAG_MIP_LINEAR, D3D11_TEXTURE_ADDRESS_WRAP);
 
@@ -156,7 +160,8 @@ namespace Green
 				TDBDepth = nullptr;
 				RTDepthSum = nullptr;
 				RTPDepth = nullptr;
-				RRTSave = nullptr;
+				RRTSaveVertices = nullptr;
+				RRTSaveTexture = nullptr;
 				NextDepthBufferSize = 1;
 
 				BAdditive = new Blend(Device, Blend::Additive);
@@ -193,6 +198,7 @@ namespace Green
 				delete PSDepthGaussH;
 				delete PSDepthGaussV;
 				delete PSVectorOutput;
+				delete PSTextureOutput;
 				delete SLinearWrap;
 				delete CBDepthAndColor;
 				delete CBCommon;
@@ -334,17 +340,28 @@ namespace Green
 					PMain->Draw();
 
 					//Save
-					if(RRTSave != nullptr && !SaveTextureReady)
+					if(RRTSaveVertices != nullptr && !SaveTextureReady)
 					{
 						SaveTextureReady = true;
-						RRTSave->SetAsRenderTarget();
 						VSSimple->Apply();
-						PSVectorOutput->Apply();
 						SLinearWrap->SetForPS();
-						RTPDepth->SetForPS();
 						BOpaque->Apply();
+
+						//Vertices
+						RRTSaveVertices->SetAsRenderTarget();
+						PSVectorOutput->Apply();
+						RTPDepth->SetForPS();
 						QMain->Draw();
-						RRTSave->CopyToStage();
+						RRTSaveVertices->CopyToStage();
+
+						//Texture
+						RRTSaveTexture->SetAsRenderTarget();
+						PSTextureOutput->Apply();
+						RRTSaveVertices->SetForPS(0);
+						TColor->SetForPS(1);
+						QMain->Draw();
+						RRTSaveTexture->CopyToStage();
+
 						DeviceContext->OMSetRenderTargets(0, 0, 0);
 						if(!StaticInput) SetEvent(SaveEvent);
 					}
@@ -386,6 +403,7 @@ namespace Green
 
 				SetAspectRatio();
 				DepthAndColorOptions.DepthSize = XMINT2(KinectDevice::DepthWidth, KinectDevice::DepthHeight);
+				DepthAndColorOptions.ColorSize = XMINT2(KinectDevice::ColorWidth, KinectDevice::ColorHeight);
 				DepthAndColorOptions.DepthInvIntrinsics = Params.DepthInvIntrinsics;
 				//DepthAndColorOptions.DepthStep = XMFLOAT2(1.f / KinectDevice::DepthWidth, 1.f / KinectDevice::DepthHeight);
 				DepthAndColorOptions.DepthStep = XMFLOAT2(1.f / NextTriangleGridWidth, 1.f / NextTriangleGridHeight);
@@ -568,11 +586,14 @@ namespace Green
 				XMMATRIX mColorRemappedIntrinsics = XMMatrixInverse(0, mColorRemapping) * mColorIntrinsics;
 
 				XMMATRIX mColorExtrinsics = Load4x4(colorExtrinsics);
-				XMMATRIX mDepthToColor = mColorIntrinsics * mColorExtrinsics * mDepthInvIntrinsics;
+				XMMATRIX mDepthToColor = mColorRemappedIntrinsics * mColorExtrinsics * mDepthInvIntrinsics;
+				XMMATRIX mWorldToColor = mColorRemappedIntrinsics * mColorExtrinsics;
 
 				XMStoreFloat4x4(&Params.DepthIntrinsics, mDepthIntrinsics);
+				XMStoreFloat4x4(&Params.DepthInvIntrinsics, mDepthInvIntrinsics);
 				XMStoreFloat4x4(&DepthAndColorOptions.DepthToColorTransform, mDepthToColor);
-				Params.DepthInvIntrinsics = Invert(Params.DepthIntrinsics);
+				XMStoreFloat4x4(&DepthAndColorOptions.WorldToColorTransform, mWorldToColor);
+
 				DepthAndColorOptions.ColorMove = XMFLOAT2((float)colorDispX / KinectDevice::ColorWidth, (float)colorDispY / KinectDevice::ColorHeight);
 				DepthAndColorOptions.ColorScale = XMFLOAT2(colorScaleX, colorScaleY);
 				SetDepthAndColorOptions();
@@ -595,10 +616,13 @@ namespace Green
 				NextTriangleGridHeight = triangleGridHeight;
 			}
 
-			void SetSave(int width, int height)
+			void SetSave(int width, int height, int texWidth, int texHeight)
 			{
 				Params.SaveWidth = width;
 				Params.SaveHeight = height;
+				Params.SaveTextureWidth = texWidth;
+				Params.SaveTextureHeight = texHeight;
+				DepthAndColorOptions.SaveSize = XMINT2(width, height);
 			}
 
 			void InitKinect(KinectDevice* device)
@@ -621,7 +645,7 @@ namespace Green
 				BackgroundColor[0] = 1.f;
 				BackgroundColor[1] = 1.f;
 				BackgroundColor[2] = 1.f;
-				BackgroundColor[3] = 1.f;
+				BackgroundColor[3] = 0.f;
 				ResizeNeeded = false;
 				StaticInput = false;
 				SaveTexture = nullptr;
@@ -757,32 +781,7 @@ namespace Green
 				
 				if(ok)
 				{
-					Bitmap bitmap(BackBufferWidth, BackBufferHeight, PixelFormat24bppRGB);
-					Gdiplus::Rect lockRect(0, 0, BackBufferWidth, BackBufferHeight);
-					BitmapData bitmapData;
-					bitmap.LockBits(&lockRect, Gdiplus::ImageLockMode::ImageLockModeWrite, PixelFormat24bppRGB, &bitmapData);
-					
-					byte *target, *source;
-					D3D11_MAPPED_SUBRESOURCE ms;
-					Error(DeviceContext->Map(SaveTexture, 0, D3D11_MAP_READ, 0, &ms));
-					for(int row = 0; row < BackBufferHeight; row++)
-					{
-						source = (byte*)ms.pData + ms.RowPitch * row + 2;
-						target = (byte*)bitmapData.Scan0 + bitmapData.Stride * row;
-						for(int col = 0; col < BackBufferWidth; col++)
-						{
-							*target++ = *source--;
-							*target++ = *source--;
-							*target++ = *source;
-							source += 6;
-						}
-					}
-					DeviceContext->Unmap(SaveTexture, 0);
-
-					CLSID pngClsid;
-					GetEncoderClsid(L"image/png", &pngClsid);
-					bitmap.UnlockBits(&bitmapData);
-					ok = bitmap.Save(path, &pngClsid, NULL) == Ok;
+					ok = PNGSave(path, SaveTexture);
 				}
 
 				SafeRelease(SaveTexture);
@@ -791,14 +790,16 @@ namespace Green
 			}
 
 			enum class SaveFormats {
-				STL = 0
+				STL = 0,
+				FBX
 			};
 
 			bool SaveModel(LPWSTR path, SaveFormats format)
 			{
 				if(KinectMode != KinectDevice::DepthAndColor) return false;
 				bool ok = false;
-				RRTSave = new ReadableRenderTarget(Device, Params.SaveWidth, Params.SaveHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);
+				RRTSaveVertices = new ReadableRenderTarget(Device, Params.SaveWidth, Params.SaveHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);
+				RRTSaveTexture = new ReadableRenderTarget(Device, Params.SaveTextureWidth, Params.SaveTextureHeight, DXGI_FORMAT_R8G8B8A8_UNORM);
 				SaveTextureReady = false;
 
 				if(StaticInput)
@@ -813,13 +814,32 @@ namespace Green
 				
 				if(ok)
 				{
+					//Texture
+					WCHAR textureFilename[MAX_PATH];
+					wcscpy_s(textureFilename, path);
+					wcscat_s(textureFilename, L".png");
+					PNGSave(textureFilename, RRTSaveTexture->GetStagingTexture());
+
+					//Geometry
 					XMFLOAT4* data = new XMFLOAT4[Params.SaveWidth * Params.SaveHeight];
-					RRTSave->GetData<XMFLOAT4>(data);
-					ok = STLSave(path, data, Params.SaveWidth, Params.SaveHeight);
+					RRTSaveVertices->GetData<XMFLOAT4>(data);
+					switch (format)
+					{
+					case SaveFormats::STL:
+						ok = STLSave(path, data, Params.SaveWidth, Params.SaveHeight);
+						break;
+					case SaveFormats::FBX:
+						ok = FBXSave(path, data, Params.SaveWidth, Params.SaveHeight, wcsrchr(textureFilename, L'\\') + 1);
+						break;
+					default:
+						ok = false;
+						break;
+					}
 					delete [Params.SaveWidth * Params.SaveHeight] data;
 				}
 
-				SafeDelete(RRTSave);
+				SafeDelete(RRTSaveVertices);
+				SafeDelete(RRTSaveTexture);
 
 				return ok;
 			}

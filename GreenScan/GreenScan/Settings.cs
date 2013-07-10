@@ -54,6 +54,8 @@ namespace Green.Scan
         public StringSetting SaveLabel { get; private set; }
         public NumericSetting<int> SaveWidth { get; private set; }
         public NumericSetting<int> SaveHeight { get; private set; }
+        public NumericSetting<int> SaveTextureWidth { get; private set; }
+        public NumericSetting<int> SaveTextureHeight { get; private set; }
 
         public ScanSettings()
             : base()
@@ -92,8 +94,8 @@ namespace Green.Scan
             CameraProperties.Settings.Add(ColorRemapping);
             CameraProperties.Settings.Add(ColorExtrinsics);
 
-            ColorDispositionX = new NumericSetting<int>("ColorDispositionX", -9, -32, 32) { FriendlyName = "Color X disposition (pixels)" };
-            ColorDispositionY = new NumericSetting<int>("ColorDispositionY", 12, -32, 32) { FriendlyName = "Color Y disposition (pixels)" };
+            ColorDispositionX = new NumericSetting<int>("ColorDispositionX", -8, -32, 32) { FriendlyName = "Color X disposition (pixels)" };
+            ColorDispositionY = new NumericSetting<int>("ColorDispositionY", 8, -32, 32) { FriendlyName = "Color Y disposition (pixels)" };
             ColorScaleX = new NumericSetting<float>("ColorScaleX", 1.01f, 0.8f, 1.2f, 2) { FriendlyName = "Color X scale (units)" };
             ColorScaleY = new NumericSetting<float>("ColorScaleY", 1f, 0.8f, 1.2f, 2) { FriendlyName = "Color Y scale (units)" };
             CameraProperties.Settings.Add(ColorDispositionX);
@@ -160,10 +162,14 @@ namespace Green.Scan
             SaveLabel = new StringSetting("Label", "") { FriendlyName = "Label" };
             SaveWidth = new NumericSetting<int>("Width", 640, 8, 640) { FriendlyName = "Horizontal divisions (count)" };
             SaveHeight = new NumericSetting<int>("Height", 480, 8, 480) { FriendlyName = "Vertical divisions (count)" };
+            SaveTextureWidth = new NumericSetting<int>("Texture width", 640, 8, 1024) { FriendlyName = "Texture width (pixels)" };
+            SaveTextureHeight = new NumericSetting<int>("Texture height", 640, 8, 1024) { FriendlyName = "Texture height (pixels)" };
             SaveProperties.Settings.Add(SaveDirectory);
             SaveProperties.Settings.Add(SaveLabel);
             SaveProperties.Settings.Add(SaveWidth);
             SaveProperties.Settings.Add(SaveHeight);
+            SaveProperties.Settings.Add(SaveTextureWidth);
+            SaveProperties.Settings.Add(SaveTextureHeight);
         }
     }
 }

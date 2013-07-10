@@ -5,6 +5,7 @@
 #define SafeDelete(p) { if(p) { delete (p); (p)=nullptr; } }
 #define SafeRelease(p) { if(p) { (p)->Release(); (p)=nullptr; } }
 #define LPWSTRDelete(str) { if(str) { delete [wcslen(str) + 1] (str); (str)=nullptr; } }
+#define LPSTRDelete(str) { if(str) { delete [strlen(str) + 1] (str); (str)=nullptr; } }
 using namespace DirectX;
 using namespace Gdiplus;
 int GetEncoderClsid(const WCHAR* form, CLSID* pClsid)
@@ -71,13 +72,14 @@ XMFLOAT4X4 Invert(XMFLOAT4X4 matrix)
 	return matrixInverse;
 }
 
-XMFLOAT4X4 md(XMMATRIX* matrix)
+LPSTR LPWSTRToLPSTR(LPWSTR wstr)
 {
-	XMFLOAT4X4 s;
-	XMStoreFloat4x4(&s, *matrix);
-	return s;
+	size_t length = wcslen(wstr) + 1;
+    size_t convertedChars = 0;
+    char* str = new char[length];
+    wcstombs_s(&convertedChars, str, length, wstr, _TRUNCATE);
+    return str;
 }
-
 #pragma managed
 #include <vcclr.h>
 LPWSTR StringToLPWSTR(System::String^ str)

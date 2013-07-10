@@ -8,7 +8,7 @@ float4 main(VertexPositionTextureOut v) : SV_TARGET
 	int3 id = DepthCoords(v.Texture);
 	int depth = Texture.Load(id);
 	if (depth == 0) 
-		return 1.f;
+		return 0.f;
 	else 
 		return ScaleTexture.Sample(Sampler, ToDepth(depth) / ShadingPeriode + ShadingPhase);
 }
