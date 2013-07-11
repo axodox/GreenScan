@@ -34,7 +34,6 @@ cbuffer CommonConstants : register(b0)
 
 cbuffer DepthAndColorConstants : register(b1)
 {
-	
 	float4x4 DepthInvIntrinsics;
 	float4x4 ReprojectionTransform;
 	float4x4 ModelTransform;
@@ -43,12 +42,14 @@ cbuffer DepthAndColorConstants : register(b1)
 	float4x4 DepthToColorTransform;
 	float4x4 WorldToColorTransform;
 	float2 DepthStep;
+	float2 DepthSaveStep;
 	float2 ColorMove;
 	float2 ColorScale;
 	int2 DepthSize;
 	int2 ColorSize;
 	int2 SaveSize;
-	float DepthLimit;
+	float DepthMaximum;
+	float DepthMinimum;
 	float ShadingPeriode;
 	float ShadingPhase;
 	float TriangleLimit;

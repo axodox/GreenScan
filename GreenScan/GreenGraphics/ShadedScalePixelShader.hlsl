@@ -9,7 +9,7 @@ float4 main(VertexPositionTextureDepth v) : SV_TARGET
 		return 0.f;
 	else
 	{
-		float4 color = ScaleTexture.Sample(ScaleSampler, v.Depth / DepthLimit) * (0.5f + shade / 4.f);
+		float4 color = ScaleTexture.Sample(ScaleSampler, (v.Depth - DepthMinimum) / (DepthMaximum - DepthMinimum)) * (0.5f + shade / 4.f);
 		color.a = 1.f;
 		return color;
 	}

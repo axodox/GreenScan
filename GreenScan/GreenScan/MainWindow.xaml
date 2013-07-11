@@ -19,10 +19,13 @@
             <MenuItem Header="File">
                 <MenuItem Header="Open..." Click="Open_Click"/>
                 <MenuItem Header="Save as">
-                    <MenuItem Header="Raw" Click="SaveRaw_Click"/>
-                    <MenuItem Header="Image" Click="SaveImage_Click"/>
-                    <MenuItem Header="STL" Click="SaveSTL_Click"/>
+                    <MenuItem Header="Raw GSR" Click="SaveRaw_Click"/>
+                    <MenuItem Header="Image PNG" Click="SaveImage_Click"/>
+                    <MenuItem Header="Binary STL" Click="SaveSTL_Click"/>
                     <MenuItem Header="Autodesk FBX" Click="SaveFBX_Click"/>
+                    <MenuItem Header="AutoCAD DXF" Click="SaveDXF_Click"/>
+                    <MenuItem Header="Collada DAE" Click="SaveDAE_Click"/>
+                    <MenuItem Header="Alias OBJ" Click="SaveOBJ_Click"/>
                 </MenuItem>
             </MenuItem>
             <MenuItem Header="Device">

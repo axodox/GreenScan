@@ -88,7 +88,8 @@ namespace Green
 			enum RasterizerType
 			{
 				Default,
-				CullNone
+				CullNone,
+				Wireframe
 			};
 
 			Rasterizer(ID3D11Device* device, RasterizerType type)
@@ -110,6 +111,10 @@ namespace Green
 				{
 				case RasterizerType::CullNone:
 					rd.CullMode = D3D11_CULL_NONE;
+					break;
+				case RasterizerType::Wireframe:
+					rd.CullMode = D3D11_CULL_NONE;
+					rd.FillMode = D3D11_FILL_WIREFRAME;
 					break;
 				}
 

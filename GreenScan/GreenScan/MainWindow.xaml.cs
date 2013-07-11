@@ -7,6 +7,7 @@ using Green.Kinect;
 using System.Windows.Input;
 using System.Windows.Threading;
 using Microsoft.Win32;
+using GreenScan;
 namespace Green.Scan
 {
     /// <summary>
@@ -114,11 +115,13 @@ namespace Green.Scan
         void SetShading()
         {
             GC.SetShading(
-                SS.ShadingMode.Value, 
-                SS.DepthLimit.Value, 
+                SS.ShadingMode.Value,
+                SS.DepthMaximum.Value,
+                SS.DepthMinimum.Value,
                 SS.ShadingPeriode.Value, 
                 SS.ShadingPhase.Value, 
-                SS.TriangleRemoveLimit.Value);
+                SS.TriangleRemoveLimit.Value,
+                SS.WireframeShading.Value);
         }
 
         void SetPerformance()
@@ -242,17 +245,38 @@ namespace Green.Scan
 
         private void SaveSTL_Click(object sender, RoutedEventArgs e)
         {
-            SaveDialog(GC.SaveModel(GenerateFilename(""), GraphicsCanvas.SaveFormats.STL));
+            SaveModel(GraphicsCanvas.SaveFormats.STL);
         }
 
         private void SaveFBX_Click(object sender, RoutedEventArgs e)
         {
-            SaveDialog(GC.SaveModel(GenerateFilename(""), GraphicsCanvas.SaveFormats.FBX));
+            SaveModel(GraphicsCanvas.SaveFormats.FBX);
+        }
+
+        private void SaveDXF_Click(object sender, RoutedEventArgs e)
+        {
+            SaveModel(GraphicsCanvas.SaveFormats.DXF);
+        }
+
+        private void SaveDAE_Click(object sender, RoutedEventArgs e)
+        {
+            SaveModel(GraphicsCanvas.SaveFormats.DAE);
+        }
+
+        private void SaveOBJ_Click(object sender, RoutedEventArgs e)
+        {
+            SaveModel(GraphicsCanvas.SaveFormats.OBJ);
         }
 
         private void SaveDialog(bool ok)
         {
             if (!ok) MessageBox.Show("Saving was unsuccessful.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+
+        private void SaveModel(GraphicsCanvas.SaveFormats format)
+        {
+            SaveWindow saveWindow = new SaveWindow(GC, GenerateFilename(""), format);
+            SaveDialog((bool)saveWindow.ShowDialog());
         }
 
         private void Open_Click(object sender, RoutedEventArgs e)

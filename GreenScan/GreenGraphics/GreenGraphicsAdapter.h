@@ -59,6 +59,7 @@ namespace Green
 				DestroyWindow((HWND)hwnd.Handle.ToPointer());
 			}
 
+			bool ResizeNeeded;
 			virtual IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, bool %handled) override
 			{
 				static int resizeTimer = 0;
@@ -66,9 +67,14 @@ namespace Green
 				{
 				case WM_SIZE:
 					resizeTimer = SetTimer((HWND)hwnd.ToPointer(), resizeTimer, 100, 0);
+					ResizeNeeded = true;
 					break;
 				case WM_TIMER:
-					XWindow->Resize();
+					if(ResizeNeeded)
+					{
+						XWindow->Resize();
+						ResizeNeeded = false;
+					}
 					break;
 				}
 				handled = false;
@@ -103,7 +109,10 @@ namespace Green
 
 			enum class SaveFormats {
 				STL = 0,
-				FBX
+				FBX,
+				DXF,
+				DAE,
+				OBJ
 			};
 
 			bool SaveModel(String^ path, SaveFormats format)
@@ -167,9 +176,9 @@ namespace Green
 				Textured
 			};
 
-			void SetShading(ShadingModes mode, float depthLimit, float shadingPeriode, float shadingPhase, float triangleLimit)
+			void SetShading(ShadingModes mode, float depthMaximum, float depthMinimum, float shadingPeriode, float shadingPhase, float triangleLimit, bool wireframeShading)
 			{
-				XWindow->SetShading((DirectXWindow::ShadingModes)mode, depthLimit, shadingPeriode, shadingPhase, triangleLimit);
+				XWindow->SetShading((DirectXWindow::ShadingModes)mode, depthMaximum, depthMinimum, shadingPeriode, shadingPhase, triangleLimit, wireframeShading);
 			}
 
 			void Draw()

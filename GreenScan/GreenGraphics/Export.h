@@ -85,7 +85,7 @@ bool STLSave(LPWSTR path, XMFLOAT4* const sVertices, int width, int height)
 	char header[] = "Created with GreenScan STL Export Module, Peter Major (c) 2013";
 	
 	fwrite(header, 1, strlen(header), file);
-	fseek(file, 80, SEEK_SET);
+	fseek(file, 84, SEEK_SET);
 
 	unsigned int i = 0u, e = 0u, bufferLength = SaveBufferSize * 100u;
     long lenPos;
@@ -123,7 +123,7 @@ bool STLSave(LPWSTR path, XMFLOAT4* const sVertices, int width, int height)
             i = 0u;
         }
     }
-
+	
 	fseek(file, 80, SEEK_SET);
 	fwrite(&e, sizeof(e), 1, file);
 	fclose(file);
@@ -219,13 +219,15 @@ void FBXAddTriangle(
 	}
 }
 
-bool FBXSave(LPWSTR path, XMFLOAT4* const sVertices, int width, int height, LPWSTR textureFilename)
+bool FBXSave(LPWSTR path, XMFLOAT4* const sVertices, int width, int height, LPWSTR wTextureFilename, LPWSTR wFormat)
 {
 	WCHAR wfilename[MAX_PATH];
 	wcscpy_s(wfilename, path);
-	wcscat_s(wfilename, L".fbx");
+	wcscat_s(wfilename, L".");
+	wcscat_s(wfilename, wFormat);
 	char* filename = LPWSTRToLPSTR(wfilename);
-	char* wTextureFilename = LPWSTRToLPSTR(textureFilename);
+	char* textureFilename = LPWSTRToLPSTR(wTextureFilename);
+	char* format = LPWSTRToLPSTR(wFormat);
 
 	//Create objects
 	FbxManager* fbxManager = FbxManager::Create();	
@@ -349,6 +351,7 @@ bool FBXSave(LPWSTR path, XMFLOAT4* const sVertices, int width, int height, LPWS
 	fbxNode->SetShadingMode(FbxNode::eTextureShading);
 	FbxSurfaceLambert* fbxSurface = FbxSurfaceLambert::Create(fbxManager, "Lambert Material");
 	fbxSurface->Emissive.Set(black);
+	fbxSurface->EmissiveFactor.Set(1.);
 	fbxSurface->Ambient.Set(white);
 	fbxSurface->AmbientFactor.Set(1.);
 	fbxSurface->Diffuse.Set(white);
@@ -358,7 +361,7 @@ bool FBXSave(LPWSTR path, XMFLOAT4* const sVertices, int width, int height, LPWS
 	fbxNode->AddMaterial(fbxSurface);
 
 	FbxFileTexture* fbxFileTexture = FbxFileTexture::Create(fbxScene, "Diffuse Texture");
-    fbxFileTexture->SetFileName(wTextureFilename);
+    fbxFileTexture->SetFileName(textureFilename);
     fbxFileTexture->SetTextureUse(FbxTexture::eStandard);
     fbxFileTexture->SetMappingType(FbxTexture::eUV);
     fbxFileTexture->SetMaterialUse(FbxFileTexture::eModelMaterial);
@@ -367,11 +370,12 @@ bool FBXSave(LPWSTR path, XMFLOAT4* const sVertices, int width, int height, LPWS
     fbxFileTexture->SetScale(1.0, 1.0);
     fbxFileTexture->SetRotation(0.0, 0.0);
     fbxFileTexture->UVSet.Set(FbxString(uvName));
-    fbxSurface->Diffuse.ConnectSrcObject(fbxFileTexture);
+	fbxSurface->Diffuse.ConnectSrcObject(fbxFileTexture);
 
 	//Save
 	fbxManager->SetIOSettings(fbxIOSettings);
-	fbxExporter->Initialize(filename, -1, fbxManager->GetIOSettings());
+	int formatIndex = fbxManager->GetIOPluginRegistry()->FindWriterIDByExtension(format);
+	fbxExporter->Initialize(filename, formatIndex, fbxManager->GetIOSettings());
 	bool ok = fbxExporter->Export(fbxScene);
 
 	//Destroy objects
@@ -383,6 +387,7 @@ bool FBXSave(LPWSTR path, XMFLOAT4* const sVertices, int width, int height, LPWS
 	fbxManager->Destroy();
 
 	LPSTRDelete(filename);
-	LPSTRDelete(wTextureFilename);
+	LPSTRDelete(textureFilename);
+	LPSTRDelete(format);
 	return ok;
 }

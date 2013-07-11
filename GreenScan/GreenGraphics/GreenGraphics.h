@@ -62,7 +62,7 @@ namespace Green
 			RenderTargetPair *RTPDepth;
 			ReadableRenderTarget *RRTSaveVertices, *RRTSaveTexture;
 			Blend *BAdditive, *BOpaque;
-			Rasterizer *RDefault, *RCullNone;
+			Rasterizer *RDefault, *RCullNone, *RWireframe;
 			int NextDepthBufferSize, DepthBufferSize;
 			int NextTriangleGridWidth, NextTriangleGridHeight;
 			bool StaticInput;
@@ -73,6 +73,7 @@ namespace Green
 				XMFLOAT4X4 DepthIntrinsics, DepthInvIntrinsics;
 				int Rotation, DepthGaussIterations, SaveWidth, SaveHeight, SaveTextureWidth, SaveTextureHeight;
 				float GaussCoeffs[GaussCoeffCount];
+				bool WireframeShading;
 			} Params;
 
 			struct CommonConstants
@@ -93,12 +94,14 @@ namespace Green
 				XMFLOAT4X4 DepthToColorTransform;
 				XMFLOAT4X4 WorldToColorTransform;
 				XMFLOAT2 DepthStep;
+				XMFLOAT2 DepthSaveStep;
 				XMFLOAT2 ColorMove;
 				XMFLOAT2 ColorScale;
 				XMINT2 DepthSize;
 				XMINT2 ColorSize;
 				XMINT2 SaveSize;
-				float DepthLimit;
+				float DepthMaximum;
+				float DepthMinimum;
 				float ShadingPeriode;
 				float ShadingPhase;
 				float TriangleLimit;
@@ -169,6 +172,7 @@ namespace Green
 
 				RDefault = new Rasterizer(Device, Rasterizer::Default);
 				RCullNone = new Rasterizer(Device, Rasterizer::CullNone);
+				RWireframe = new Rasterizer(Device, Rasterizer::Wireframe);
 				
 				PreprocessingChanged = false;
 			}
@@ -209,6 +213,7 @@ namespace Green
 				delete BOpaque;
 				delete RDefault;
 				delete RCullNone;
+				delete RWireframe;
 			}
 
 			void DrawScene()
@@ -298,6 +303,10 @@ namespace Green
 					GSReprojection->Apply();
 					CBDepthAndColor->SetForGS(1);
 
+					if(Params.WireframeShading)
+						RWireframe->Set();
+					else
+						RCullNone->Set();
 					switch (ShadingMode)
 					{
 					case ShadingModes::Zebra:
@@ -336,8 +345,9 @@ namespace Green
 						break;
 					}
 					CBDepthAndColor->SetForPS(1);
-								
 					PMain->Draw();
+
+					RCullNone->Set();
 
 					//Save
 					if(RRTSaveVertices != nullptr && !SaveTextureReady)
@@ -600,13 +610,15 @@ namespace Green
 				if(StaticInput) Draw();
 			}
 
-			void SetShading(ShadingModes mode, float depthLimit, float shadingPeriode, float shadingPhase, float triangleLimit)
+			void SetShading(ShadingModes mode, float depthMaximum, float depthMinimum, float shadingPeriode, float shadingPhase, float triangleLimit, bool wireframeShading)
 			{
 				ShadingMode = mode;
-				DepthAndColorOptions.DepthLimit = depthLimit;
+				DepthAndColorOptions.DepthMaximum = depthMaximum;
+				DepthAndColorOptions.DepthMinimum = depthMinimum;
 				DepthAndColorOptions.ShadingPeriode = shadingPeriode;
 				DepthAndColorOptions.ShadingPhase = shadingPhase;
 				DepthAndColorOptions.TriangleLimit = triangleLimit;
+				Params.WireframeShading = wireframeShading;
 				if(StaticInput) Draw();
 			}
 
@@ -623,6 +635,7 @@ namespace Green
 				Params.SaveTextureWidth = texWidth;
 				Params.SaveTextureHeight = texHeight;
 				DepthAndColorOptions.SaveSize = XMINT2(width, height);
+				DepthAndColorOptions.DepthSaveStep = XMFLOAT2(1.f / width, 1.f / height);
 			}
 
 			void InitKinect(KinectDevice* device)
@@ -791,7 +804,10 @@ namespace Green
 
 			enum class SaveFormats {
 				STL = 0,
-				FBX
+				FBX,
+				DXF,
+				DAE,
+				OBJ
 			};
 
 			bool SaveModel(LPWSTR path, SaveFormats format)
@@ -819,17 +835,29 @@ namespace Green
 					wcscpy_s(textureFilename, path);
 					wcscat_s(textureFilename, L".png");
 					PNGSave(textureFilename, RRTSaveTexture->GetStagingTexture());
+					SafeDelete(RRTSaveTexture);
 
 					//Geometry
 					XMFLOAT4* data = new XMFLOAT4[Params.SaveWidth * Params.SaveHeight];
 					RRTSaveVertices->GetData<XMFLOAT4>(data);
+					SafeDelete(RRTSaveVertices);
+					
 					switch (format)
 					{
 					case SaveFormats::STL:
 						ok = STLSave(path, data, Params.SaveWidth, Params.SaveHeight);
 						break;
 					case SaveFormats::FBX:
-						ok = FBXSave(path, data, Params.SaveWidth, Params.SaveHeight, wcsrchr(textureFilename, L'\\') + 1);
+						ok = FBXSave(path, data, Params.SaveWidth, Params.SaveHeight, wcsrchr(textureFilename, L'\\') + 1, L"fbx");
+						break;
+					case SaveFormats::DXF:
+						ok = FBXSave(path, data, Params.SaveWidth, Params.SaveHeight, wcsrchr(textureFilename, L'\\') + 1, L"dxf");
+						break;
+					case SaveFormats::DAE:
+						ok = FBXSave(path, data, Params.SaveWidth, Params.SaveHeight, wcsrchr(textureFilename, L'\\') + 1, L"dae");
+						break;
+					case SaveFormats::OBJ:
+						ok = FBXSave(path, data, Params.SaveWidth, Params.SaveHeight, wcsrchr(textureFilename, L'\\') + 1, L"obj");
 						break;
 					default:
 						ok = false;
@@ -837,9 +865,6 @@ namespace Green
 					}
 					delete [Params.SaveWidth * Params.SaveHeight] data;
 				}
-
-				SafeDelete(RRTSaveVertices);
-				SafeDelete(RRTSaveTexture);
 
 				return ok;
 			}

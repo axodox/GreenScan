@@ -40,10 +40,12 @@ namespace Green.Scan
 
         public SettingGroup ShadingProperties { get; private set; }
         public EnumSetting<GraphicsCanvas.ShadingModes> ShadingMode { get; private set; }
-        public NumericSetting<float> DepthLimit { get; private set; }
+        public NumericSetting<float> DepthMaximum { get; private set; }
+        public NumericSetting<float> DepthMinimum { get; private set; }
         public NumericSetting<float> ShadingPeriode { get; private set; }
         public NumericSetting<float> ShadingPhase { get; private set; }
         public NumericSetting<float> TriangleRemoveLimit { get; private set; }
+        public BooleanSetting WireframeShading { get; private set; }
 
         public SettingGroup PerformanceProperties { get; private set; }
         public NumericSetting<int> TriangleGridWidth { get; private set; }
@@ -135,15 +137,19 @@ namespace Green.Scan
             SettingGroups.Add(ShadingProperties);
 
             ShadingMode = new EnumSetting<GraphicsCanvas.ShadingModes>("ShadingMode", GraphicsCanvas.ShadingModes.Rainbow) { FriendlyName = "Mode" };
-            DepthLimit = new NumericSetting<float>("DepthLimit", 8f, 0f, 8f, 2) { FriendlyName = "Depth limit (meters)" };
+            DepthMaximum = new NumericSetting<float>("DepthMaximum", 8f, 0f, 8f, 2) { FriendlyName = "Depth maximum (meters)" };
+            DepthMinimum = new NumericSetting<float>("DepthMinimum", 0.6f, 0f, 8f, 2) { FriendlyName = "Depth minimum (meters)" };
             ShadingPeriode = new NumericSetting<float>("ShadingPeriode", 1f, 0.01f, 2f, 2) { FriendlyName = "Shading periode (meters)" };
             ShadingPhase = new NumericSetting<float>("ShadingPhase", 0f, 0f, 1f, 2) { FriendlyName = "Shading phase (radians)" };
             TriangleRemoveLimit = new NumericSetting<float>("TriangleRemoveLimit", 0.0024f, 0.0001f, 0.004f, 4) { FriendlyName = "Triangle remove limit (units)" };
+            WireframeShading = new BooleanSetting("WireframeShading", false) { FriendlyName = "Wireframe shading" };
             ShadingProperties.Settings.Add(ShadingMode);
-            ShadingProperties.Settings.Add(DepthLimit);
+            ShadingProperties.Settings.Add(DepthMaximum);
+            ShadingProperties.Settings.Add(DepthMinimum);
             ShadingProperties.Settings.Add(ShadingPeriode);
             ShadingProperties.Settings.Add(ShadingPhase);
             ShadingProperties.Settings.Add(TriangleRemoveLimit);
+            ShadingProperties.Settings.Add(WireframeShading);
 
             //Performance
             PerformanceProperties = new SettingGroup("Performance") { FriendlyName = "Performance" };
@@ -162,8 +168,8 @@ namespace Green.Scan
             SaveLabel = new StringSetting("Label", "") { FriendlyName = "Label" };
             SaveWidth = new NumericSetting<int>("Width", 640, 8, 640) { FriendlyName = "Horizontal divisions (count)" };
             SaveHeight = new NumericSetting<int>("Height", 480, 8, 480) { FriendlyName = "Vertical divisions (count)" };
-            SaveTextureWidth = new NumericSetting<int>("Texture width", 640, 8, 1024) { FriendlyName = "Texture width (pixels)" };
-            SaveTextureHeight = new NumericSetting<int>("Texture height", 640, 8, 1024) { FriendlyName = "Texture height (pixels)" };
+            SaveTextureWidth = new NumericSetting<int>("TextureWidth", 640, 8, 1024) { FriendlyName = "Texture width (pixels)" };
+            SaveTextureHeight = new NumericSetting<int>("TextureHeight", 640, 8, 1024) { FriendlyName = "Texture height (pixels)" };
             SaveProperties.Settings.Add(SaveDirectory);
             SaveProperties.Settings.Add(SaveLabel);
             SaveProperties.Settings.Add(SaveWidth);
