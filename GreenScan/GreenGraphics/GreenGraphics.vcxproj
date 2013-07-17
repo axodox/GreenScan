@@ -277,6 +277,11 @@
   <ItemGroup>
     <None Include="Header.hlsli" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\GreenMath\GreenMath.csproj">
+      <Project>{3848e35d-4c46-4592-83b6-fe7fc770953e}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

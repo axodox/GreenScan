@@ -24,10 +24,7 @@ namespace Green.Scan
             InitializeComponent();
             KM = new KinectManager();
             SS = new ScanSettings();
-            
-
             GC.Loaded += GC_Loaded;
-
             InitGUI();
             InitSettings();
         }
@@ -38,7 +35,8 @@ namespace Green.Scan
 
             DataContext = KM;
             MIMode.DataContext = SS.KinectMode;
-            MIShading.DataContext = SS.ShadingMode;
+            //MIShading.DataContext = SS.ShadingMode;
+            SMC.DataContext = SS;
 
             DT = new DispatcherTimer();
             DT.Interval = new TimeSpan(0, 0, 0, 0, 10);
@@ -48,6 +46,7 @@ namespace Green.Scan
 
         void InitSettings()
         {
+            SS.Load("Settings.ini");
             SS.KinectMode.ValueChanged += KinectMode_ValueChanged;
             SS.PreprocessingProperties.ValueChanged += (object sender, EventArgs e) => { SetPreprocessing(); };
             SS.ViewProperties.ValueChanged += (object sender, EventArgs e) => { SetView(); };
@@ -167,6 +166,7 @@ namespace Green.Scan
                 SW.Close();
             }
             KM.CloseKinect();
+            SS.Save("Settings.ini");
         }
 
         const float ZoomStep = 1.1f;
@@ -178,10 +178,20 @@ namespace Green.Scan
                 SS.Scale.Value /= ZoomStep;
         }
 
+        bool IsMouseOnCanvas
+        {
+            get
+            {
+                Point p = Mouse.GetPosition(GC);
+                return p.X > 0 && p.Y > 0 && p.X < GC.ActualWidth && p.Y < GC.ActualHeight;
+            }
+        }
+
         bool ViewMouseManipulation = false;
         Point CursorStartPos;
         private void Window_MouseDown(object sender, MouseButtonEventArgs e)
         {
+            if (!IsMouseOnCanvas) return;
             CursorStartPos = Mouse.GetPosition(null);
             ViewMouseManipulation = true;
             Mouse.Capture(this);
@@ -221,6 +231,7 @@ namespace Green.Scan
 
         private void Window_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
+            if (!IsMouseOnCanvas) return;
             SS.ViewProperties.ResetToDefault();
         }
 
@@ -295,6 +306,12 @@ namespace Green.Scan
         private void OpenDialog(bool ok)
         {
             if (!ok) MessageBox.Show("Opening was unsuccessful.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+
+        private void TurntableCalibrate_Click(object sender, RoutedEventArgs e)
+        {
+            TurntableCalibrationWindow TCW = new TurntableCalibrationWindow(GC, SS);
+            TCW.Show();
         }
     }
 }

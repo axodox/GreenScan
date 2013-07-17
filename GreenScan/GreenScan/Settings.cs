@@ -2,10 +2,11 @@
 using Green.Settings;
 using Green.Kinect;
 using Green.Graphics;
+using System.Windows;
 
 namespace Green.Scan
 {
-    class ScanSettings : SettingManager
+    public class ScanSettings : SettingManager
     {
         public SettingGroup KinectProperties { get; private set; }
         public EnumSetting<KinectManager.Modes> KinectMode { get; private set; }
@@ -59,6 +60,16 @@ namespace Green.Scan
         public NumericSetting<int> SaveTextureWidth { get; private set; }
         public NumericSetting<int> SaveTextureHeight { get; private set; }
 
+        public SettingGroup TurntableProperties { get; private set; }
+        public RectangleSetting TurntableEllipse { get; private set; }
+        public RectangleSetting TurntableRectangle { get; private set; }
+        public NumericSetting<float> TurntableTranslationX { get; private set; }
+        public NumericSetting<float> TurntableTranslationY { get; private set; }
+        public NumericSetting<float> TurntableTranslationZ { get; private set; }
+        public NumericSetting<float> TurntableRotationX { get; private set; }
+        public NumericSetting<float> TurntableRotationY { get; private set; }
+        public NumericSetting<float> TurntableRotationZ { get; private set; }
+
         public ScanSettings()
             : base()
         {
@@ -84,10 +95,10 @@ namespace Green.Scan
             CameraProperties = new SettingGroup("Camera") { FriendlyName = "Camera" };
             SettingGroups.Add(CameraProperties);
 
-            InfraredIntrinsics = new MatrixSetting("InfraredIntrinsics", new float[,] { { 1161.959596f, 0f, 639.865400f }, { 0f, 1169.649383f, 521.460524f }, { 0f, 0f, 1f } }) { FriendlyName = "Infrared intrinsic matrix" };
+            InfraredIntrinsics = new MatrixSetting("InfraredIntrinsics", new float[,] { { 1161.96f, 0f, 639.8654f }, { 0f, 1169.649f, 521.4605f }, { 0f, 0f, 1f } }) { FriendlyName = "Infrared intrinsic matrix" };
 
             DepthToIRMapping = new MatrixSetting("DepthToIRMapping", new float[,] { { 2f, 0f, 16f }, { 0f, 2f, 17f }, { 0f, 0f, 1f } }) { FriendlyName = "Depth to IR mapping" };
-            ColorIntrinsics = new MatrixSetting("ColorIntrinsics", new float[,] { { 1051.45007f, 0f, 641.1544f }, { 0f, 1053.781f, 521.790466f }, { 0f, 0f, 1f } }) { FriendlyName = "Color intrinsics" };
+            ColorIntrinsics = new MatrixSetting("ColorIntrinsics", new float[,] { { 1051.45f, 0f, 641.1544f }, { 0f, 1053.781f, 521.7905f }, { 0f, 0f, 1f } }) { FriendlyName = "Color intrinsic matrix" };
             ColorRemapping = new MatrixSetting("ColorRemapping", new float[,] { { 2f, 0f, 2f }, { 0f, 2f, 0f }, { 0f, 0f, 1f } }) { FriendlyName = "Color remapping" };
             ColorExtrinsics = new MatrixSetting("ColorExtrinsics", new float[,] { { 0.999946f, -0.006657f, 0.00794f, -0.025955f }, { 0.006679f, 0.999974f, -0.002686f, -0.000035f }, { -0.007922f, 0.002739f, 0.999965f, 0.005283f }, { 0f, 0f, 0f, 1f } }) { FriendlyName = "Color extrinsics" };
             CameraProperties.Settings.Add(InfraredIntrinsics);
@@ -138,7 +149,7 @@ namespace Green.Scan
 
             ShadingMode = new EnumSetting<GraphicsCanvas.ShadingModes>("ShadingMode", GraphicsCanvas.ShadingModes.Rainbow) { FriendlyName = "Mode" };
             DepthMaximum = new NumericSetting<float>("DepthMaximum", 8f, 0f, 8f, 2) { FriendlyName = "Depth maximum (meters)" };
-            DepthMinimum = new NumericSetting<float>("DepthMinimum", 0.6f, 0f, 8f, 2) { FriendlyName = "Depth minimum (meters)" };
+            DepthMinimum = new NumericSetting<float>("DepthMinimum", 0.8f, 0f, 8f, 2) { FriendlyName = "Depth minimum (meters)" };
             ShadingPeriode = new NumericSetting<float>("ShadingPeriode", 1f, 0.01f, 2f, 2) { FriendlyName = "Shading periode (meters)" };
             ShadingPhase = new NumericSetting<float>("ShadingPhase", 0f, 0f, 1f, 2) { FriendlyName = "Shading phase (radians)" };
             TriangleRemoveLimit = new NumericSetting<float>("TriangleRemoveLimit", 0.0024f, 0.0001f, 0.004f, 4) { FriendlyName = "Triangle remove limit (units)" };
@@ -155,8 +166,8 @@ namespace Green.Scan
             PerformanceProperties = new SettingGroup("Performance") { FriendlyName = "Performance" };
             SettingGroups.Add(PerformanceProperties);
 
-            TriangleGridWidth = new NumericSetting<int>("TriangleGridWidth", 640, 16, 640) { FriendlyName = "Triangle grid width (count)" };
-            TriangleGridHeight = new NumericSetting<int>("TriangleGridHeight", 480, 12, 480) { FriendlyName = "Triangle grid height (count)" };
+            TriangleGridWidth = new NumericSetting<int>("TriangleGridWidth", 320, 16, 640) { FriendlyName = "Triangle grid width (count)" };
+            TriangleGridHeight = new NumericSetting<int>("TriangleGridHeight", 240, 12, 480) { FriendlyName = "Triangle grid height (count)" };
             PerformanceProperties.Settings.Add(TriangleGridWidth);
             PerformanceProperties.Settings.Add(TriangleGridHeight);
 
@@ -176,6 +187,29 @@ namespace Green.Scan
             SaveProperties.Settings.Add(SaveHeight);
             SaveProperties.Settings.Add(SaveTextureWidth);
             SaveProperties.Settings.Add(SaveTextureHeight);
+
+            //Turntable
+            TurntableProperties = new SettingGroup("Turntable") { FriendlyName = "Turntable" };
+            SettingGroups.Add(TurntableProperties);
+
+            TurntableEllipse = new RectangleSetting("SelectionEllipse", new Rect(0d, 0d, 0d, 0d)) { IsHidden = true };
+            TurntableRectangle = new RectangleSetting("SelectionRectangle", new Rect(0d, 0d, 0d, 0d)) { IsHidden = true };
+            TurntableProperties.Settings.Add(TurntableEllipse);
+            TurntableProperties.Settings.Add(TurntableRectangle);
+
+            TurntableTranslationX = new NumericSetting<float>("TranslationX", 0f, -1f, 1f, 2) { FriendlyName = "Translation X (meters)" };
+            TurntableTranslationY = new NumericSetting<float>("TranslationY", 0f, -1f, 1f, 2) { FriendlyName = "Translation Y (meters)" };
+            TurntableTranslationZ = new NumericSetting<float>("TranslationZ", 1.5f, 0f, 3f, 2) { FriendlyName = "Translation Z (meters)" };
+            TurntableProperties.Settings.Add(TurntableTranslationX);
+            TurntableProperties.Settings.Add(TurntableTranslationY);
+            TurntableProperties.Settings.Add(TurntableTranslationZ);
+
+            TurntableRotationX = new NumericSetting<float>("RotationX", 0f, -90f, 90f, 2) { FriendlyName = "Rotation X (degrees)" };
+            TurntableRotationY = new NumericSetting<float>("RotationY", 0f, -90f, 90f, 2) { FriendlyName = "Rotation Y (degrees)" };
+            TurntableRotationZ = new NumericSetting<float>("RotationZ", 0f, -180f, 180f, 2) { FriendlyName = "Rotation Z (degrees)" };
+            TurntableProperties.Settings.Add(TurntableRotationX);
+            TurntableProperties.Settings.Add(TurntableRotationY);
+            TurntableProperties.Settings.Add(TurntableRotationZ);
         }
     }
 }

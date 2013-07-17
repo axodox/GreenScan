@@ -30,6 +30,10 @@ namespace Green
 			property int DeviceCount { int get() { return deviceCount; }}
 			property bool DeviceOpened { bool get()	{ return deviceOpened; }}
 			property bool Processing { bool get() { return processing; }}
+			static property int DepthWidth { int get() { return KinectDevice::DepthWidth; }}
+			static property int DepthHeight { int get() { return KinectDevice::DepthHeight; }}
+			static property int ColorWidth { int get() { return KinectDevice::ColorWidth; }}
+			static property int ColorHeight { int get() { return KinectDevice::ColorHeight; }}
 			KinectDevice* Device;
 		private:
 			void OnPropertyChanged(String^ name)

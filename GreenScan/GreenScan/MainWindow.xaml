@@ -5,7 +5,7 @@
         xmlns:g="clr-namespace:Green.Graphics;assembly=GreenGraphics"
         xmlns:local="clr-namespace:Green.Scan" x:Class="Green.Scan.MainWindow"
         Closing="Window_Closing"
-        Title="GreenScan" Width="640" Height="480" Icon="icon.ico" MouseWheel="Window_MouseWheel" MouseDown="Window_MouseDown" MouseDoubleClick="Window_MouseDoubleClick">
+        Title="GreenScan" Width="720" Height="480" Icon="icon.ico" MouseWheel="Window_MouseWheel" MouseDown="Window_MouseDown" MouseDoubleClick="Window_MouseDoubleClick">
     <Window.Resources>
         <local:KinectManagerToDeviceListConverter x:Key="KinectManagerToDeviceListConverter"/>
     </Window.Resources>
@@ -13,7 +13,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
+            <!--<RowDefinition Height="Auto"/>-->
         </Grid.RowDefinitions>
         <Menu>
             <MenuItem Header="File">
@@ -33,14 +33,27 @@
                 <MenuItem Header="Stop" Click="Stop_Click" IsEnabled="{Binding Processing, Mode=OneWay}" SnapsToDevicePixels="True"/>
                 <s:EnumMenu x:Name="MIMode" Header="Mode" />
             </MenuItem>
-            <s:EnumMenu x:Name="MIShading" Header="Shading"/>
-            <MenuItem Header="Reset view" Click="ResetView_Click"/>
-            <MenuItem Header="Settings" Click="Settings_Click"/>   
+            <!--<s:EnumMenu x:Name="MIShading" Header="Shading"/>-->
+            <!--<MenuItem Header="Reset view" Click="ResetView_Click"/>-->
+            <!--<MenuItem Header="Settings" Click="Settings_Click"/>-->   
+            <MenuItem Header="Turntable">
+                <MenuItem Header="Calibrate..." Click="TurntableCalibrate_Click"/>
+            </MenuItem>
         </Menu>
-        <g:GraphicsCanvas x:Name="GC" Grid.Row="1"/>
-        <StatusBar Grid.Row="2">
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="256"/>
+            </Grid.ColumnDefinitions>
+            <GridSplitter Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Stretch" Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}" ShowsPreview="true" Width="5"/>
+            <g:GraphicsCanvas x:Name="GC"/>
+            <s:SettingManagerControl x:Name="SMC" Grid.Column="2"/>
+        </Grid>
+        
+        <!--<StatusBar Grid.Row="2">
             <CheckBox IsChecked="{Binding DeviceOpened, Mode=OneWay}" IsEnabled="False" Content="Opened"/>
             <CheckBox IsChecked="{Binding Processing, Mode=OneWay}" IsEnabled="False" Content="Processing"/>
-        </StatusBar>
+        </StatusBar>-->
     </Grid>
 </Window>

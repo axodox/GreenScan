@@ -9,6 +9,7 @@ using System.Windows.Controls;
 using System.Reflection;
 using System.IO;
 using System.Globalization;
+using System.Windows;
 
 namespace Green.Settings
 {
@@ -28,7 +29,27 @@ namespace Green.Settings
         public string Name { get; protected set; }
         
         [Flags]
-        public enum Types : uint { Unknown = 0, Boolean = 1, Enum = 2, SByte = 4, Int16 = 8, Int32 = 16, Int64 = 32, Byte = 64, UInt16 = 128, UInt32 = 256, UInt64 = 512, Single = 1024, Double = 2048, Matrix = 4096, String = 8192, Path = 16384, Numeric = 4092, Integer = 1020 };
+        public enum Types : uint { 
+            Unknown = 0, 
+            Boolean = 1, 
+            Enum = 2, 
+            SByte = 4, 
+            Int16 = 8, 
+            Int32 = 16, 
+            Int64 = 32, 
+            Byte = 64, 
+            UInt16 = 128, 
+            UInt32 = 256, 
+            UInt64 = 512, 
+            Single = 1024, 
+            Double = 2048, 
+            Matrix = 4096, 
+            String = 8192, 
+            Path = 16384, 
+            Rectangle = 32768, 
+            Numeric = 4092, 
+            Integer = 1020 
+        };
         public Types Type { get; protected set; }
         
         public event PropertyChangedEventHandler PropertyChanged;
@@ -60,6 +81,17 @@ namespace Green.Settings
             set
             {
                 friendlyName = value;
+            }
+        }
+
+        private bool isHidden;
+        public bool IsHidden
+        {
+            get { return isHidden; }
+            set
+            {
+                isHidden = value;
+                OnPropertyChanged("IsHidden");
             }
         }
     }
@@ -129,7 +161,8 @@ namespace Green.Settings
 
         public int Rows { get; private set; }
         public int Columns { get; private set; }
-        public MatrixSetting(string name, float[,] value) : base(name)
+        public MatrixSetting(string name, float[,] value)
+            : base(name)
         {
             Type = Types.Matrix;
             Rows = value.GetLength(0);
@@ -143,11 +176,11 @@ namespace Green.Settings
 
         public override bool HasDefaultValue
         {
-            get 
+            get
             {
                 for (int r = 0; r < Rows; r++)
                     for (int c = 0; c < Columns; c++)
-                        if(DefaultValue[r, c] != value[r, c]) return false;
+                        if (DefaultValue[r, c] != value[r, c]) return false;
                 return true;
             }
         }
@@ -310,7 +343,61 @@ namespace Green.Settings
         }
     }
 
-    
+    public class RectangleSetting : Setting
+    {
+        private Rect value;
+        public Rect Value
+        {
+            get { return value; }
+            set
+            {
+                this.value = value;
+                OnValueChanged();
+            }
+        }
+
+        public Rect DefaultValue { get; private set; }
+
+        public RectangleSetting(string name, Rect value)
+            : base(name)
+        {
+            Type = Types.Boolean;
+            DefaultValue = Value = value;
+        }
+
+        public override string StringValue
+        {
+            get
+            {
+                return String.Format(Culture, "{0};{1};{2};{3}", new object[] { Value.X, Value.Y, Value.Width, Value.Height });
+            }
+            set
+            {
+                string[] items = value.Split(';');
+                try
+                {
+                    Value = new Rect(
+                        double.Parse(items[0], Culture),
+                        double.Parse(items[1], Culture),
+                        double.Parse(items[2], Culture),
+                        double.Parse(items[3], Culture)
+                        );
+
+                }
+                catch { }
+            }
+        }
+
+        public override bool HasDefaultValue
+        {
+            get { return DefaultValue == Value; }
+        }
+
+        public override void ResetValue()
+        {
+            DefaultValue = Value;
+        }
+    }
 
     public class BooleanSetting : Setting
     {
@@ -471,6 +558,17 @@ namespace Green.Settings
 
     public class SettingGroup : INotifyPropertyChanged
     {
+        private bool isHidden;
+        public bool IsHidden
+        {
+            get { return isHidden; }
+            set
+            {
+                isHidden = value;
+                OnPropertyChanged("IsHidden");
+            }
+        }
+
         private bool hasDefaultValues;
         public bool HasDefaultValues 
         {

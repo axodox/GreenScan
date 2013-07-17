@@ -379,6 +379,8 @@ bool FBXSave(LPWSTR path, XMFLOAT4* const sVertices, int width, int height, LPWS
 	bool ok = fbxExporter->Export(fbxScene);
 
 	//Destroy objects
+	fbxSurface->Destroy();
+	fbxFileTexture->Destroy();
 	fbxMesh->Destroy();
 	fbxNode->Destroy();
 	fbxExporter->Destroy();

@@ -14,7 +14,7 @@
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <ScrollViewer>
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
             <StackPanel>
                 <ItemsControl x:Name="SettingGroups" ItemsSource="{Binding SettingGroups}">
                     <ItemsControl.ItemTemplate>

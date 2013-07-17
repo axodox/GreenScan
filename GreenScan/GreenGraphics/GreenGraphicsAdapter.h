@@ -11,6 +11,7 @@ using namespace System::Runtime::InteropServices;
 using namespace System::Reflection;
 using namespace System::IO;
 using namespace Green::Kinect;
+using Green::MathExtensions::Float4;
 
 namespace Green
 {
@@ -97,6 +98,22 @@ namespace Green
 			~GraphicsCanvas()
 			{
 				delete XWindow;
+			}
+
+			bool GetVertices([Out] array<Float4, 2>^ %vertices)
+			{
+				int width, height;
+				XMFLOAT4* data;
+				if(XWindow->GetVertices(data, width, height))
+				{
+					int bufferLength = width * height;
+					vertices = gcnew array<Float4, 2>(width, height);
+					pin_ptr<Float4> sVertices = &vertices[0, 0];
+					memcpy(sVertices, data, bufferLength * sizeof(XMFLOAT4));
+					delete [bufferLength] data;
+					return true;
+				}
+				else return false;
 			}
 
 			bool SaveImage(String^ path)

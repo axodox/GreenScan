@@ -44,6 +44,7 @@
     <WarningLevel>4</WarningLevel>
     <UseVSHostingProcess>true</UseVSHostingProcess>
     <Prefer32Bit>true</Prefer32Bit>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -87,12 +88,16 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Helper.cs" />
     <Compile Include="SaveWindow.xaml.cs">
       <DependentUpon>SaveWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Settings.cs" />
     <Compile Include="SettingsWindow.xaml.cs">
       <DependentUpon>SettingsWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="TurntableCalibrationWindow.xaml.cs">
+      <DependentUpon>TurntableCalibrationWindow.xaml</DependentUpon>
     </Compile>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
@@ -112,6 +117,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="SettingsWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="TurntableCalibrationWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -147,6 +156,10 @@
     <ProjectReference Include="..\GreenGraphics\GreenGraphics.vcxproj">
       <Project>{5f930999-ca86-4ac7-826d-f9a8ade7a7b0}</Project>
       <Name>GreenGraphics</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\GreenMath\GreenMath.csproj">
+      <Project>{3848e35d-4c46-4592-83b6-fe7fc770953e}</Project>
+      <Name>GreenMath</Name>
     </ProjectReference>
     <ProjectReference Include="..\GreenSettings\GreenSettings.csproj">
       <Project>{79e48d1d-2d71-4544-ad04-505929d0dbb4}</Project>

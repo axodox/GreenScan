@@ -27,20 +27,12 @@ namespace Green.Settings.UI
 
         public void Expand()
         {
-            SP.Visibility = Visibility.Visible;
+            Expander.IsExpanded = true;
         }
 
         public void Collapse()
         {
-            SP.Visibility = Visibility.Collapsed;
-        }
-
-        private void Button_Click(object sender, RoutedEventArgs e)
-        {
-            if (SP.Visibility == System.Windows.Visibility.Collapsed)
-                SP.Visibility = System.Windows.Visibility.Visible;
-            else
-                SP.Visibility = System.Windows.Visibility.Collapsed;
+            Expander.IsExpanded = false;
         }
     }
 }

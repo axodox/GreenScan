@@ -20,6 +20,8 @@ namespace Green.Settings.UI
     {
         public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         {
+            if (value is Setting && (value as Setting).IsHidden) 
+                return null;
             if (value is NumericSetting)
                 return new NumericControl();
             if (value is EnumSetting)
@@ -47,7 +49,10 @@ namespace Green.Settings.UI
         public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         {
             if (value is SettingGroup)
+            {
+                if ((value as SettingGroup).IsHidden) return null;
                 return new SettingGroupControl();
+            }
             return null;
         }
 

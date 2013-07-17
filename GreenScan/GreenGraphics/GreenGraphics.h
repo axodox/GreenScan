@@ -50,7 +50,7 @@ namespace Green
 			KinectDevice::Modes KinectMode;
 			Quad *QMain;
 			Plane *PMain;
-			SamplerState *SLinearWrap;
+			SamplerState *SLinearWrap, *SLinearClamp;
 			VertexShader *VSSimple, *VSCommon, *VSReprojection;
 			GeometryShader *GSReprojection;
 			PixelShader *PSSimple, *PSInfrared, *PSDepth, *PSColor, *PSSine, *PSPeriodicScale, *PSPeriodicShadedScale, *PSScale, *PSShadedScale, *PSBlinn, *PSTextured;
@@ -148,6 +148,7 @@ namespace Green
 				PSTextureOutput = new PixelShader(Device, L"TextureOutputPixelShader.cso");
 
 				SLinearWrap = new SamplerState(Device, D3D11_FILTER_MIN_MAG_MIP_LINEAR, D3D11_TEXTURE_ADDRESS_WRAP);
+				SLinearClamp = new SamplerState(Device, D3D11_FILTER_MIN_MAG_MIP_LINEAR, D3D11_TEXTURE_ADDRESS_CLAMP);
 
 				ZeroMemory(&Params, sizeof(RenderingParameters));				
 				CBDepthAndColor = new ConstantBuffer<DepthAndColorConstants>(Device);
@@ -204,6 +205,7 @@ namespace Green
 				delete PSVectorOutput;
 				delete PSTextureOutput;
 				delete SLinearWrap;
+				delete SLinearClamp;
 				delete CBDepthAndColor;
 				delete CBCommon;
 				delete THueMap;
@@ -324,12 +326,12 @@ namespace Green
 						break;
 					case ShadingModes::Scale:
 						PSScale->Apply();
-						SLinearWrap->SetForPS();
+						SLinearClamp->SetForPS();
 						TScaleMap->SetForPS();
 						break;
 					case ShadingModes::ShadedScale:
 						PSShadedScale->Apply();
-						SLinearWrap->SetForPS();
+						SLinearClamp->SetForPS();
 						TScaleMap->SetForPS();
 						break;
 					case ShadingModes::Blinn:
@@ -350,7 +352,7 @@ namespace Green
 					RCullNone->Set();
 
 					//Save
-					if(RRTSaveVertices != nullptr && !SaveTextureReady)
+					if(!SaveTextureReady && (RRTSaveVertices != nullptr || RRTSaveTexture != nullptr))
 					{
 						SaveTextureReady = true;
 						VSSimple->Apply();
@@ -358,19 +360,25 @@ namespace Green
 						BOpaque->Apply();
 
 						//Vertices
-						RRTSaveVertices->SetAsRenderTarget();
-						PSVectorOutput->Apply();
-						RTPDepth->SetForPS();
-						QMain->Draw();
-						RRTSaveVertices->CopyToStage();
+						if(RRTSaveVertices != nullptr)
+						{
+							RRTSaveVertices->SetAsRenderTarget();
+							PSVectorOutput->Apply();
+							RTPDepth->SetForPS();
+							QMain->Draw();
+							RRTSaveVertices->CopyToStage();
+						}
 
 						//Texture
-						RRTSaveTexture->SetAsRenderTarget();
-						PSTextureOutput->Apply();
-						RRTSaveVertices->SetForPS(0);
-						TColor->SetForPS(1);
-						QMain->Draw();
-						RRTSaveTexture->CopyToStage();
+						if(RRTSaveTexture != nullptr)
+						{
+							RRTSaveTexture->SetAsRenderTarget();
+							PSTextureOutput->Apply();
+							RRTSaveVertices->SetForPS(0);
+							TColor->SetForPS(1);
+							QMain->Draw();
+							RRTSaveTexture->CopyToStage();	
+						}
 
 						DeviceContext->OMSetRenderTargets(0, 0, 0);
 						if(!StaticInput) SetEvent(SaveEvent);
@@ -415,7 +423,6 @@ namespace Green
 				DepthAndColorOptions.DepthSize = XMINT2(KinectDevice::DepthWidth, KinectDevice::DepthHeight);
 				DepthAndColorOptions.ColorSize = XMINT2(KinectDevice::ColorWidth, KinectDevice::ColorHeight);
 				DepthAndColorOptions.DepthInvIntrinsics = Params.DepthInvIntrinsics;
-				//DepthAndColorOptions.DepthStep = XMFLOAT2(1.f / KinectDevice::DepthWidth, 1.f / KinectDevice::DepthHeight);
 				DepthAndColorOptions.DepthStep = XMFLOAT2(1.f / NextTriangleGridWidth, 1.f / NextTriangleGridHeight);
 			}
 
@@ -594,11 +601,11 @@ namespace Green
 				XMMATRIX mColorIntrinsics = Load4x4(colorIntrinsics);
 				XMMATRIX mColorRemapping = Load4x4(colorRemapping);
 				XMMATRIX mColorRemappedIntrinsics = XMMatrixInverse(0, mColorRemapping) * mColorIntrinsics;
-
+				
 				XMMATRIX mColorExtrinsics = Load4x4(colorExtrinsics);
 				XMMATRIX mDepthToColor = mColorRemappedIntrinsics * mColorExtrinsics * mDepthInvIntrinsics;
 				XMMATRIX mWorldToColor = mColorRemappedIntrinsics * mColorExtrinsics;
-
+				
 				XMStoreFloat4x4(&Params.DepthIntrinsics, mDepthIntrinsics);
 				XMStoreFloat4x4(&Params.DepthInvIntrinsics, mDepthInvIntrinsics);
 				XMStoreFloat4x4(&DepthAndColorOptions.DepthToColorTransform, mDepthToColor);
@@ -809,6 +816,34 @@ namespace Green
 				DAE,
 				OBJ
 			};
+
+			bool GetVertices(XMFLOAT4* &data, int &width, int &height)
+			{
+				if(KinectMode != KinectDevice::DepthAndColor) return false;
+				width = KinectDevice::DepthWidth;
+				height = KinectDevice::DepthHeight;
+				RRTSaveVertices = new ReadableRenderTarget(Device, width, height, DXGI_FORMAT_R32G32B32A32_FLOAT);
+				SaveTextureReady = false;
+
+				bool ok = false;
+				if(StaticInput)
+				{
+					Draw();
+					ok = true;
+				}
+				else
+				{
+					ok = WaitForSingleObject(SaveEvent, 1000) == WAIT_OBJECT_0;
+				}
+
+				if(ok)
+				{
+					data = new XMFLOAT4[width * height];
+					RRTSaveVertices->GetData<XMFLOAT4>(data);
+				}
+
+				return ok;
+			}
 
 			bool SaveModel(LPWSTR path, SaveFormats format)
 			{

@@ -11,9 +11,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GreenTest", "GreenTest\Gree
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MakePalettes", "MakePalettes\MakePalettes.csproj", "{1F69FAE4-7EBD-47F2-9A85-F25784765F0F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GreenMath", "GreenMath\GreenMath.csproj", "{3848E35D-4C46-4592-83B6-FE7FC770953E}"
+EndProject
 Global
 	GlobalSection(TeamFoundationVersionControl) = preSolution
-		SccNumberOfProjects = 6
+		SccNumberOfProjects = 7
 		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
 		SccTeamFoundationServer = https://axodox.visualstudio.com/defaultcollection
 		SccLocalPath0 = .
@@ -32,6 +34,9 @@ Global
 		SccProjectUniqueName5 = MakePalettes\\MakePalettes.csproj
 		SccProjectName5 = MakePalettes
 		SccLocalPath5 = MakePalettes
+		SccProjectUniqueName6 = GreenMath\\GreenMath.csproj
+		SccProjectName6 = GreenMath
+		SccLocalPath6 = GreenMath
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -63,6 +68,7 @@ Global
 		{79E48D1D-2D71-4544-AD04-505929D0DBB4}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
 		{79E48D1D-2D71-4544-AD04-505929D0DBB4}.Debug|Win32.ActiveCfg = Debug|Any CPU
 		{79E48D1D-2D71-4544-AD04-505929D0DBB4}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{79E48D1D-2D71-4544-AD04-505929D0DBB4}.Debug|x86.Build.0 = Debug|Any CPU
 		{79E48D1D-2D71-4544-AD04-505929D0DBB4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{79E48D1D-2D71-4544-AD04-505929D0DBB4}.Release|Any CPU.Build.0 = Release|Any CPU
 		{79E48D1D-2D71-4544-AD04-505929D0DBB4}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
@@ -89,6 +95,7 @@ Global
 		{DE10109E-3B53-4933-B07F-48EFD7165F67}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
 		{DE10109E-3B53-4933-B07F-48EFD7165F67}.Debug|Win32.ActiveCfg = Debug|Any CPU
 		{DE10109E-3B53-4933-B07F-48EFD7165F67}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{DE10109E-3B53-4933-B07F-48EFD7165F67}.Debug|x86.Build.0 = Debug|Any CPU
 		{DE10109E-3B53-4933-B07F-48EFD7165F67}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DE10109E-3B53-4933-B07F-48EFD7165F67}.Release|Any CPU.Build.0 = Release|Any CPU
 		{DE10109E-3B53-4933-B07F-48EFD7165F67}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
@@ -101,12 +108,26 @@ Global
 		{1F69FAE4-7EBD-47F2-9A85-F25784765F0F}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
 		{1F69FAE4-7EBD-47F2-9A85-F25784765F0F}.Debug|Win32.ActiveCfg = Debug|Any CPU
 		{1F69FAE4-7EBD-47F2-9A85-F25784765F0F}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{1F69FAE4-7EBD-47F2-9A85-F25784765F0F}.Debug|x86.Build.0 = Debug|Any CPU
 		{1F69FAE4-7EBD-47F2-9A85-F25784765F0F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1F69FAE4-7EBD-47F2-9A85-F25784765F0F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{1F69FAE4-7EBD-47F2-9A85-F25784765F0F}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{1F69FAE4-7EBD-47F2-9A85-F25784765F0F}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{1F69FAE4-7EBD-47F2-9A85-F25784765F0F}.Release|Win32.ActiveCfg = Release|Any CPU
 		{1F69FAE4-7EBD-47F2-9A85-F25784765F0F}.Release|x86.ActiveCfg = Release|Any CPU
+		{3848E35D-4C46-4592-83B6-FE7FC770953E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3848E35D-4C46-4592-83B6-FE7FC770953E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3848E35D-4C46-4592-83B6-FE7FC770953E}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{3848E35D-4C46-4592-83B6-FE7FC770953E}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{3848E35D-4C46-4592-83B6-FE7FC770953E}.Debug|Win32.ActiveCfg = Debug|Any CPU
+		{3848E35D-4C46-4592-83B6-FE7FC770953E}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{3848E35D-4C46-4592-83B6-FE7FC770953E}.Debug|x86.Build.0 = Debug|Any CPU
+		{3848E35D-4C46-4592-83B6-FE7FC770953E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3848E35D-4C46-4592-83B6-FE7FC770953E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3848E35D-4C46-4592-83B6-FE7FC770953E}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{3848E35D-4C46-4592-83B6-FE7FC770953E}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{3848E35D-4C46-4592-83B6-FE7FC770953E}.Release|Win32.ActiveCfg = Release|Any CPU
+		{3848E35D-4C46-4592-83B6-FE7FC770953E}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

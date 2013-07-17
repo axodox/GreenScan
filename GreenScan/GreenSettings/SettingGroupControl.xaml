@@ -9,14 +9,8 @@
     <UserControl.Resources>
         <ResourceDictionary Source="Style.xaml"/>
     </UserControl.Resources>
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
-        <Button Content="{Binding FriendlyName}" FontWeight="{Binding HasDefaultValues, Converter={StaticResource HasDefaultValueToFontWeightConverter}}" Margin="3,3,3,0" Click="Button_Click"/>
-        <StackPanel x:Name="SP" Grid.Row="1" Visibility="Collapsed">
+    <Expander x:Name="Expander" Header="{Binding FriendlyName}" Margin="3">
+        <StackPanel x:Name="SP" Grid.Row="1">
             <ItemsControl ItemsSource="{Binding Settings}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
@@ -25,5 +19,5 @@
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
         </StackPanel>
-    </Grid>
+    </Expander>
 </UserControl>
