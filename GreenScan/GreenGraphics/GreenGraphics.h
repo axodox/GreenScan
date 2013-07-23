@@ -42,12 +42,6 @@ namespace Green
 				return tempPath;
 			}
 			ULONG_PTR GdiPlusToken;
-			void UseMainRenderTarget()
-			{
-				DepthBackBuffer->Set();
-				//DeviceContext->OMSetRenderTargets(1, &BackBuffer, NULL);
-				DeviceContext->RSSetViewports(1, MainViewport);
-			}
 
 			bool KinectReady, ResizeNeeded, PreprocessingChanged;
 			KinectDevice::Modes KinectMode;
@@ -243,7 +237,7 @@ namespace Green
 				CBCommon->SetForVS(0);
 				CBDepthAndColor->Update(&DepthAndColorOptions);
 
-				UseMainRenderTarget();
+				Device->SetAsRenderTarget();
 				BOpaque->Apply();
 
 				switch (KinectMode)
@@ -331,7 +325,7 @@ namespace Green
 
 					//Reprojection
 					RTPDepth->Swap();
-					UseMainRenderTarget();
+					Device->SetAsRenderTarget();
 					
 					VSReprojection->Apply();
 					CBDepthAndColor->SetForVS(1);
@@ -415,7 +409,6 @@ namespace Green
 							RRTSaveTexture->CopyToStage();	
 						}
 
-						DeviceContext->OMSetRenderTargets(0, 0, 0);
 						if(!StaticInput) SetEvent(SaveEvent);
 					}
 					break;
@@ -455,7 +448,7 @@ namespace Green
 			{
 				XMFLOAT2 aspectScale;
 				float depthAspectRatio = (float)KinectDevice::DepthWidth / (float)KinectDevice::DepthHeight;
-				float aspectRatio = (Params.Rotation % 2 == 0 ? MainViewport->Width / MainViewport->Height : MainViewport->Height / MainViewport->Width);
+				float aspectRatio = (Params.Rotation % 2 == 0 ? Device->GetAspectRatio() : 1.f / Device->GetAspectRatio());
 
 				if(depthAspectRatio >= aspectRatio)
 				{
@@ -746,7 +739,7 @@ namespace Green
 				BackgroundColor[3] = 0.f;
 				ResizeNeeded = false;
 				StaticInput = false;
-				SaveTexture = nullptr;
+				ReadableBackBuffer = nullptr;
 				SaveTextureReady = true;
 				SaveEvent = CreateEvent(0, 0, 0, 0);
 				Modules = new GraphicsModule*[MaxModuleCount];
@@ -754,26 +747,6 @@ namespace Green
 				{
 					Modules[i] = nullptr;
 				}
-			}
-
-			void QueryBackBuffer()
-			{
-				ID3D11Texture2D *tex;
-				Error(SwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&tex));
-				Error(Device->CreateRenderTargetView(tex, NULL, &BackBuffer));
-				D3D11_TEXTURE2D_DESC td;
-				tex->GetDesc(&td);
-				
-				DepthBackBuffer = new DepthBuffer(BackBuffer);
-				DepthBackBuffer->Set();
-				
-				BackBufferWidth = td.Width;
-				BackBufferHeight = td.Height;
-
-				MainViewport->Width = td.Width;
-				MainViewport->Height = td.Height;
-				DeviceContext->RSSetViewports(1, MainViewport);
-				BackBufferTexture = tex;
 			}
 
 			void Resize()
@@ -791,13 +764,7 @@ namespace Green
 				}
 				delete [MaxModuleCount] Modules;
 				DestroyResources();
-				BackBufferTexture->Release();
-				BackBuffer->Release();
-				DeviceContext->Release();
-				Device->Release();
-				SwapChain->Release();
-				delete DepthBackBuffer;
-				delete MainViewport;
+				delete Device;
 				GdiplusShutdown(GdiPlusToken);
 				CloseHandle(SaveEvent);
 			}
@@ -830,79 +797,28 @@ namespace Green
 				return false;
 			}
 		private:
-			IDXGISwapChain *SwapChain;
-			ID3D11Device *Device;
-			ID3D11DeviceContext *DeviceContext;
-			ID3D11RenderTargetView *BackBuffer;
-			ID3D11Texture2D *SaveTexture, *BackBufferTexture;
-			DepthBuffer *DepthBackBuffer;
-			D3D11_VIEWPORT *MainViewport;
-			HWND Window;
+			GraphicsDevice* Device;
+			ReadableRenderTarget* ReadableBackBuffer;
 			HANDLE SaveEvent;
 			bool SaveTextureReady;
-			unsigned int BackBufferWidth, BackBufferHeight;
 
 			void InitD3D(HWND hWnd)
 			{
-				Window = hWnd;
-				DXGI_SWAP_CHAIN_DESC scd;
-				ZeroMemory(&scd, sizeof(DXGI_SWAP_CHAIN_DESC));
-				scd.BufferCount = 1;
-				scd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-				scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-				scd.OutputWindow = hWnd;
-				scd.SampleDesc.Count = 1;
-				scd.Windowed = TRUE;
-
-				Error(D3D11CreateDeviceAndSwapChain(
-					NULL,
-					D3D_DRIVER_TYPE_HARDWARE,
-					NULL,
-					NULL,
-					NULL,
-					NULL,
-					D3D11_SDK_VERSION,
-					&scd,
-					&SwapChain,
-					&Device,
-					NULL,
-					&DeviceContext));
-
-				DepthBackBuffer = 0;
-
-				LPRECT clientRect;
-				GetClientRect(hWnd, clientRect);
-				MainViewport = new D3D11_VIEWPORT();
-				MainViewport->MaxDepth = D3D11_MAX_DEPTH;
-				MainViewport->MinDepth = D3D11_MIN_DEPTH;
-				QueryBackBuffer();
+				Device = new GraphicsDevice(hWnd);
 			}
 		public:
 			void ClearScreen()
 			{
-				DeviceContext->OMSetRenderTargets(1, &BackBuffer, NULL);
-				DeviceContext->ClearRenderTargetView(BackBuffer, BackgroundColor);
-				SwapChain->Present(0, 0);
+				Device->SetAsRenderTarget();
+				Device->Clear(BackgroundColor);
+				Device->Present();
 			}
 
 			bool SaveImage(LPWSTR path)
 			{
 				bool ok = false;
 				SaveTextureReady = true;
-				D3D11_TEXTURE2D_DESC desc;
-				ZeroMemory(&desc, sizeof(desc));
-				desc.Width = BackBufferWidth;
-				desc.Height = BackBufferHeight;
-				desc.MipLevels = 1;
-				desc.ArraySize = 1;
-				desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-				desc.SampleDesc.Count = 1;
-				desc.SampleDesc.Quality = 0;
-				desc.BindFlags = 0;				
-				desc.MiscFlags = 0;
-				desc.Usage = D3D11_USAGE_STAGING;
-				desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-				Error(Device->CreateTexture2D(&desc, 0, &SaveTexture));				
+				ReadableBackBuffer = new ReadableRenderTarget(Device);							
 				SaveTextureReady = false;
 				ResetEvent(SaveEvent);
 
@@ -918,11 +834,9 @@ namespace Green
 				
 				if(ok)
 				{
-					ok = PNGSave(path, SaveTexture);
+					ok = PNGSave(path, ReadableBackBuffer->GetStagingTexture());
 				}
-
-				SafeRelease(SaveTexture);
-
+				delete ReadableBackBuffer;
 				return ok;
 			}
 
@@ -1026,21 +940,17 @@ namespace Green
 			{
 				if(ResizeNeeded)
 				{
-					BackBufferTexture->Release();
-					BackBuffer->Release();
-					SafeDelete(DepthBackBuffer);
-					Error(SwapChain->ResizeBuffers(2, 0, 0, DXGI_FORMAT_UNKNOWN, 0));
-					QueryBackBuffer();
-					ResizeNeeded = false;
+					Device->Resize();
 					SetAspectRatio();
+					ResizeNeeded = false;
 				}
-				DepthBackBuffer->Clear();
-				DeviceContext->ClearRenderTargetView(BackBuffer, BackgroundColor);
+				
+				Device->Clear(BackgroundColor);
 				DrawScene();
-				SwapChain->Present(0, 0);
-				if(SaveTexture != nullptr && !SaveTextureReady)
+				Device->Present();
+				if(ReadableBackBuffer != nullptr && !SaveTextureReady)
 				{
-					DeviceContext->CopyResource(SaveTexture, BackBufferTexture);
+					ReadableBackBuffer->CopyToStage();
 					SaveTextureReady = true;
 					if(!StaticInput) SetEvent(SaveEvent);
 				}

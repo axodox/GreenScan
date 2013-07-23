@@ -9,7 +9,7 @@ namespace Green
 		class GraphicsModule
 		{
 		public:
-			virtual void CreateResources(ID3D11Device* device/*, D3D11_VIEWPORT* viewport*/) = 0;
+			virtual void CreateResources(GraphicsDevice* device/*, D3D11_VIEWPORT* viewport*/) = 0;
 			virtual void DestroyResources() = 0;
 			virtual void StartProcessing() = 0;
 			virtual void EndProcessing() = 0;

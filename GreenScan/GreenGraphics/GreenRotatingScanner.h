@@ -8,7 +8,7 @@ namespace Green
 	{
 		class RotatingScannerModule : public GraphicsModule
 		{
-			virtual void CreateResources(ID3D11Device* device) override
+			virtual void CreateResources(GraphicsDevice* device) override
 			{
 
 			}
