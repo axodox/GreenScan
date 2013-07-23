@@ -18,6 +18,8 @@ namespace Green.Scan
 
         public SettingGroup CameraProperties { get; private set; }
         public MatrixSetting InfraredIntrinsics { get; private set; }
+        public MatrixSetting InfraredDistortion { get; private set; }
+        public BooleanSetting InfraredDistortionCorrectionEnabled { get; private set; }
         public MatrixSetting DepthToIRMapping { get; private set; }
         public MatrixSetting ColorIntrinsics { get; private set; }
         public MatrixSetting ColorRemapping { get; private set; }
@@ -96,12 +98,15 @@ namespace Green.Scan
             SettingGroups.Add(CameraProperties);
 
             InfraredIntrinsics = new MatrixSetting("InfraredIntrinsics", new float[,] { { 1161.96f, 0f, 639.8654f }, { 0f, 1169.649f, 521.4605f }, { 0f, 0f, 1f } }) { FriendlyName = "Infrared intrinsic matrix" };
-
+            InfraredDistortion = new MatrixSetting("InfraredDistortion", new float[,] { { 0.143542f, -0.244779f }, { 0.003839f, -0.000318f } }) { FriendlyName = "Infrared distortion coefficients {K1, K2; P1, P2}" };
+            InfraredDistortionCorrectionEnabled = new BooleanSetting("InfraredDistortionCorrectionEnabled", false) { FriendlyName = "Infrared distortion correction enabled" };
             DepthToIRMapping = new MatrixSetting("DepthToIRMapping", new float[,] { { 2f, 0f, 16f }, { 0f, 2f, 17f }, { 0f, 0f, 1f } }) { FriendlyName = "Depth to IR mapping" };
             ColorIntrinsics = new MatrixSetting("ColorIntrinsics", new float[,] { { 1051.45f, 0f, 641.1544f }, { 0f, 1053.781f, 521.7905f }, { 0f, 0f, 1f } }) { FriendlyName = "Color intrinsic matrix" };
             ColorRemapping = new MatrixSetting("ColorRemapping", new float[,] { { 2f, 0f, 2f }, { 0f, 2f, 0f }, { 0f, 0f, 1f } }) { FriendlyName = "Color remapping" };
             ColorExtrinsics = new MatrixSetting("ColorExtrinsics", new float[,] { { 0.999946f, -0.006657f, 0.00794f, -0.025955f }, { 0.006679f, 0.999974f, -0.002686f, -0.000035f }, { -0.007922f, 0.002739f, 0.999965f, 0.005283f }, { 0f, 0f, 0f, 1f } }) { FriendlyName = "Color extrinsics" };
             CameraProperties.Settings.Add(InfraredIntrinsics);
+            CameraProperties.Settings.Add(InfraredDistortion);
+            CameraProperties.Settings.Add(InfraredDistortionCorrectionEnabled);
             CameraProperties.Settings.Add(DepthToIRMapping);
             CameraProperties.Settings.Add(ColorIntrinsics);
             CameraProperties.Settings.Add(ColorRemapping);
@@ -166,8 +171,8 @@ namespace Green.Scan
             PerformanceProperties = new SettingGroup("Performance") { FriendlyName = "Performance" };
             SettingGroups.Add(PerformanceProperties);
 
-            TriangleGridWidth = new NumericSetting<int>("TriangleGridWidth", 320, 16, 640) { FriendlyName = "Triangle grid width (count)" };
-            TriangleGridHeight = new NumericSetting<int>("TriangleGridHeight", 240, 12, 480) { FriendlyName = "Triangle grid height (count)" };
+            TriangleGridWidth = new NumericSetting<int>("TriangleGridWidth", 640, 16, 640) { FriendlyName = "Triangle grid width (count)" };
+            TriangleGridHeight = new NumericSetting<int>("TriangleGridHeight", 480, 12, 480) { FriendlyName = "Triangle grid height (count)" };
             PerformanceProperties.Settings.Add(TriangleGridWidth);
             PerformanceProperties.Settings.Add(TriangleGridHeight);
 
@@ -189,7 +194,7 @@ namespace Green.Scan
             SaveProperties.Settings.Add(SaveTextureHeight);
 
             //Turntable
-            TurntableProperties = new SettingGroup("Turntable") { FriendlyName = "Turntable" };
+            TurntableProperties = new SettingGroup("Turntable") { FriendlyName = "Turntable", IsHidden = true };
             SettingGroups.Add(TurntableProperties);
 
             TurntableEllipse = new RectangleSetting("SelectionEllipse", new Rect(0d, 0d, 0d, 0d)) { IsHidden = true };

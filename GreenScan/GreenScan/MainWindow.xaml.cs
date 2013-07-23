@@ -8,6 +8,7 @@ using System.Windows.Input;
 using System.Windows.Threading;
 using Microsoft.Win32;
 using GreenScan;
+using System.ComponentModel;
 namespace Green.Scan
 {
     /// <summary>
@@ -19,6 +20,7 @@ namespace Green.Scan
         KinectManager KM;
         DispatcherTimer DT;
         SettingsWindow SW;
+        
         public MainWindow()
         {
             InitializeComponent();
@@ -42,7 +44,44 @@ namespace Green.Scan
             DT.Interval = new TimeSpan(0, 0, 0, 0, 10);
             DT.Tick += DT_Tick;
             DT.IsEnabled = true;
+        }        
+
+        void KinectMode_ValueChanged(object sender, System.EventArgs e)
+        {
+            if (KM.Processing)
+            {
+                KM.StartKinect(SS.KinectMode.Value);
+            }
         }
+
+        private void Stop_Click(object sender, RoutedEventArgs e)
+        {
+            KM.StopKinect();
+        }
+
+        void GC_Loaded(object sender, RoutedEventArgs e)
+        {
+            SetPreprocessing();
+            SetView();
+            SetCameras();
+            SetShading();
+            SetPerformance();
+            SetSave();
+
+            InitRotatingScanner();
+        }
+
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            if (SW != null)
+            {
+                SW.Close();
+            }
+            KM.CloseKinect();
+            SS.Save("Settings.ini");
+        }
+
+        #region Settings
 
         void InitSettings()
         {
@@ -54,24 +93,6 @@ namespace Green.Scan
             SS.ShadingProperties.ValueChanged += (object sender, EventArgs e) => { SetShading(); };
             SS.PerformanceProperties.ValueChanged += (object sender, EventArgs e) => { SetPerformance(); };
             SS.SaveProperties.ValueChanged += (object sender, EventArgs e) => { SetSave(); };
-        }
-
-        void KinectMode_ValueChanged(object sender, System.EventArgs e)
-        {
-            if (KM.Processing)
-            {
-                KM.StartKinect(SS.KinectMode.Value);
-            }
-        }
-
-        void GC_Loaded(object sender, RoutedEventArgs e)
-        {
-            SetPreprocessing();
-            SetView();
-            SetCameras();
-            SetShading();
-            SetPerformance();
-            SetSave();
         }
 
         void SetPreprocessing()
@@ -100,7 +121,9 @@ namespace Green.Scan
         void SetCameras()
         {
             GC.SetCameras(
-                SS.InfraredIntrinsics.Value, 
+                SS.InfraredIntrinsics.Value,
+                SS.InfraredDistortion.Value,
+                SS.InfraredDistortionCorrectionEnabled.Value,
                 SS.DepthToIRMapping.Value,
                 SS.ColorIntrinsics.Value,
                 SS.ColorRemapping.Value,
@@ -117,8 +140,8 @@ namespace Green.Scan
                 SS.ShadingMode.Value,
                 SS.DepthMaximum.Value,
                 SS.DepthMinimum.Value,
-                SS.ShadingPeriode.Value, 
-                SS.ShadingPhase.Value, 
+                SS.ShadingPeriode.Value,
+                SS.ShadingPhase.Value,
                 SS.TriangleRemoveLimit.Value,
                 SS.WireframeShading.Value);
         }
@@ -138,7 +161,7 @@ namespace Green.Scan
                 SS.SaveTextureWidth.Value,
                 SS.SaveTextureHeight.Value);
         }
-        
+
         void Settings_Click(object sender, RoutedEventArgs e)
         {
             if (SW == null)
@@ -154,20 +177,9 @@ namespace Green.Scan
             }
         }
 
-        private void Stop_Click(object sender, RoutedEventArgs e)
-        {
-            KM.StopKinect();
-        }
+        #endregion
 
-        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
-        {
-            if (SW != null)
-            {
-                SW.Close();
-            }
-            KM.CloseKinect();
-            SS.Save("Settings.ini");
-        }
+        #region View manipulation
 
         const float ZoomStep = 1.1f;
         private void Window_MouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)
@@ -235,7 +247,11 @@ namespace Green.Scan
             SS.ViewProperties.ResetToDefault();
         }
 
-        private string GenerateFilename(string ext)
+        #endregion
+
+        #region Save & Open
+
+        private string GenerateFilename(string ext = "")
         {
             string fileName = "";
             if (SS.SaveLabel.Value != "")
@@ -281,13 +297,44 @@ namespace Green.Scan
 
         private void SaveDialog(bool ok)
         {
-            if (!ok) MessageBox.Show("Saving was unsuccessful.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            if (ok)
+                ShowStatus("Save complete.");
+            else
+                MessageBox.Show("Saving was unsuccessful.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+
+        class SaveTask
+        {
+            public String Filename;
+            public GraphicsCanvas.SaveFormats Format;
+            public SaveTask(string filename, GraphicsCanvas.SaveFormats format)
+            {
+                Filename = filename;
+                Format = format;
+            }
         }
 
         private void SaveModel(GraphicsCanvas.SaveFormats format)
         {
-            SaveWindow saveWindow = new SaveWindow(GC, GenerateFilename(""), format);
-            SaveDialog((bool)saveWindow.ShowDialog());
+            //SaveWindow saveWindow = new SaveWindow(GC, GenerateFilename(""), format);
+            //SaveDialog((bool)saveWindow.ShowDialog());
+            BackgroundWorker SaveWorker = new BackgroundWorker();
+            SaveWorker.DoWork += SaveWorker_DoWork;
+            SaveWorker.RunWorkerCompleted += SaveWorker_RunWorkerCompleted;
+            SaveWorker.RunWorkerAsync(new SaveTask(GenerateFilename(), format));
+            ShowStatus("Saving in progress...", true, double.NaN);
+        }
+
+        void SaveWorker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            SaveTask ST = (SaveTask)e.Argument;
+            e.Result = GC.SaveModel(ST.Filename, ST.Format);
+        }
+
+        void SaveWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            SaveDialog((bool)e.Result);
+            (sender as BackgroundWorker).Dispose();
         }
 
         private void Open_Click(object sender, RoutedEventArgs e)
@@ -308,10 +355,48 @@ namespace Green.Scan
             if (!ok) MessageBox.Show("Opening was unsuccessful.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
 
+        #endregion
+
+        #region Rotating scanner
+
+        RotatingScanner RS;
+        void InitRotatingScanner()
+        {
+            RS = new RotatingScanner(KM, GC);
+            MITurntable.DataContext = RS;
+            RS.PropertyChanged += RS_PropertyChanged;
+            
+        }
+
+        void RS_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            switch (e.PropertyName)
+            {
+                case "Connected":
+                    SS.TurntableProperties.IsHidden = !RS.Connected;
+                    if (RS.Connected) ShowStatus("Turntable connected.");
+                    else ShowStatus("Turntable disconnected.");
+                    break;
+            }
+        }
+
         private void TurntableCalibrate_Click(object sender, RoutedEventArgs e)
         {
             TurntableCalibrationWindow TCW = new TurntableCalibrationWindow(GC, SS);
             TCW.Show();
+        }
+
+        #endregion
+
+        void ShowStatus(string text, bool showProgress = false, double progress = double.NaN)
+        {
+            SBIStatusText.Content = text;
+            Visibility newVisibility = showProgress ? Visibility.Visible : Visibility.Collapsed;
+            if (PBStatus.Visibility != newVisibility) PBStatus.Visibility = newVisibility;
+            bool newIndeterminity = double.IsNaN(progress);
+            if (PBStatus.IsIndeterminate != newIndeterminity) PBStatus.IsIndeterminate = newIndeterminity;
+            PBStatus.IsIndeterminate = double.IsNaN(progress);
+            if (PBStatus.Value != progress && !PBStatus.IsIndeterminate) PBStatus.Value = progress;
         }
     }
 }

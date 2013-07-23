@@ -18,7 +18,7 @@
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <TextBlock Text="{Binding FriendlyName}" Grid.ColumnSpan="2" VerticalAlignment="Center" FontWeight="{Binding HasDefaultValue, Converter={StaticResource HasDefaultValueToFontWeightConverter}}"/>
+            <TextBlock Text="{Binding FriendlyName}" Grid.ColumnSpan="1" VerticalAlignment="Center" FontWeight="{Binding HasDefaultValue, Converter={StaticResource HasDefaultValueToFontWeightConverter}}" TextTrimming="CharacterEllipsis"/>
             <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding StringValue}" VerticalAlignment="Center"/>
             <Slider Grid.ColumnSpan="2" Grid.Row="1" Maximum="{Binding Maximum}" Minimum="{Binding Minimum}" Value="{Binding Path=Value, Mode=TwoWay}" Margin="{StaticResource ContentMargin}"/>        
         </Grid>

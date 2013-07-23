@@ -7,6 +7,7 @@ using System.Windows.Data;
 using Green.Kinect;
 using System.Windows.Controls;
 using Green.Settings;
+using System.Windows;
 
 namespace Green.Scan
 {
@@ -35,6 +36,20 @@ namespace Green.Scan
             int index = (int)(sender as MenuItem).Tag;
             manager.OpenKinect(index);
             manager.StartKinect(ModeSetting.Value);
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    [ValueConversion(typeof(bool), typeof(Visibility))]
+    class BooleanToVisibilityConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            return ((bool)value ? Visibility.Visible : Visibility.Collapsed);
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)

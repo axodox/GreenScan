@@ -100,6 +100,11 @@ namespace Green
 				delete XWindow;
 			}
 
+			DirectXWindow* GetDirectXWindow()
+			{
+				return XWindow;
+			}
+
 			bool GetVertices([Out] array<Float4, 2>^ %vertices)
 			{
 				int width, height;
@@ -154,7 +159,8 @@ namespace Green
 			}
 
 			void SetCameras(
-				array<float, 2>^ infraredIntrinsics, array<float, 2>^ depthToIRMapping,
+				array<float, 2>^ infraredIntrinsics, array<float, 2>^ infraredDistortion, 
+				bool infraredDistortionCorrectionEnabled, array<float, 2>^ depthToIRMapping,
 				array<float, 2>^ colorIntrinsics, array<float, 2>^ colorRemapping,
 				array<float, 2>^ colorExtrinsics, int colorDispX, int colorDispY, 
 				float colorScaleX, float colorScaleY)
@@ -162,13 +168,14 @@ namespace Green
 				if(Is3x3(infraredIntrinsics) && Is3x3(depthToIRMapping))
 				{
 					pin_ptr<float> pInfraredIntrinsics = &To4x4(infraredIntrinsics)[0, 0];
+					pin_ptr<float> pInfraredDistortion = &infraredDistortion[0, 0];
 					pin_ptr<float> pDepthToIRMapping = &Expand4x4(depthToIRMapping)[0, 0];
 					pin_ptr<float> pColorIntrinsics = &To4x4(colorIntrinsics)[0, 0];
 					pin_ptr<float> pColorRemapping = &Expand4x4(colorRemapping)[0, 0];
 					pin_ptr<float> pColorExtrinsics = &colorExtrinsics[0, 0];
 					XWindow->SetCameras(
-						pInfraredIntrinsics, pDepthToIRMapping,
-						pColorIntrinsics, pColorRemapping, pColorExtrinsics,
+						pInfraredIntrinsics, (infraredDistortionCorrectionEnabled ? pInfraredDistortion : nullptr),
+						pDepthToIRMapping, pColorIntrinsics, pColorRemapping, pColorExtrinsics,
 						colorDispX, colorDispY, colorScaleX, colorScaleY);
 				}
 			}

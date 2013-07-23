@@ -658,6 +658,67 @@ namespace Green
 			}
 		};
 
+		/*class GraphicsDevice
+		{
+		private:
+			IDXGISwapChain* SwapChain;
+			ID3D11Device* Device;
+			ID3D11DeviceContext* DeviceContext;
+			D3D11_VIEWPORT* Viewport;
+			void PrepareBackBuffer()
+			{
+				ID3D11Texture2D *tex;
+				Error(SwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&tex));
+				Error(Device->CreateRenderTargetView(tex, NULL, &BackBuffer));
+				D3D11_TEXTURE2D_DESC td;
+				tex->GetDesc(&td);
+				
+				DepthBackBuffer = new DepthBuffer(BackBuffer);
+				DepthBackBuffer->Set();
+				
+				BackBufferWidth = td.Width;
+				BackBufferHeight = td.Height;
+
+				MainViewport->Width = td.Width;
+				MainViewport->Height = td.Height;
+				DeviceContext->RSSetViewports(1, MainViewport);
+				BackBufferTexture = tex;
+			}
+		public:
+			GraphicsDevice(HWND hWnd)
+			{
+				DXGI_SWAP_CHAIN_DESC scd;
+				ZeroMemory(&scd, sizeof(DXGI_SWAP_CHAIN_DESC));
+				scd.BufferCount = 1;
+				scd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+				scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+				scd.OutputWindow = hWnd;
+				scd.SampleDesc.Count = 1;
+				scd.Windowed = TRUE;
+
+				Error(D3D11CreateDeviceAndSwapChain(
+					NULL,
+					D3D_DRIVER_TYPE_HARDWARE,
+					NULL,
+					NULL,
+					NULL,
+					NULL,
+					D3D11_SDK_VERSION,
+					&scd,
+					&SwapChain,
+					&Device,
+					NULL,
+					&DeviceContext));
+
+				LPRECT clientRect;
+				GetClientRect(hWnd, clientRect);
+				Viewport = new D3D11_VIEWPORT();
+				Viewport->MaxDepth = D3D11_MAX_DEPTH;
+				Viewport->MinDepth = D3D11_MIN_DEPTH;
+				PrepareBackBuffer();
+			}
+		};*/
+
 		class RenderTarget : public Texture2D
 		{
 		private:
@@ -793,6 +854,7 @@ namespace Green
 
 			void CopyToStage()
 			{
+				DeviceContext->OMSetRenderTargets(0, 0, 0);
 				DeviceContext->CopyResource(StagingTexture, Texture);
 			}
 
@@ -806,8 +868,8 @@ namespace Green
 				D3D11_MAPPED_SUBRESOURCE ms;
 				Error(DeviceContext->Map(StagingTexture, 0, D3D11_MAP_READ, 0, &ms));
 				for(int row = 0; row < Height; row++)
-					memcpy(data + row * Width, (byte*)ms.pData + row * ms.RowPitch, Width * sizeof(T));
-				DeviceContext->Unmap(Texture, 0);
+					memcpy_s(data + row * Width, ms.DepthPitch, (byte*)ms.pData + row * ms.RowPitch, Width * sizeof(T));
+				DeviceContext->Unmap(StagingTexture, 0);
 			}
 
 			~ReadableRenderTarget()

@@ -14,7 +14,7 @@
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <TextBlock Text="{Binding FriendlyName}" VerticalAlignment="Center" FontWeight="{Binding HasDefaultValue, Converter={StaticResource HasDefaultValueToFontWeightConverter}}"/>
+            <TextBlock Text="{Binding FriendlyName}" VerticalAlignment="Center" FontWeight="{Binding HasDefaultValue, Converter={StaticResource HasDefaultValueToFontWeightConverter}}" TextTrimming="CharacterEllipsis"/>
             <ComboBox Margin="{StaticResource ContentMargin}" Style="{StaticResource ComboBox}" Grid.Column="1" ItemsSource="{Binding FriendlyOptions}" SelectedItem="{Binding FriendlyValue, Mode=TwoWay}" VerticalAlignment="Center"/>
         </Grid>
     </Border>

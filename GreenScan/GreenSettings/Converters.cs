@@ -50,7 +50,6 @@ namespace Green.Settings.UI
         {
             if (value is SettingGroup)
             {
-                if ((value as SettingGroup).IsHidden) return null;
                 return new SettingGroupControl();
             }
             return null;
@@ -71,6 +70,20 @@ namespace Green.Settings.UI
                 return ((bool)value ? FontWeights.Normal : FontWeights.Bold);
             else
                 return null;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    [ValueConversion(typeof(bool), typeof(Visibility))]
+    class BooleanToVisibilityConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            return ((bool)value ? Visibility.Collapsed : Visibility.Visible);
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)

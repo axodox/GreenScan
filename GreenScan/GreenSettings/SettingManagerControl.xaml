@@ -25,7 +25,7 @@
                 </ItemsControl>
             </StackPanel>
         </ScrollViewer>
-        <Menu x:Name="SettingsMenu" Grid.Row="2" Padding="3">
+        <Menu x:Name="SettingsMenu" Grid.Row="2" Padding="3" Background="{x:Null}">
             <MenuItem Header="Import" Click="Import_Click"/>
             <MenuItem Header="Export" Click="Export_Click"/>
             <MenuItem Header="Reset" Click="Reset_Click"/>

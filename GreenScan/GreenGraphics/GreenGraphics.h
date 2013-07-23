@@ -5,6 +5,7 @@
 #include "stdafx.h"
 #include "Helper.h"
 #include "GreenGraphicsClasses.h"
+#include "GreenGraphicsModules.h"
 #include "GreenKinect.h"
 #include "Export.h"
 using namespace std;
@@ -29,6 +30,8 @@ namespace Green
 				Textured
 			} ShadingMode;
 		private:
+			static const int MaxModuleCount = 16;
+			GraphicsModule** Modules;
 			LPWSTR Root;
 			LPWSTR ToRoot(LPCWSTR path)
 			{
@@ -54,8 +57,8 @@ namespace Green
 			VertexShader *VSSimple, *VSCommon, *VSReprojection;
 			GeometryShader *GSReprojection;
 			PixelShader *PSSimple, *PSInfrared, *PSDepth, *PSColor, *PSSine, *PSPeriodicScale, *PSPeriodicShadedScale, *PSScale, *PSShadedScale, *PSBlinn, *PSTextured;
-			PixelShader *PSDepthSum, *PSDepthAverage, *PSDepthGaussH, *PSDepthGaussV, *PSVectorOutput, *PSTextureOutput;
-			Texture2D *TColor;
+			PixelShader *PSDepthSum, *PSDepthAverage, *PSDepthGaussH, *PSDepthGaussV, *PSVectorOutput, *PSTextureOutput, *PSDistortionCorrection;
+			Texture2D *TColor, *TDepthCorrection;
 			Texture1D *THueMap, *TScaleMap, *TGauss;
 			Texture2DDoubleBuffer *TDBDepth;
 			RenderTarget *RTDepthSum;
@@ -66,6 +69,9 @@ namespace Green
 			int NextDepthBufferSize, DepthBufferSize;
 			int NextTriangleGridWidth, NextTriangleGridHeight;
 			bool StaticInput;
+			static const int DistortionMapWidth = 160;
+			static const int DistortionMapHeight = 120;
+			char* DepthDistortionMap;
 			
 			struct RenderingParameters
 			{
@@ -88,7 +94,6 @@ namespace Green
 			{
 				XMFLOAT4X4 DepthInvIntrinsics;
 				XMFLOAT4X4 ReprojectionTransform;
-				XMFLOAT4X4 ModelTransform;
 				XMFLOAT4X4 WorldTransform;
 				XMFLOAT4X4 NormalTransform;
 				XMFLOAT4X4 DepthToColorTransform;
@@ -146,6 +151,7 @@ namespace Green
 				PSDepthGaussV = new PixelShader(Device, L"DepthGaussVPixelShader.cso");
 				PSVectorOutput = new PixelShader(Device, L"VectorOutputPixelShader.cso");
 				PSTextureOutput = new PixelShader(Device, L"TextureOutputPixelShader.cso");
+				PSDistortionCorrection = new PixelShader(Device, L"DistortionCorrectionPixelShader.cso");
 
 				SLinearWrap = new SamplerState(Device, D3D11_FILTER_MIN_MAG_MIP_LINEAR, D3D11_TEXTURE_ADDRESS_WRAP);
 				SLinearClamp = new SamplerState(Device, D3D11_FILTER_MIN_MAG_MIP_LINEAR, D3D11_TEXTURE_ADDRESS_CLAMP);
@@ -156,7 +162,8 @@ namespace Green
 				
 				KinectReady = false;
 
-				TColor = 0;
+				TColor = nullptr;
+				TDepthCorrection = nullptr;
 				THueMap = Texture1D::FromFile(Device, L"hueMap.png");
 				TScaleMap = Texture1D::FromFile(Device, L"scaleMap.png");
 				TGauss = new Texture1D(Device, GaussCoeffCount, DXGI_FORMAT_R32_FLOAT);
@@ -167,6 +174,7 @@ namespace Green
 				RRTSaveVertices = nullptr;
 				RRTSaveTexture = nullptr;
 				NextDepthBufferSize = 1;
+				DepthDistortionMap = nullptr;
 
 				BAdditive = new Blend(Device, Blend::Additive);
 				BOpaque = new Blend(Device, Blend::Opaque);
@@ -176,6 +184,9 @@ namespace Green
 				RWireframe = new Rasterizer(Device, Rasterizer::Wireframe);
 				
 				PreprocessingChanged = false;
+
+				DepthAndColorOptions.DepthSize = XMINT2(KinectDevice::DepthWidth, KinectDevice::DepthHeight);
+				DepthAndColorOptions.ColorSize = XMINT2(KinectDevice::ColorWidth, KinectDevice::ColorHeight);
 			}
 
 			void DestroyResources()
@@ -204,6 +215,7 @@ namespace Green
 				delete PSDepthGaussV;
 				delete PSVectorOutput;
 				delete PSTextureOutput;
+				delete PSDistortionCorrection;
 				delete SLinearWrap;
 				delete SLinearClamp;
 				delete CBDepthAndColor;
@@ -216,6 +228,12 @@ namespace Green
 				delete RDefault;
 				delete RCullNone;
 				delete RWireframe;
+
+				if(DepthDistortionMap)
+				{
+					delete [KinectDevice::DepthWidth * KinectDevice::DepthHeight * 2] DepthDistortionMap;
+					DepthDistortionMap = nullptr;
+				}
 			}
 
 			void DrawScene()
@@ -270,7 +288,18 @@ namespace Green
 					RTDepthSum->SetForPS();
 					QMain->Draw();
 
-					
+					//Distortion Correction
+					if(TDepthCorrection)
+					{
+						RTPDepth->Swap();
+						RTPDepth->SetAsRenderTarget();
+						VSSimple->Apply();
+						PSDistortionCorrection->Apply();
+						RTPDepth->SetForPS(0);
+						TDepthCorrection->SetForPS(1);
+						QMain->Draw();
+					}
+
 					//Depth Gauss filtering
 					if(PreprocessingChanged)
 					{
@@ -292,6 +321,12 @@ namespace Green
 						PSDepthGaussV->Apply();
 						RTPDepth->SetForPS(0);
 						QMain->Draw();
+					}
+
+					//Process with modules
+					for(int i = 0; i < MaxModuleCount; i++)
+					{
+						if(Modules[i] != nullptr) Modules[i]->Process(/*RTPDepth, TColor*/);
 					}
 
 					//Reprojection
@@ -398,8 +433,6 @@ namespace Green
 
 			void SetDepthAndColorOptions()
 			{
-				float halfDepthWidth = KinectDevice::DepthWidth / 2.f;
-				float halfDepthHeight = KinectDevice::DepthHeight / 2.f;
 				XMMATRIX DepthIntrinsics = XMLoadFloat4x4(&Params.DepthIntrinsics);
 				XMMATRIX DepthInverseIntrinsics = XMLoadFloat4x4(&Params.DepthInvIntrinsics);
 
@@ -412,18 +445,10 @@ namespace Green
 					XMMatrixRotationY(XMConvertToRadians(Params.RotY));
 				XMMATRIX world = Ti * R * T * T2;
 				XMMATRIX reproj = DepthIntrinsics * world * DepthInverseIntrinsics;
-				XMMATRIX reprojModel = DepthIntrinsics * Ti * R *T;
 				XMMATRIX reprojNormals = XMMatrixTranspose(XMMatrixInverse(0, world));
 				XMStoreFloat4x4(&DepthAndColorOptions.ReprojectionTransform, reproj);
-				XMStoreFloat4x4(&DepthAndColorOptions.ModelTransform, reprojModel);
 				XMStoreFloat4x4(&DepthAndColorOptions.WorldTransform, world);
 				XMStoreFloat4x4(&DepthAndColorOptions.NormalTransform, reprojNormals);
-
-				SetAspectRatio();
-				DepthAndColorOptions.DepthSize = XMINT2(KinectDevice::DepthWidth, KinectDevice::DepthHeight);
-				DepthAndColorOptions.ColorSize = XMINT2(KinectDevice::ColorWidth, KinectDevice::ColorHeight);
-				DepthAndColorOptions.DepthInvIntrinsics = Params.DepthInvIntrinsics;
-				DepthAndColorOptions.DepthStep = XMFLOAT2(1.f / NextTriangleGridWidth, 1.f / NextTriangleGridHeight);
 			}
 
 			void SetAspectRatio()
@@ -460,6 +485,32 @@ namespace Green
 				}
 			}
 
+			char* GenerateDistortionMap(int width, int height, int imageWidth, int imageHeight, float k1, float k2, float p1, float p2, 
+				float cx, float cy, float fx, float fy)
+			{
+				char* map = new char[width * height * 2], *pMap = map;
+				float x, xd, y, yd, r2, r4, xi, yi, xo, yo;
+				for (int j = 0; j < height; j++)
+				{
+					yi = j * imageHeight / height;
+					y = (yi - cy) / fy;
+					for (int i = 0; i < width; i++)
+					{
+						xi = i * imageWidth / width;
+						x = (xi - cx) / fx;
+						r2 = x * x + y * y;
+						r4 = r2 * r2;
+						xd = x * (1 + k1 * r2 + k2 * r4) + p2 * (r2 + 2 * x * x) + 2 * p1 * x * y;
+						yd = y * (1 + k1 * r2 + k2 * r4) + p1 * (r2 + 2 * y * y) + 2 * p2 * x * y;
+						xo = xd * fx + cx;
+						yo = yd * fy + cy;
+						*pMap++ = ClampToChar((xo - xi) / 32.f);
+						*pMap++ = ClampToChar((yo - yi) / 32.f);
+					}
+				}
+				return map;
+			}
+
 			void PrepareProcessing(KinectDevice::Modes mode)
 			{
 				KinectMode = (KinectDevice::Modes)(mode & KinectDevice::NonFlags);
@@ -483,6 +534,9 @@ namespace Green
 					RTDepthSum = new RenderTarget(Device, KinectDevice::DepthWidth, KinectDevice::DepthHeight, DXGI_FORMAT_R32G32_FLOAT);
 					RTPDepth = new RenderTargetPair(Device, KinectDevice::DepthWidth, KinectDevice::DepthHeight, DXGI_FORMAT_R16_FLOAT);
 					PMain = new Plane(Device, NextTriangleGridWidth, NextTriangleGridHeight);
+					DepthAndColorOptions.DepthStep = XMFLOAT2(1.f / NextTriangleGridWidth, 1.f / NextTriangleGridHeight);
+					if(DepthDistortionMap) 
+						TDepthCorrection = new Texture2D(Device, DistortionMapWidth, DistortionMapHeight, DXGI_FORMAT_R8G8_SNORM, DepthDistortionMap, DistortionMapWidth * 2);
 					RCullNone->Set();
 					break;
 				case KinectDevice::Infrared:
@@ -497,6 +551,11 @@ namespace Green
 				SetDepthAndColorOptions();
 				KinectReady = true;
 				StaticInput = mode & KinectDevice::Virtual;
+
+				for(int i = 0; i < MaxModuleCount; i++)
+				{
+					if(Modules[i]) Modules[i]->StartProcessing();
+				}
 			}
 			
 			static void OnKinectStarting(KinectDevice::Modes mode, void* obj)
@@ -544,11 +603,16 @@ namespace Green
 			void ShutdownProcessing()
 			{
 				KinectReady = false;
+				for(int i = 0; i < MaxModuleCount; i++)
+				{
+					if(Modules[i]) Modules[i]->EndProcessing();
+				}
 				SafeDelete(TColor);
 				SafeDelete(TDBDepth);				
 				SafeDelete(RTDepthSum);
 				SafeDelete(RTPDepth);
 				SafeDelete(PMain);
+				SafeDelete(TDepthCorrection);
 				ClearScreen();
 			}
 
@@ -585,14 +649,27 @@ namespace Green
 				CommonOptions.Move = XMFLOAT2(moveX, moveY);
 				XMMATRIX R = XMMatrixRotationZ(-Params.Rotation * XM_PIDIV2);
 				XMStoreFloat4x4(&CommonOptions.SceneRotation, R);
+				SetAspectRatio();
+
 				if(StaticInput) Draw();
 			}
 
 			void SetCameras(
-				float* infraredIntrinsics, float* depthToIRMapping,
+				float* infraredIntrinsics, float* infraredDistortion, float* depthToIRMapping,
 				float* colorIntrinsics, float* colorRemapping, float* colorExtrinsics,
 				int colorDispX, int colorDispY, float colorScaleX, float colorScaleY)
 			{
+				if(infraredDistortion)
+					DepthDistortionMap = GenerateDistortionMap(
+						DistortionMapWidth, DistortionMapHeight, KinectDevice::DepthWidth, KinectDevice::DepthHeight,
+						infraredDistortion[0], infraredDistortion[1], infraredDistortion[2], infraredDistortion[3],
+						infraredIntrinsics[2], infraredIntrinsics[6], infraredIntrinsics[0], infraredIntrinsics[5]);
+				else if(DepthDistortionMap)
+				{
+					delete [KinectDevice::DepthWidth * KinectDevice::DepthHeight * 2] DepthDistortionMap;
+					DepthDistortionMap = nullptr;
+				}
+
 				XMMATRIX mInfraredIntrinsics = Load4x4(infraredIntrinsics);
 				XMMATRIX mDepthToIRMapping = Load4x4(depthToIRMapping);
 				XMMATRIX mDepthIntrinsics = XMMatrixInverse(0, mDepthToIRMapping) * mInfraredIntrinsics;
@@ -610,9 +687,10 @@ namespace Green
 				XMStoreFloat4x4(&Params.DepthInvIntrinsics, mDepthInvIntrinsics);
 				XMStoreFloat4x4(&DepthAndColorOptions.DepthToColorTransform, mDepthToColor);
 				XMStoreFloat4x4(&DepthAndColorOptions.WorldToColorTransform, mWorldToColor);
-
+				
 				DepthAndColorOptions.ColorMove = XMFLOAT2((float)colorDispX / KinectDevice::ColorWidth, (float)colorDispY / KinectDevice::ColorHeight);
 				DepthAndColorOptions.ColorScale = XMFLOAT2(colorScaleX, colorScaleY);
+				DepthAndColorOptions.DepthInvIntrinsics = Params.DepthInvIntrinsics;
 				SetDepthAndColorOptions();
 				if(StaticInput) Draw();
 			}
@@ -671,6 +749,11 @@ namespace Green
 				SaveTexture = nullptr;
 				SaveTextureReady = true;
 				SaveEvent = CreateEvent(0, 0, 0, 0);
+				Modules = new GraphicsModule*[MaxModuleCount];
+				for(int i = 0; i < MaxModuleCount; i++)
+				{
+					Modules[i] = nullptr;
+				}
 			}
 
 			void QueryBackBuffer()
@@ -690,7 +773,6 @@ namespace Green
 				MainViewport->Width = td.Width;
 				MainViewport->Height = td.Height;
 				DeviceContext->RSSetViewports(1, MainViewport);
-				//tex->Release();
 				BackBufferTexture = tex;
 			}
 
@@ -702,6 +784,12 @@ namespace Green
 
 			~DirectXWindow()
 			{
+				for(int i = 0; i < MaxModuleCount; i++)
+				{
+					if(Modules[i]) Modules[i]->DestroyResources();
+					SafeDelete(Modules[i]);
+				}
+				delete [MaxModuleCount] Modules;
 				DestroyResources();
 				BackBufferTexture->Release();
 				BackBuffer->Release();
@@ -712,6 +800,34 @@ namespace Green
 				delete MainViewport;
 				GdiplusShutdown(GdiPlusToken);
 				CloseHandle(SaveEvent);
+			}
+
+			bool LoadModule(GraphicsModule* module)
+			{
+				for(int i = 0; i < MaxModuleCount; i++)
+				{
+					if(!Modules[i])
+					{
+						module->CreateResources(Device);
+						Modules[i] = module;						
+						return true;
+					}
+				}
+				return false;
+			}
+
+			bool UnloadModule(GraphicsModule* module)
+			{
+				for(int i = 0; i < MaxModuleCount; i++)
+				{
+					if(Modules[i] == module)
+					{
+						Modules[i] = nullptr;
+						module->DestroyResources();
+						return true;
+					}
+				}
+				return false;
 			}
 		private:
 			IDXGISwapChain *SwapChain;
@@ -788,6 +904,7 @@ namespace Green
 				desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
 				Error(Device->CreateTexture2D(&desc, 0, &SaveTexture));				
 				SaveTextureReady = false;
+				ResetEvent(SaveEvent);
 
 				if(StaticInput)
 				{
@@ -865,12 +982,9 @@ namespace Green
 				
 				if(ok)
 				{
-					//Texture
 					WCHAR textureFilename[MAX_PATH];
 					wcscpy_s(textureFilename, path);
 					wcscat_s(textureFilename, L".png");
-					PNGSave(textureFilename, RRTSaveTexture->GetStagingTexture());
-					SafeDelete(RRTSaveTexture);
 
 					//Geometry
 					XMFLOAT4* data = new XMFLOAT4[Params.SaveWidth * Params.SaveHeight];
@@ -899,6 +1013,10 @@ namespace Green
 						break;
 					}
 					delete [Params.SaveWidth * Params.SaveHeight] data;
+
+					//Texture
+					PNGSave(textureFilename, RRTSaveTexture->GetStagingTexture());
+					SafeDelete(RRTSaveTexture);
 				}
 
 				return ok;

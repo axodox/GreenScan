@@ -14,7 +14,7 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
-            <TextBlock Text="{Binding FriendlyName}" VerticalAlignment="Center" FontWeight="{Binding HasDefaultValue, Converter={StaticResource HasDefaultValueToFontWeightConverter}}"/>
+            <TextBlock Text="{Binding FriendlyName}" VerticalAlignment="Center" FontWeight="{Binding HasDefaultValue, Converter={StaticResource HasDefaultValueToFontWeightConverter}}" TextTrimming="CharacterEllipsis"/>
             <TextBox Grid.Row="1" Text="{Binding Value, Mode=TwoWay}" VerticalAlignment="Center" Margin="{StaticResource ContentMargin}"/>
         </Grid>
     </Border>

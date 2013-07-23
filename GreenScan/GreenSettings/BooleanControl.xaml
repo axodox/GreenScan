@@ -15,7 +15,7 @@
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <TextBlock Text="{Binding FriendlyName}" VerticalAlignment="Center" FontWeight="{Binding HasDefaultValue, Converter={StaticResource HasDefaultValueToFontWeightConverter}}"/>
+            <TextBlock Text="{Binding FriendlyName}" VerticalAlignment="Center" FontWeight="{Binding HasDefaultValue, Converter={StaticResource HasDefaultValueToFontWeightConverter}}" TextTrimming="CharacterEllipsis"/>
             <CheckBox Grid.Column="1" IsChecked="{Binding Value, Mode=TwoWay}" VerticalAlignment="Center"/>
         </Grid>
     </Border>

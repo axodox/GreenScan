@@ -80,6 +80,22 @@ LPSTR LPWSTRToLPSTR(LPWSTR wstr)
     wcstombs_s(&convertedChars, str, length, wstr, _TRUNCATE);
     return str;
 }
+
+char ClampToChar(float x)
+{
+	if (x < -1.f) return -127;
+	else if (x > 1.f) return 127;
+	else return (byte)(x * 127);
+}
+
+byte ClampToByte(float x)
+{
+	if (x < 0.f) return 0;
+	else if (x > 1.f) return 255;
+	else return (byte)(x * 255);
+}
+
+
 #pragma managed
 #include <vcclr.h>
 LPWSTR StringToLPWSTR(System::String^ str)

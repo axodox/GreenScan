@@ -137,9 +137,12 @@
     <ClInclude Include="GreenGraphicsAdapter.h" />
     <ClInclude Include="GreenGraphicsClasses.h" />
     <ClInclude Include="Export.h" />
+    <ClInclude Include="GreenGraphicsModules.h" />
     <ClInclude Include="GreenGraphicsVertexDefinitions.h" />
     <ClInclude Include="GreenKinect.h" />
     <ClInclude Include="GreenKinectAdapter.h" />
+    <ClInclude Include="GreenRotatingScanner.h" />
+    <ClInclude Include="GreenRotatingScannerAdapter.h" />
     <ClInclude Include="Helper.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="Stdafx.h" />
@@ -199,6 +202,11 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
     </FxCompile>
     <FxCompile Include="DepthGaussHPixelShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Remote|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="DistortionCorrectionPixelShader.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Remote|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
@@ -280,6 +288,9 @@
   <ItemGroup>
     <ProjectReference Include="..\GreenMath\GreenMath.csproj">
       <Project>{3848e35d-4c46-4592-83b6-fe7fc770953e}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\Turntables\Turntables.csproj">
+      <Project>{126148cb-fabd-4b3b-a813-caabbe42acb7}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

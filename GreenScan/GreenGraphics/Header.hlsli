@@ -36,7 +36,6 @@ cbuffer DepthAndColorConstants : register(b1)
 {
 	float4x4 DepthInvIntrinsics;
 	float4x4 ReprojectionTransform;
-	float4x4 ModelTransform;
 	float4x4 WorldTransform;
 	float4x4 NormalTransform;
 	float4x4 DepthToColorTransform;

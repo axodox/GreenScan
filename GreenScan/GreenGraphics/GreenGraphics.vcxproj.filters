@@ -50,6 +50,15 @@
     <ClInclude Include="Export.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="GreenGraphicsModules.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GreenRotatingScanner.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GreenRotatingScannerAdapter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GreenGraphics.cpp">
@@ -137,6 +146,9 @@
       <Filter>Source Files\Shaders</Filter>
     </FxCompile>
     <FxCompile Include="TextureOutputPixelShader.hlsl">
+      <Filter>Source Files\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="DistortionCorrectionPixelShader.hlsl">
       <Filter>Source Files\Shaders</Filter>
     </FxCompile>
   </ItemGroup>
