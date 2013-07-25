@@ -18,6 +18,9 @@
       <Extensions>
       </Extensions>
     </Filter>
+    <Filter Include="Source Files\TurntableShaders">
+      <UniqueIdentifier>{e0aee845-4155-41ee-b47f-ef6d8142d54a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GreenGraphics.h">
@@ -150,6 +153,12 @@
     </FxCompile>
     <FxCompile Include="DistortionCorrectionPixelShader.hlsl">
       <Filter>Source Files\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="TurntableOverlayVertexShader.hlsl">
+      <Filter>Source Files\TurntableShaders</Filter>
+    </FxCompile>
+    <FxCompile Include="TurntableOverlayPixelShader.hlsl">
+      <Filter>Source Files\TurntableShaders</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>

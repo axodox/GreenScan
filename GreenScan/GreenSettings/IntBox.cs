@@ -5,13 +5,13 @@ using System.Windows.Controls;
 
 namespace Green.Settings.UI
 {
-    public class FloatBox : TextBox
+    public class IntBox : TextBox
     {
         int oldCaretPos;
         string oldText;
         bool skipNext;
 
-        public FloatBox()
+        public IntBox()
             : base()
         {
             Text = "0";
@@ -31,7 +31,7 @@ namespace Green.Settings.UI
         protected override void OnKeyDown(System.Windows.Input.KeyEventArgs e)
         {
             oldCaretPos = CaretIndex;
-            oldText = Text;            
+            oldText = Text;
             base.OnKeyDown(e);
         }
 
@@ -42,8 +42,8 @@ namespace Green.Settings.UI
                 skipNext = false;
                 return;
             }
-            float val;
-            if (Text == "" || Text == "-" || float.TryParse(Text, out val))
+            int val;
+            if (Text == "" || Text == "-" || int.TryParse(Text, out val))
             {
                 oldText = Text;
                 oldCaretPos = CaretIndex;
@@ -56,43 +56,43 @@ namespace Green.Settings.UI
             }
             base.OnTextChanged(e);
 
-            if (float.TryParse(Text, out val))
+            if (int.TryParse(Text, out val))
             {
                 TempValue = val;
             }
         }
 
-        float TempValue;
-        public float Value
+        int TempValue;
+        public int Value
         {
-            get { return (float)GetValue(ValueProperty); }
+            get { return (int)GetValue(ValueProperty); }
             set { SetValue(ValueProperty, value); }
         }
         public static readonly DependencyProperty ValueProperty = DependencyProperty.Register(
-    "Value", typeof(float), typeof(FloatBox), new PropertyMetadata(0f, ValueChangedCallback));
+    "Value", typeof(int), typeof(IntBox), new PropertyMetadata(0, ValueChangedCallback));
 
         private static void ValueChangedCallback(DependencyObject obj, DependencyPropertyChangedEventArgs e)
         {
-            FloatBox fb = obj as FloatBox;
-            fb.Text = e.NewValue.ToString();
-            fb.TempValue = (float)e.NewValue;
+            IntBox ib = obj as IntBox;
+            ib.Text = e.NewValue.ToString();
+            ib.TempValue = (int)e.NewValue;
         }
 
-        public float Maximum
+        public int Maximum
         {
-            get { return (float)GetValue(MaximumProperty); }
+            get { return (int)GetValue(MaximumProperty); }
             set { SetValue(MaximumProperty, value); }
         }
         public static readonly DependencyProperty MaximumProperty = DependencyProperty.Register(
-    "Maximum", typeof(float), typeof(FloatBox), new PropertyMetadata(float.PositiveInfinity));
-
-        public float Minimum
+    "Maximum", typeof(int), typeof(IntBox), new PropertyMetadata(int.MaxValue));
+        
+        public int Minimum
         {
-            get { return (float)GetValue(MinimumProperty); }
+            get { return (int)GetValue(MinimumProperty); }
             set { SetValue(MinimumProperty, value); }
         }
         public static readonly DependencyProperty MinimumProperty = DependencyProperty.Register(
-    "Minimum", typeof(float), typeof(FloatBox), new PropertyMetadata(float.NegativeInfinity));
+    "Minimum", typeof(int), typeof(IntBox), new PropertyMetadata(int.MinValue));
 
         void OnValueChanged()
         {

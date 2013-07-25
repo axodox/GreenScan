@@ -15,6 +15,18 @@ struct VertexPositionTextureOut
 	float2 Texture : TEXCOORD0;
 };
 
+struct VertexPositionColorIn
+{
+	float3 Position : POSITION0;
+	float4 Color : COLOR0;
+};
+
+struct VertexPositionColorOut
+{
+	float4 Position : SV_POSITION;
+	float4 Color : COLOR0;
+};
+
 struct VertexPositionTextureDepth
 {
     float4 Position : SV_POSITION;
@@ -52,6 +64,12 @@ cbuffer DepthAndColorConstants : register(b1)
 	float ShadingPeriode;
 	float ShadingPhase;
 	float TriangleLimit;
+};
+
+cbuffer TurntableConstants : register(b1)
+{
+	float4x4 TurntableToScreenTransform;
+	int2 DepthResolution;
 };
 
 float ToDepth(float raw)

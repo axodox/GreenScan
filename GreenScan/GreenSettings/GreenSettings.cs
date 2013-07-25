@@ -47,6 +47,7 @@ namespace Green.Settings
             String = 8192, 
             Path = 16384, 
             Rectangle = 32768, 
+            Size = 65536,
             Numeric = 4092, 
             Integer = 1020 
         };
@@ -164,7 +165,7 @@ namespace Green.Settings
         public MatrixSetting(string name, float[,] value)
             : base(name)
         {
-            Type = Types.Matrix;
+            Type = Types.Matrix | Types.Single;
             Rows = value.GetLength(0);
             Columns = value.GetLength(1);
             this.value = value;
@@ -343,6 +344,86 @@ namespace Green.Settings
         }
     }
 
+    public class SizeSetting : Setting
+    {
+        public int MinWidth { get; set; }
+        public int MinHeight { get; set; }
+        public int MaxWidth { get; set; }
+        public int MaxHeight { get; set; }
+
+        private int width, height;
+        public int Width
+        {
+            get { return width; }
+            set
+            {
+                if (value < MinWidth) value = MinWidth;
+                if (value > MaxWidth) value = MaxWidth;
+                width = value;
+                OnPropertyChanged("Width");
+                OnPropertyChanged("StringValue");
+                OnPropertyChanged("HasDefaultValue");
+            }
+        }
+        public int Height
+        {
+            get { return height; }
+            set
+            {
+                if (value < MinHeight) value = MinHeight;
+                if (value > MaxHeight) value = MaxHeight;
+                height = value;
+                OnPropertyChanged("Height");
+                OnPropertyChanged("StringValue");
+                OnPropertyChanged("HasDefaultValue");
+            }
+        }
+
+        public int DefaultWidth { get; private set; }
+        public int DefaultHeight { get; private set; }
+
+        public SizeSetting(string name, int width, int height, int minWidth, int minHeight, int maxWidth, int maxHeight)
+            : base(name)
+        {
+            MinWidth = minWidth;
+            MinHeight = minHeight;
+            MaxWidth = maxWidth;
+            MaxHeight = maxHeight;
+            Type = Types.Size | Types.Int32;
+            DefaultWidth = Width = width;
+            DefaultHeight = Height = height;
+        }
+
+        public override string StringValue
+        {
+            get
+            {
+                return String.Format(Culture, "{0}x{1}", new object[] { Width, Height});
+            }
+            set
+            {
+                string[] items = value.Split('x');
+                try
+                {
+                    Width = int.Parse(items[0], Culture);
+                    Height = int.Parse(items[1], Culture);
+                }
+                catch { }
+            }
+        }
+
+        public override bool HasDefaultValue
+        {
+            get { return DefaultWidth == Width && DefaultHeight == Height; }
+        }
+
+        public override void ResetValue()
+        {
+            Width = DefaultWidth;
+            Height = DefaultHeight;
+        }
+    }
+
     public class RectangleSetting : Setting
     {
         private Rect value;
@@ -361,7 +442,7 @@ namespace Green.Settings
         public RectangleSetting(string name, Rect value)
             : base(name)
         {
-            Type = Types.Boolean;
+            Type = Types.Rectangle | Types.Double;
             DefaultValue = Value = value;
         }
 

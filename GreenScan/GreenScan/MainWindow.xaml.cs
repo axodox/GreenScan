@@ -93,6 +93,7 @@ namespace Green.Scan
             SS.ShadingProperties.ValueChanged += (object sender, EventArgs e) => { SetShading(); };
             SS.PerformanceProperties.ValueChanged += (object sender, EventArgs e) => { SetPerformance(); };
             SS.SaveProperties.ValueChanged += (object sender, EventArgs e) => { SetSave(); };
+            SS.TurntableProperties.ValueChanged += (object sender, EventArgs e) => { SetTurntable(); };
         }
 
         void SetPreprocessing()
@@ -143,23 +144,44 @@ namespace Green.Scan
                 SS.ShadingPeriode.Value,
                 SS.ShadingPhase.Value,
                 SS.TriangleRemoveLimit.Value,
-                SS.WireframeShading.Value);
+                SS.WireframeShading.Value,
+                SS.UseModuleShading.Value);
         }
 
         void SetPerformance()
         {
             GC.SetPerformance(
-                SS.TriangleGridWidth.Value,
-                SS.TriangleGridHeight.Value);
+                SS.TriangleGridResolution.Width,
+                SS.TriangleGridResolution.Height);
         }
 
         void SetSave()
         {
             GC.SetSave(
-                SS.SaveWidth.Value,
-                SS.SaveHeight.Value,
-                SS.SaveTextureWidth.Value,
-                SS.SaveTextureHeight.Value);
+                SS.SaveModelResolution.Width,
+                SS.SaveModelResolution.Height,
+                SS.SaveTextureResolution.Width,
+                SS.SaveTextureResolution.Height);
+        }
+
+        void SetTurntable()
+        {
+            RS.SetPerformance(
+                SS.TurntableModelResolution.Width,
+                SS.TurntableModelResolution.Height,
+                SS.TurntableTextureResolution.Width,
+                SS.TurntableTextureResolution.Height);
+            RS.SetCalibration(
+                SS.TurntableTranslationX.Value,
+                SS.TurntableTranslationY.Value,
+                SS.TurntableTranslationZ.Value,
+                SS.TurntableRotationX.Value,
+                SS.TurntableRotationY.Value,
+                SS.TurntableRotationZ.Value,
+                SS.TurntableClippingHeight.Value,
+                SS.TurntableClippingRadius.Value,
+                SS.TurntableCoreX.Value,
+                SS.TurntableCoreY.Value);
         }
 
         void Settings_Click(object sender, RoutedEventArgs e)
@@ -374,7 +396,11 @@ namespace Green.Scan
             {
                 case "Connected":
                     SS.TurntableProperties.IsHidden = !RS.Connected;
-                    if (RS.Connected) ShowStatus("Turntable connected.");
+                    if (RS.Connected)
+                    {
+                        ShowStatus("Turntable connected.");
+                        SetTurntable();
+                    }
                     else ShowStatus("Turntable disconnected.");
                     break;
             }

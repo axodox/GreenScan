@@ -22,11 +22,11 @@ namespace Green
 			bool connected;
 			void OnTableConnected(Object^ sender, EventArgs^ e)
 			{
-				connected = true;
-				PropertyChanged(this, gcnew PropertyChangedEventArgs("Connected"));
-
 				ScannerModule = new RotatingScannerModule();
 				Canvas->GetDirectXWindow()->LoadModule(ScannerModule);
+
+				connected = true;
+				PropertyChanged(this, gcnew PropertyChangedEventArgs("Connected"));				
 			}
 
 			void OnTableDisconnected(Object^ sender, EventArgs^ e)
@@ -49,6 +49,22 @@ namespace Green
 				ScannerModule = nullptr;
 				Turntable::DeviceConnected += gcnew EventHandler(this, &RotatingScanner::OnTableConnected);
 				Turntable::DeviceDisconnected += gcnew EventHandler(this, &RotatingScanner::OnTableDisconnected);
+			}
+
+			void SetPerformance(int modelWidth, int modelHeight, int textureWidth, int textureHeight)
+			{
+				if(ScannerModule) ScannerModule->SetPerformance(modelWidth, modelHeight, textureWidth, textureHeight);
+			}
+
+			void SetCalibration(
+				float transX, float transY, float transZ,
+				float rotX, float rotY, float rotZ,
+				float height, float radius, 
+				float coreX, float coreY)
+			{
+				if(ScannerModule) ScannerModule->SetCalibration(
+					transX, transY, transZ,	rotX, rotY, rotZ, 
+					height, radius, coreX, coreY);
 			}
 
 			~RotatingScanner()

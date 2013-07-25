@@ -42,6 +42,7 @@ namespace Green.Scan
         public NumericSetting<int> Rotation { get; private set; }
 
         public SettingGroup ShadingProperties { get; private set; }
+        public BooleanSetting UseModuleShading { get; private set; }
         public EnumSetting<GraphicsCanvas.ShadingModes> ShadingMode { get; private set; }
         public NumericSetting<float> DepthMaximum { get; private set; }
         public NumericSetting<float> DepthMinimum { get; private set; }
@@ -51,16 +52,13 @@ namespace Green.Scan
         public BooleanSetting WireframeShading { get; private set; }
 
         public SettingGroup PerformanceProperties { get; private set; }
-        public NumericSetting<int> TriangleGridWidth { get; private set; }
-        public NumericSetting<int> TriangleGridHeight { get; private set; }
+        public SizeSetting TriangleGridResolution { get; private set; }
 
         public SettingGroup SaveProperties { get; private set; }
         public PathSetting SaveDirectory { get; private set; }
         public StringSetting SaveLabel { get; private set; }
-        public NumericSetting<int> SaveWidth { get; private set; }
-        public NumericSetting<int> SaveHeight { get; private set; }
-        public NumericSetting<int> SaveTextureWidth { get; private set; }
-        public NumericSetting<int> SaveTextureHeight { get; private set; }
+        public SizeSetting SaveModelResolution { get; private set; }
+        public SizeSetting SaveTextureResolution { get; private set; }
 
         public SettingGroup TurntableProperties { get; private set; }
         public RectangleSetting TurntableEllipse { get; private set; }
@@ -71,12 +69,20 @@ namespace Green.Scan
         public NumericSetting<float> TurntableRotationX { get; private set; }
         public NumericSetting<float> TurntableRotationY { get; private set; }
         public NumericSetting<float> TurntableRotationZ { get; private set; }
+        public NumericSetting<float> TurntableClippingHeight { get; private set; }
+        public NumericSetting<float> TurntableClippingRadius { get; private set; }
+        public NumericSetting<float> TurntableCoreX { get; private set; }
+        public NumericSetting<float> TurntableCoreY { get; private set; }
+        
+
+        public SizeSetting TurntableModelResolution { get; private set; }
+        public SizeSetting TurntableTextureResolution { get; private set; }
 
         public ScanSettings()
             : base()
         {
             //Kinect
-            KinectProperties = new SettingGroup("Kinect") { FriendlyName = "Kinect" };
+            KinectProperties = new SettingGroup("Kinect") { FriendlyName = "Kinect", IsHidden = true };
             SettingGroups.Add(KinectProperties);
 
             KinectMode = new EnumSetting<KinectManager.Modes>("Mode", KinectManager.Modes.DepthAndColor) { FriendlyName = "Mode" };
@@ -152,6 +158,7 @@ namespace Green.Scan
             ShadingProperties = new SettingGroup("Shading") { FriendlyName = "Shading" };
             SettingGroups.Add(ShadingProperties);
 
+            UseModuleShading = new BooleanSetting("ModuleShading", false) { FriendlyName = "Use module shading (if available)" };
             ShadingMode = new EnumSetting<GraphicsCanvas.ShadingModes>("ShadingMode", GraphicsCanvas.ShadingModes.Rainbow) { FriendlyName = "Mode" };
             DepthMaximum = new NumericSetting<float>("DepthMaximum", 8f, 0f, 8f, 2) { FriendlyName = "Depth maximum (meters)" };
             DepthMinimum = new NumericSetting<float>("DepthMinimum", 0.8f, 0f, 8f, 2) { FriendlyName = "Depth minimum (meters)" };
@@ -159,6 +166,7 @@ namespace Green.Scan
             ShadingPhase = new NumericSetting<float>("ShadingPhase", 0f, 0f, 1f, 2) { FriendlyName = "Shading phase (radians)" };
             TriangleRemoveLimit = new NumericSetting<float>("TriangleRemoveLimit", 0.0024f, 0.0001f, 0.004f, 4) { FriendlyName = "Triangle remove limit (units)" };
             WireframeShading = new BooleanSetting("WireframeShading", false) { FriendlyName = "Wireframe shading" };
+            ShadingProperties.Settings.Add(UseModuleShading);
             ShadingProperties.Settings.Add(ShadingMode);
             ShadingProperties.Settings.Add(DepthMaximum);
             ShadingProperties.Settings.Add(DepthMinimum);
@@ -171,10 +179,8 @@ namespace Green.Scan
             PerformanceProperties = new SettingGroup("Performance") { FriendlyName = "Performance" };
             SettingGroups.Add(PerformanceProperties);
 
-            TriangleGridWidth = new NumericSetting<int>("TriangleGridWidth", 640, 16, 640) { FriendlyName = "Triangle grid width (count)" };
-            TriangleGridHeight = new NumericSetting<int>("TriangleGridHeight", 480, 12, 480) { FriendlyName = "Triangle grid height (count)" };
-            PerformanceProperties.Settings.Add(TriangleGridWidth);
-            PerformanceProperties.Settings.Add(TriangleGridHeight);
+            TriangleGridResolution = new SizeSetting("TriangleGridResolution", 640, 480, 16, 12, 640, 480) { FriendlyName = "Triangle grid resolution" };
+            PerformanceProperties.Settings.Add(TriangleGridResolution);
 
             //Save
             SaveProperties = new SettingGroup("Save") { FriendlyName = "Saving" };
@@ -182,16 +188,12 @@ namespace Green.Scan
 
             SaveDirectory = new PathSetting("Directory", "") { FriendlyName = "Directory" };
             SaveLabel = new StringSetting("Label", "") { FriendlyName = "Label" };
-            SaveWidth = new NumericSetting<int>("Width", 640, 8, 640) { FriendlyName = "Horizontal divisions (count)" };
-            SaveHeight = new NumericSetting<int>("Height", 480, 8, 480) { FriendlyName = "Vertical divisions (count)" };
-            SaveTextureWidth = new NumericSetting<int>("TextureWidth", 640, 8, 1024) { FriendlyName = "Texture width (pixels)" };
-            SaveTextureHeight = new NumericSetting<int>("TextureHeight", 640, 8, 1024) { FriendlyName = "Texture height (pixels)" };
+            SaveModelResolution = new SizeSetting("ModelResolution", 640, 480, 8, 8, 640, 480) { FriendlyName = "Model resolution (vertices)" };
+            SaveTextureResolution = new SizeSetting("TextureResolution", 640, 480, 8, 8, 1024, 1024) { FriendlyName = "Texture resolution (pixels)" };
             SaveProperties.Settings.Add(SaveDirectory);
             SaveProperties.Settings.Add(SaveLabel);
-            SaveProperties.Settings.Add(SaveWidth);
-            SaveProperties.Settings.Add(SaveHeight);
-            SaveProperties.Settings.Add(SaveTextureWidth);
-            SaveProperties.Settings.Add(SaveTextureHeight);
+            SaveProperties.Settings.Add(SaveModelResolution);
+            SaveProperties.Settings.Add(SaveTextureResolution);
 
             //Turntable
             TurntableProperties = new SettingGroup("Turntable") { FriendlyName = "Turntable", IsHidden = true };
@@ -202,19 +204,34 @@ namespace Green.Scan
             TurntableProperties.Settings.Add(TurntableEllipse);
             TurntableProperties.Settings.Add(TurntableRectangle);
 
-            TurntableTranslationX = new NumericSetting<float>("TranslationX", 0f, -1f, 1f, 2) { FriendlyName = "Translation X (meters)" };
-            TurntableTranslationY = new NumericSetting<float>("TranslationY", 0f, -1f, 1f, 2) { FriendlyName = "Translation Y (meters)" };
-            TurntableTranslationZ = new NumericSetting<float>("TranslationZ", 1.5f, 0f, 3f, 2) { FriendlyName = "Translation Z (meters)" };
+            TurntableTranslationX = new NumericSetting<float>("TranslationX", 0f, -1f, 1f, 3) { FriendlyName = "Translation X (meters)" };
+            TurntableTranslationY = new NumericSetting<float>("TranslationY", 0f, -1f, 1f, 3) { FriendlyName = "Translation Y (meters)" };
+            TurntableTranslationZ = new NumericSetting<float>("TranslationZ", 1.5f, 0f, 3f, 3) { FriendlyName = "Translation Z (meters)" };
             TurntableProperties.Settings.Add(TurntableTranslationX);
             TurntableProperties.Settings.Add(TurntableTranslationY);
             TurntableProperties.Settings.Add(TurntableTranslationZ);
 
-            TurntableRotationX = new NumericSetting<float>("RotationX", 0f, -90f, 90f, 2) { FriendlyName = "Rotation X (degrees)" };
-            TurntableRotationY = new NumericSetting<float>("RotationY", 0f, -90f, 90f, 2) { FriendlyName = "Rotation Y (degrees)" };
-            TurntableRotationZ = new NumericSetting<float>("RotationZ", 0f, -180f, 180f, 2) { FriendlyName = "Rotation Z (degrees)" };
+            TurntableRotationX = new NumericSetting<float>("RotationX", 0f, -90f, 90f, 3) { FriendlyName = "Rotation X (degrees)" };
+            TurntableRotationY = new NumericSetting<float>("RotationY", 0f, -90f, 90f, 3) { FriendlyName = "Rotation Y (degrees)" };
+            TurntableRotationZ = new NumericSetting<float>("RotationZ", 0f, -180f, 180f, 3) { FriendlyName = "Rotation Z (degrees)" };
             TurntableProperties.Settings.Add(TurntableRotationX);
             TurntableProperties.Settings.Add(TurntableRotationY);
             TurntableProperties.Settings.Add(TurntableRotationZ);
+
+            TurntableModelResolution = new SizeSetting("ModelResolution", 640, 480, 64, 64, 1024, 1024) { FriendlyName = "Model resolution (vertices/leg)" };
+            TurntableTextureResolution = new SizeSetting("TextureResolution", 640, 480, 64, 64, 1024, 1024) { FriendlyName = "Texture resolution (pixels/leg)" };
+            TurntableProperties.Settings.Add(TurntableModelResolution);
+            TurntableProperties.Settings.Add(TurntableTextureResolution);
+
+            TurntableClippingHeight = new NumericSetting<float>("ClippingHeight", 1f, 0f, 2f, 3) { FriendlyName = "Clipping height (meters)" };
+            TurntableClippingRadius = new NumericSetting<float>("ClippingRadius", 0.3f, 0f, 2f, 3) { FriendlyName = "Clipping radius (meters)" };
+            TurntableProperties.Settings.Add(TurntableClippingHeight);
+            TurntableProperties.Settings.Add(TurntableClippingRadius);
+
+            TurntableCoreX = new NumericSetting<float>("CoreX", 0.11f, 0f, 0.5f, 3) { FriendlyName = "Leg distance (meters)" };
+            TurntableCoreY = new NumericSetting<float>("CoreY", -0.11f, -0.5f, 0.5f, 3) { FriendlyName = "Leg position (meters)" };
+            TurntableProperties.Settings.Add(TurntableCoreX);
+            TurntableProperties.Settings.Add(TurntableCoreY);
         }
     }
 }

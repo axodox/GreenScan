@@ -61,6 +61,10 @@
       <DependentUpon>BooleanControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="Converters.cs" />
+    <Compile Include="SizeControl.xaml.cs">
+      <DependentUpon>SizeControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="IntBox.cs" />
     <Compile Include="StringControl.xaml.cs">
       <DependentUpon>StringControl.xaml</DependentUpon>
     </Compile>
@@ -92,6 +96,10 @@
     <Page Include="BooleanControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="SizeControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="StringControl.xaml">
       <Generator>MSBuild:Compile</Generator>

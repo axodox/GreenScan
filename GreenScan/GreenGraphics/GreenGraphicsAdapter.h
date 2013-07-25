@@ -200,9 +200,9 @@ namespace Green
 				Textured
 			};
 
-			void SetShading(ShadingModes mode, float depthMaximum, float depthMinimum, float shadingPeriode, float shadingPhase, float triangleLimit, bool wireframeShading)
+			void SetShading(ShadingModes mode, float depthMaximum, float depthMinimum, float shadingPeriode, float shadingPhase, float triangleLimit, bool wireframeShading, bool useModuleShading)
 			{
-				XWindow->SetShading((DirectXWindow::ShadingModes)mode, depthMaximum, depthMinimum, shadingPeriode, shadingPhase, triangleLimit, wireframeShading);
+				XWindow->SetShading((DirectXWindow::ShadingModes)mode, depthMaximum, depthMinimum, shadingPeriode, shadingPhase, triangleLimit, wireframeShading, useModuleShading);
 			}
 
 			void Draw()

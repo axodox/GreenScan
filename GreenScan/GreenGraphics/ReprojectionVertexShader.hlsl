@@ -39,7 +39,7 @@ VertexPositionTextureDepth main(VertexPositionTextureIn vi)
 	posTemp = mul(posTemp, SceneRotation);
 	posTemp.xy = (posTemp.xy + Move) * Scale;
 	posTemp.z /= MaxDepth;
-	posTemp *= DepthMaximum;	
+	//posTemp *= DepthMaximum;	
 	float4 posScreen = posTemp;
 
 	posTemp = mul(posDepth, DepthToColorTransform);

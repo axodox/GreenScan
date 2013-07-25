@@ -113,6 +113,14 @@ namespace Green
 				DeviceContext->OMSetRenderTargets(1, &RenderTargetView, DepthStencilView);
 			}
 
+			void SetShaders(VertexShader* vs, PixelShader* ps, GeometryShader* gs = 0);
+
+			ID3D11DeviceContext* GetImmediateContext()
+			{
+				DeviceContext->AddRef();
+				return DeviceContext;
+			}
+
 			float GetAspectRatio()
 			{
 				return Viewport->Width / Viewport->Height;
@@ -295,11 +303,18 @@ namespace Green
 
 		class VertexShader
 		{
+			friend class GraphicsDevice;
 		private:
 			void* Source;
 			int SourceLength;
 			GraphicsDevice* Host;
 			ID3D11InputLayout* InputLayout;
+
+			void Apply()
+			{
+				Host->DeviceContext->VSSetShader(Shader, 0, 0);
+				Host->DeviceContext->IASetInputLayout(InputLayout);
+			}
 		public:
 			ID3D11VertexShader* Shader;			
 			VertexShader(GraphicsDevice* graphicsDevice, LPWSTR path)
@@ -311,6 +326,7 @@ namespace Green
 				InputLayout = 0;
 				Error(Host->Device->CreateVertexShader(Source, SourceLength, 0, &Shader));
 			}
+
 			void SetInputLayout(VertexDefinition* vertexDefinition)
 			{
 				if(InputLayout != 0) InputLayout->Release();
@@ -319,11 +335,7 @@ namespace Green
 					vertexDefinition->ElementCount,
 					Source, SourceLength, &InputLayout));
 			}
-			void Apply()
-			{
-				Host->DeviceContext->VSSetShader(Shader, 0, 0);
-				Host->DeviceContext->IASetInputLayout(InputLayout);
-			}
+			
 			~VertexShader()
 			{
 				Shader->Release();
@@ -504,9 +516,15 @@ namespace Green
 
 		class GeometryShader
 		{
+			friend class GraphicsDevice;
 		private:
 			GraphicsDevice* Host;
 			ID3D11GeometryShader* Shader;
+
+			void Apply()
+			{
+				Host->DeviceContext->GSSetShader(Shader, 0, 0);
+			}
 		public:			
 			GeometryShader(GraphicsDevice* graphicsDevice, LPWSTR path)
 			{
@@ -519,11 +537,6 @@ namespace Green
 				free(source);
 			}
 
-			void Apply()
-			{
-				Host->DeviceContext->GSSetShader(Shader, 0, 0);
-			}
-
 			~GeometryShader()
 			{
 				Shader->Release();
@@ -532,9 +545,15 @@ namespace Green
 
 		class PixelShader
 		{
+			friend class GraphicsDevice;
 		private:
 			GraphicsDevice* Host;
 			ID3D11PixelShader* Shader;
+
+			void Apply()
+			{
+				Host->DeviceContext->PSSetShader(Shader, 0, 0);
+			}
 		public:			
 			PixelShader(GraphicsDevice* graphicsDevice, LPWSTR path)
 			{
@@ -545,11 +564,6 @@ namespace Green
 				LoadFile(path, source, sourceLength);
 				Error(Host->Device->CreatePixelShader(source, sourceLength, 0, &Shader));
 				free(source);
-			}
-
-			void Apply()
-			{
-				Host->DeviceContext->PSSetShader(Shader, 0, 0);
 			}
 
 			~PixelShader()
@@ -1238,6 +1252,12 @@ namespace Green
 			}
 		};
 
-
+		void GraphicsDevice::SetShaders(VertexShader* vs, PixelShader* ps, GeometryShader* gs)
+		{
+			vs->Apply();
+			if(gs) gs->Apply();
+			else DeviceContext->GSSetShader(0, 0, 0);
+			ps->Apply();
+		}
 	}
 }

@@ -30,7 +30,8 @@ namespace Green
 				Textured
 			} ShadingMode;
 		private:
-			static const int MaxModuleCount = 16;
+			static const int MaxModuleCount = 4;
+			int ModuleCount;
 			GraphicsModule** Modules;
 			LPWSTR Root;
 			LPWSTR ToRoot(LPCWSTR path)
@@ -69,18 +70,17 @@ namespace Green
 			
 			struct RenderingParameters
 			{
-				float TransX, TransY, TransZ, RotX, RotY, RotZ;
-				XMFLOAT4X4 DepthIntrinsics, DepthInvIntrinsics;
+				XMFLOAT4X4 DepthIntrinsics, DepthInvIntrinsics, World;
 				int Rotation, DepthGaussIterations, SaveWidth, SaveHeight, SaveTextureWidth, SaveTextureHeight;
 				float GaussCoeffs[GaussCoeffCount];
-				bool WireframeShading;
+				bool WireframeShading, UseModuleShading;
 			} Params;
 
 			struct CommonConstants
 			{
 				XMFLOAT4X4 SceneRotation;
 				XMFLOAT2 AspectScale;
-				XMFLOAT2 Move;				
+				XMFLOAT2 Move;
 				float Scale;			
 			} CommonOptions;
 
@@ -240,11 +240,12 @@ namespace Green
 				Device->SetAsRenderTarget();
 				BOpaque->Apply();
 
+				bool overlayMode = false;
+				bool backgroundDone = false;
 				switch (KinectMode)
 				{
 				case KinectDevice::Depth:
-					VSCommon->Apply();
-					PSDepth->Apply();
+					Device->SetShaders(VSCommon, PSDepth);
 					THueMap->SetForPS(1);
 					TColor->SetForPS();
 					SLinearWrap->SetForPS();	
@@ -252,8 +253,7 @@ namespace Green
 					QMain->Draw();
 					break;
 				case KinectDevice::Color:
-					VSCommon->Apply();
-					PSColor->Apply();
+					Device->SetShaders(VSCommon, PSColor);
 					TColor->SetForPS();
 					SLinearWrap->SetForPS();	
 					QMain->Draw();
@@ -262,8 +262,7 @@ namespace Green
 					//Depth averaging
 					RTDepthSum->SetAsRenderTarget();
 					RTDepthSum->Clear();
-					VSSimple->Apply();
-					PSDepthSum->Apply();
+					Device->SetShaders(VSSimple, PSDepthSum);
 					CBDepthAndColor->SetForPS(1);
 					BAdditive->Apply();
 					Texture2D *depthTex;
@@ -277,7 +276,7 @@ namespace Green
 						TDBDepth->EndTextureUse();
 					}
 					RTPDepth->SetAsRenderTarget();
-					PSDepthAverage->Apply();
+					Device->SetShaders(VSSimple, PSDepthAverage);
 					BOpaque->Apply();
 					RTDepthSum->SetForPS();
 					QMain->Draw();
@@ -287,8 +286,7 @@ namespace Green
 					{
 						RTPDepth->Swap();
 						RTPDepth->SetAsRenderTarget();
-						VSSimple->Apply();
-						PSDistortionCorrection->Apply();
+						Device->SetShaders(VSSimple, PSDistortionCorrection);
 						RTPDepth->SetForPS(0);
 						TDepthCorrection->SetForPS(1);
 						QMain->Draw();
@@ -306,85 +304,111 @@ namespace Green
 					{
 						RTPDepth->Swap();
 						RTPDepth->SetAsRenderTarget();
-						PSDepthGaussH->Apply();
+						Device->SetShaders(VSSimple, PSDepthGaussH);
 						RTPDepth->SetForPS(0);
 						QMain->Draw();
 
 						RTPDepth->Swap();
 						RTPDepth->SetAsRenderTarget();
-						PSDepthGaussV->Apply();
+						Device->SetShaders(VSSimple, PSDepthGaussV);
 						RTPDepth->SetForPS(0);
 						QMain->Draw();
 					}
+					RTPDepth->Swap();
 
 					//Process with modules
 					for(int i = 0; i < MaxModuleCount; i++)
 					{
-						if(Modules[i] != nullptr) Modules[i]->Process(/*RTPDepth, TColor*/);
+						if(Modules[i] != nullptr) Modules[i]->ProcessFrame(RTPDepth, TColor);
 					}
 
-					//Reprojection
-					RTPDepth->Swap();
+					//Rendering
 					Device->SetAsRenderTarget();
-					
-					VSReprojection->Apply();
-					CBDepthAndColor->SetForVS(1);
-					RTPDepth->SetForVS();
-					
-					GSReprojection->Apply();
-					CBDepthAndColor->SetForGS(1);
-
-					if(Params.WireframeShading)
-						RWireframe->Set();
-					else
-						RCullNone->Set();
-					switch (ShadingMode)
+					if(Params.UseModuleShading && ModuleCount > 0)
 					{
-					case ShadingModes::Zebra:
-						PSSine->Apply();
-						break;
-					case ShadingModes::Rainbow:
-						PSPeriodicScale->Apply();
-						SLinearWrap->SetForPS();
-						THueMap->SetForPS();
-						break;
-					case ShadingModes::ShadedRainbow:
-						PSPeriodicShadedScale->Apply();
-						SLinearWrap->SetForPS();
-						THueMap->SetForPS();
-						break;
-					case ShadingModes::Scale:
-						PSScale->Apply();
-						SLinearClamp->SetForPS();
-						TScaleMap->SetForPS();
-						break;
-					case ShadingModes::ShadedScale:
-						PSShadedScale->Apply();
-						SLinearClamp->SetForPS();
-						TScaleMap->SetForPS();
-						break;
-					case ShadingModes::Blinn:
-						PSBlinn->Apply();
-						break;
-					case ShadingModes::Textured:
-						PSTextured->Apply();
-						SLinearWrap->SetForPS();
-						TColor->SetForPS();
-						break;
-					default:
-						PSSine->Apply();
-						break;
+						for(int i = 0; i < MaxModuleCount; i++)
+						{
+							if(Modules[i] != nullptr)
+							{
+							   if(Modules[i]->DrawsOverlay)
+							   {
+								   overlayMode = true;
+							   }
+							   else
+							   {
+								   Modules[i]->Draw();
+								   backgroundDone = true;
+							   }
+							}
+						}
 					}
-					CBDepthAndColor->SetForPS(1);
-					PMain->Draw();
 
-					RCullNone->Set();
+					if(!Params.UseModuleShading || (overlayMode && !backgroundDone))
+					{
+						CBDepthAndColor->SetForVS(1);
+						CBDepthAndColor->SetForGS(1);
+						RTPDepth->SetForVS();
+
+						if(Params.WireframeShading)
+							RWireframe->Set();
+						else
+							RCullNone->Set();
+						switch (ShadingMode)
+						{
+						case ShadingModes::Zebra:
+							Device->SetShaders(VSReprojection, PSSine, GSReprojection);
+							break;
+						case ShadingModes::Rainbow:
+							Device->SetShaders(VSReprojection, PSPeriodicScale, GSReprojection);
+							SLinearWrap->SetForPS();
+							THueMap->SetForPS();
+							break;
+						case ShadingModes::ShadedRainbow:
+							Device->SetShaders(VSReprojection, PSPeriodicShadedScale, GSReprojection);
+							SLinearWrap->SetForPS();
+							THueMap->SetForPS();
+							break;
+						case ShadingModes::Scale:
+							Device->SetShaders(VSReprojection, PSScale, GSReprojection);
+							SLinearClamp->SetForPS();
+							TScaleMap->SetForPS();
+							break;
+						case ShadingModes::ShadedScale:
+							Device->SetShaders(VSReprojection, PSShadedScale, GSReprojection);
+							SLinearClamp->SetForPS();
+							TScaleMap->SetForPS();
+							break;
+						case ShadingModes::Blinn:
+							Device->SetShaders(VSReprojection, PSBlinn, GSReprojection);
+							break;
+						case ShadingModes::Textured:
+							Device->SetShaders(VSReprojection, PSTextured, GSReprojection);
+							SLinearWrap->SetForPS();
+							TColor->SetForPS();
+							break;
+						default:
+							Device->SetShaders(VSReprojection, PSSine, GSReprojection);
+							break;
+						}
+						CBDepthAndColor->SetForPS(1);
+						PMain->Draw();
+
+						RCullNone->Set();
+					}
+
+					if(Params.UseModuleShading && overlayMode)
+					{
+						for(int i = 0; i < MaxModuleCount; i++)
+						{
+							if(Modules[i] != nullptr && Modules[i]->DrawsOverlay)
+								Modules[i]->Draw();
+						}
+					}
 
 					//Save
 					if(!SaveTextureReady && (RRTSaveVertices != nullptr || RRTSaveTexture != nullptr))
 					{
 						SaveTextureReady = true;
-						VSSimple->Apply();
 						SLinearWrap->SetForPS();
 						BOpaque->Apply();
 
@@ -392,7 +416,7 @@ namespace Green
 						if(RRTSaveVertices != nullptr)
 						{
 							RRTSaveVertices->SetAsRenderTarget();
-							PSVectorOutput->Apply();
+							Device->SetShaders(VSSimple, PSVectorOutput);
 							RTPDepth->SetForPS();
 							QMain->Draw();
 							RRTSaveVertices->CopyToStage();
@@ -402,7 +426,7 @@ namespace Green
 						if(RRTSaveTexture != nullptr)
 						{
 							RRTSaveTexture->SetAsRenderTarget();
-							PSTextureOutput->Apply();
+							Device->SetShaders(VSSimple, PSTextureOutput);
 							RRTSaveVertices->SetForPS(0);
 							TColor->SetForPS(1);
 							QMain->Draw();
@@ -413,8 +437,7 @@ namespace Green
 					}
 					break;
 				case KinectDevice::Infrared:
-					VSCommon->Apply();
-					PSInfrared->Apply();
+					Device->SetShaders(VSCommon, PSInfrared);
 					TColor->SetForPS();
 					SLinearWrap->SetForPS();				
 					QMain->Draw();
@@ -426,18 +449,10 @@ namespace Green
 
 			void SetDepthAndColorOptions()
 			{
-				XMMATRIX DepthIntrinsics = XMLoadFloat4x4(&Params.DepthIntrinsics);
-				XMMATRIX DepthInverseIntrinsics = XMLoadFloat4x4(&Params.DepthInvIntrinsics);
-
-				XMMATRIX T = XMMatrixTranspose(XMMatrixTranslation(0.f, 0.f, -Params.TransZ));
-				XMMATRIX T2 = XMMatrixTranspose(XMMatrixTranslation(Params.TransX, Params.TransY, 0.f));
-				XMMATRIX Ti = XMMatrixInverse(0, T);
-				XMMATRIX R = 
-					XMMatrixRotationZ(XMConvertToRadians(Params.RotZ)) *
-					XMMatrixRotationX(XMConvertToRadians(Params.RotX)) *
-					XMMatrixRotationY(XMConvertToRadians(Params.RotY));
-				XMMATRIX world = Ti * R * T * T2;
-				XMMATRIX reproj = DepthIntrinsics * world * DepthInverseIntrinsics;
+				XMMATRIX world = XMLoadFloat4x4(&Params.World);
+				XMMATRIX depthIntrinsics = XMLoadFloat4x4(&Params.DepthIntrinsics);
+				XMMATRIX depthInverseIntrinsics = XMLoadFloat4x4(&Params.DepthInvIntrinsics);				
+				XMMATRIX reproj = depthIntrinsics * world * depthInverseIntrinsics;
 				XMMATRIX reprojNormals = XMMatrixTranspose(XMMatrixInverse(0, world));
 				XMStoreFloat4x4(&DepthAndColorOptions.ReprojectionTransform, reproj);
 				XMStoreFloat4x4(&DepthAndColorOptions.WorldTransform, world);
@@ -629,20 +644,32 @@ namespace Green
 				float rotX, float rotY, float rotZ, 
 				float scale, float moveX, float moveY, float rotation)
 			{
-				Params.TransX = transX;
-				Params.TransY = transY;
-				Params.TransZ = transZ;
-				Params.RotX = rotX;
-				Params.RotY = rotY;
-				Params.RotZ = rotZ;
 				Params.Rotation = rotation;
 				SetDepthAndColorOptions();
 
+				XMMATRIX T = XMMatrixTranspose(XMMatrixTranslation(0.f, 0.f, -transZ));
+				XMMATRIX T2 = XMMatrixTranspose(XMMatrixTranslation(transX, transY, 0.f));
+				XMMATRIX Ti = XMMatrixInverse(0, T);
+				XMMATRIX R = 
+					XMMatrixRotationZ(XMConvertToRadians(rotZ)) *
+					XMMatrixRotationX(XMConvertToRadians(rotX)) *
+					XMMatrixRotationY(XMConvertToRadians(rotY));
+				XMMATRIX world = Ti * R * T2 * T;
+				XMStoreFloat4x4(&Params.World, world);
+
 				CommonOptions.Scale = scale;
 				CommonOptions.Move = XMFLOAT2(moveX, moveY);
-				XMMATRIX R = XMMatrixRotationZ(-Params.Rotation * XM_PIDIV2);
-				XMStoreFloat4x4(&CommonOptions.SceneRotation, R);
+				XMMATRIX R2 = XMMatrixRotationZ(-Params.Rotation * XM_PIDIV2);
+				XMStoreFloat4x4(&CommonOptions.SceneRotation, R2);
 				SetAspectRatio();
+
+				for(int i = 0; i < MaxModuleCount; i++)
+				{
+					if(Modules[i] != nullptr)
+					{
+						Modules[i]->SetView(Params.World);
+					}
+				}
 
 				if(StaticInput) Draw();
 			}
@@ -673,9 +700,9 @@ namespace Green
 				XMMATRIX mColorRemappedIntrinsics = XMMatrixInverse(0, mColorRemapping) * mColorIntrinsics;
 				
 				XMMATRIX mColorExtrinsics = Load4x4(colorExtrinsics);
-				XMMATRIX mDepthToColor = mColorRemappedIntrinsics * mColorExtrinsics * mDepthInvIntrinsics;
 				XMMATRIX mWorldToColor = mColorRemappedIntrinsics * mColorExtrinsics;
-				
+				XMMATRIX mDepthToColor = mWorldToColor * mDepthInvIntrinsics;
+
 				XMStoreFloat4x4(&Params.DepthIntrinsics, mDepthIntrinsics);
 				XMStoreFloat4x4(&Params.DepthInvIntrinsics, mDepthInvIntrinsics);
 				XMStoreFloat4x4(&DepthAndColorOptions.DepthToColorTransform, mDepthToColor);
@@ -686,9 +713,17 @@ namespace Green
 				DepthAndColorOptions.DepthInvIntrinsics = Params.DepthInvIntrinsics;
 				SetDepthAndColorOptions();
 				if(StaticInput) Draw();
+
+				for(int i = 0; i < MaxModuleCount; i++)
+				{
+					if(Modules[i] != nullptr)
+					{
+						Modules[i]->SetCameras(Params.DepthIntrinsics, Params.DepthInvIntrinsics, DepthAndColorOptions.WorldToColorTransform);
+					}
+				}
 			}
 
-			void SetShading(ShadingModes mode, float depthMaximum, float depthMinimum, float shadingPeriode, float shadingPhase, float triangleLimit, bool wireframeShading)
+			void SetShading(ShadingModes mode, float depthMaximum, float depthMinimum, float shadingPeriode, float shadingPhase, float triangleLimit, bool wireframeShading, bool useModuleShading)
 			{
 				ShadingMode = mode;
 				DepthAndColorOptions.DepthMaximum = depthMaximum;
@@ -697,6 +732,7 @@ namespace Green
 				DepthAndColorOptions.ShadingPhase = shadingPhase;
 				DepthAndColorOptions.TriangleLimit = triangleLimit;
 				Params.WireframeShading = wireframeShading;
+				Params.UseModuleShading = useModuleShading;
 				if(StaticInput) Draw();
 			}
 
@@ -743,6 +779,7 @@ namespace Green
 				SaveTextureReady = true;
 				SaveEvent = CreateEvent(0, 0, 0, 0);
 				Modules = new GraphicsModule*[MaxModuleCount];
+				ModuleCount = 0;
 				for(int i = 0; i < MaxModuleCount; i++)
 				{
 					Modules[i] = nullptr;
@@ -776,7 +813,10 @@ namespace Green
 					if(!Modules[i])
 					{
 						module->CreateResources(Device);
-						Modules[i] = module;						
+						module->SetView(Params.World);
+						module->SetCameras(Params.DepthIntrinsics, Params.DepthInvIntrinsics, DepthAndColorOptions.WorldToColorTransform); 
+						Modules[i] = module;	
+						ModuleCount++;
 						return true;
 					}
 				}
@@ -791,6 +831,7 @@ namespace Green
 					{
 						Modules[i] = nullptr;
 						module->DestroyResources();
+						ModuleCount--;
 						return true;
 					}
 				}
@@ -957,4 +998,4 @@ namespace Green
 			}
 		};
 	}
-}                                                                                                                                                               
+}
