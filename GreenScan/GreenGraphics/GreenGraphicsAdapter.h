@@ -134,7 +134,8 @@ namespace Green
 				FBX,
 				DXF,
 				DAE,
-				OBJ
+				OBJ,
+				FL4
 			};
 
 			bool SaveModel(String^ path, SaveFormats format)

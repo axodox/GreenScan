@@ -92,6 +92,7 @@ namespace Green
 				XMFLOAT4X4 NormalTransform;
 				XMFLOAT4X4 DepthToColorTransform;
 				XMFLOAT4X4 WorldToColorTransform;
+				XMFLOAT4X4 SaveTransform;
 				XMFLOAT2 DepthStep;
 				XMFLOAT2 DepthSaveStep;
 				XMFLOAT2 ColorMove;
@@ -645,7 +646,6 @@ namespace Green
 				float scale, float moveX, float moveY, float rotation)
 			{
 				Params.Rotation = rotation;
-				SetDepthAndColorOptions();
 
 				XMMATRIX T = XMMatrixTranspose(XMMatrixTranslation(0.f, 0.f, -transZ));
 				XMMATRIX T2 = XMMatrixTranspose(XMMatrixTranslation(transX, transY, 0.f));
@@ -670,6 +670,7 @@ namespace Green
 						Modules[i]->SetView(Params.World);
 					}
 				}
+				SetDepthAndColorOptions();
 
 				if(StaticInput) Draw();
 			}
@@ -886,12 +887,14 @@ namespace Green
 				FBX,
 				DXF,
 				DAE,
-				OBJ
+				OBJ,
+				FL4
 			};
 
 			bool GetVertices(XMFLOAT4* &data, int &width, int &height)
 			{
 				if(KinectMode != KinectDevice::DepthAndColor) return false;
+				XMStoreFloat4x4(&DepthAndColorOptions.SaveTransform, XMMatrixIdentity());
 				width = KinectDevice::DepthWidth;
 				height = KinectDevice::DepthHeight;
 				RRTSaveVertices = new ReadableRenderTarget(Device, width, height, DXGI_FORMAT_R32G32B32A32_FLOAT);
@@ -920,6 +923,7 @@ namespace Green
 			bool SaveModel(LPWSTR path, SaveFormats format)
 			{
 				if(KinectMode != KinectDevice::DepthAndColor) return false;
+				XMStoreFloat4x4(&DepthAndColorOptions.SaveTransform, XMMatrixScaling(1.f, -1.f, 1.f));
 				bool ok = false;
 				RRTSaveVertices = new ReadableRenderTarget(Device, Params.SaveWidth, Params.SaveHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);
 				RRTSaveTexture = new ReadableRenderTarget(Device, Params.SaveTextureWidth, Params.SaveTextureHeight, DXGI_FORMAT_R8G8B8A8_UNORM);
@@ -962,6 +966,9 @@ namespace Green
 						break;
 					case SaveFormats::OBJ:
 						ok = FBXSave(path, data, Params.SaveWidth, Params.SaveHeight, wcsrchr(textureFilename, L'\\') + 1, L"obj");
+						break;
+					case SaveFormats::FL4:
+						ok = FL4Save(path, data, Params.SaveWidth, Params.SaveHeight);
 						break;
 					default:
 						ok = false;

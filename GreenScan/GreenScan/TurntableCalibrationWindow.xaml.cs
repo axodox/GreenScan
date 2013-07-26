@@ -46,7 +46,7 @@ namespace GreenScan
             Matrix4x4 mInfraredIntrinsics = settings.InfraredIntrinsics.GrowToMatrix4x4();
             Matrix4x4 mDepthToIRMapping = settings.DepthToIRMapping.ExpandToMatrix4x4();
             Matrix4x4 mDepthIntrinsics = mDepthToIRMapping.Inverse * mInfraredIntrinsics;
-            VI.WorldViewProjection = Matrix4x4.Scale(1d / KinectManager.DepthWidth, 1d / KinectManager.DepthHeight, 1d) * mDepthIntrinsics * Matrix4x4.Scale(1d, -1d, 1d);
+            VI.WorldViewProjection = Matrix4x4.Scale(1d / KinectManager.DepthWidth, 1d / KinectManager.DepthHeight, 1d) * mDepthIntrinsics;
 
             SelectedRectangle = settings.TurntableRectangle.Value;
             SelectedEllipse = settings.TurntableEllipse.Value;
@@ -217,11 +217,7 @@ namespace GreenScan
 
         private void BFinish_Click(object sender, RoutedEventArgs e)
         {
-            Settings.TurntableTranslationX.Value = Calibrator.TranslationX;
-            Settings.TurntableTranslationY.Value = Calibrator.TranslationY;
-            Settings.TurntableTranslationZ.Value = Calibrator.TranslationZ;
-            Settings.TurntableRotationX.Value = Calibrator.RotationX;
-            Settings.TurntableRotationZ.Value = Calibrator.RotationZ;
+            Settings.TurntableTransform.Value = Calibrator.Table.GetTransform().GetMatrix();
             Close();
         }
     }
@@ -280,14 +276,14 @@ namespace GreenScan
         public Plane Table { get; private set; }
         public bool IsCalibrated { get; private set; }
 
-        public float TranslationX { get { return (float)-Table.Origin.X; } }
+        public float TranslationX { get { return (float)Table.Origin.X; } }
         public float TranslationY { get { return (float)-Table.Origin.Y; } }
         public float TranslationZ { get { return (float)Table.Origin.Z; } }
         public float RotationX
         {
             get
             {
-                return (float)Vector3.AngleOf(Vector3.UnitZ, Vector3.UnitX * -Table.Normal).ToDegrees();
+                return (float)-Vector3.AngleOf(Vector3.UnitZ, Vector3.UnitX * Table.Normal).ToDegrees();
             }
         }
         public float RotationZ

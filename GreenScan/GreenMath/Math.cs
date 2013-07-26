@@ -312,6 +312,15 @@ namespace Green.MathExtensions
             M44 = m44;
         }
 
+        public float[,] GetMatrix()
+        {
+            return new float[,] { 
+                { (float)M11, (float)M12, (float)M13, (float)M14 }, 
+                { (float)M21, (float)M22, (float)M23, (float)M24 },
+                { (float)M31, (float)M32, (float)M33, (float)M34 },
+                { (float)M41, (float)M42, (float)M43, (float)M44 }};
+        }
+
         public static Matrix4x4 Scale(double x, double y, double z)
         {
             return new Matrix4x4(x, 0d, 0d, 0d, 0d, y, 0d, 0d, 0d, 0d, z, 0d, 0d, 0d, 0d, 1d);
@@ -406,7 +415,7 @@ namespace Green.MathExtensions
 
         public override string ToString()
         {
-            return String.Format("{0}, {1}, {2}, {3}; {4}, {5}, {6}, {7}; {8}, {9}, {10}, {11}; {12}, {12}, {13}, {14}, {15}",
+            return String.Format("{0}, {1}, {2}, {3}; {4}, {5}, {6}, {7}; {8}, {9}, {10}, {11}; {12}, {13}, {14}, {15}",
                 new object[] { M11, M12, M13, M14, M21, M22, M23, M24, M31, M32, M33, M34, M41, M42, M43, M44 });
         }
     }
@@ -457,6 +466,19 @@ namespace Green.MathExtensions
             Line lB = new Line(b.Origin, L.Direction * b.Normal);
             L.Origin = Line.Midpoint(lA, lB);
             return L;
+        }
+
+        public Matrix4x4 GetTransform()
+        {
+            Vector3 x = (Vector3.UnitZ * Normal).Direction;
+            Vector3 y = Normal.Direction;
+            Vector3 z = (x * y).Direction;
+            Matrix4x4 m = new Matrix4x4(
+                x.X, y.X, z.X, Origin.X,
+                x.Y, y.Y, z.Y, Origin.Y,
+                x.Z, y.Z, z.Z, Origin.Z,
+                0d, 0d, 0d, 1d);
+            return m;
         }
     }
 

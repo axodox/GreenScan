@@ -36,6 +36,12 @@ struct VertexPositionTextureDepth
 	float2 Texture : TEXCOORD0;
 };
 
+struct VertexPolar
+{
+    float4 Position : SV_POSITION;
+	float3 World : POSITION1;
+};
+
 cbuffer CommonConstants : register(b0)
 {
 	float4x4 SceneRotation;
@@ -52,6 +58,7 @@ cbuffer DepthAndColorConstants : register(b1)
 	float4x4 NormalTransform;
 	float4x4 DepthToColorTransform;
 	float4x4 WorldToColorTransform;
+	float4x4 SaveTransform;
 	float2 DepthStep;
 	float2 DepthSaveStep;
 	float2 ColorMove;
@@ -69,6 +76,9 @@ cbuffer DepthAndColorConstants : register(b1)
 cbuffer TurntableConstants : register(b1)
 {
 	float4x4 TurntableToScreenTransform;
+	float4x4 DepthToTurntableTransform;
+	float2 CorePosition;
+	float2 ClipLimit;
 	int2 DepthResolution;
 };
 

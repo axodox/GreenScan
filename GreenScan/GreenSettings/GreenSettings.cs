@@ -27,7 +27,8 @@ namespace Green.Settings
         }
 
         public string Name { get; protected set; }
-        
+        public SettingGroup Group { get; internal set; }
+
         [Flags]
         public enum Types : uint { 
             Unknown = 0, 
@@ -275,13 +276,18 @@ namespace Green.Settings
             {
                 if (InvalidChars != null)
                 {
+                    string s = "";
                     for (int i = 0; i < value.Length; i++)
                     {
                         if (InvalidChars.Contains(value[i]))
-                            return;
+                            s += '_';
+                        else
+                            s += value[i];
                     }
+                    this.value = s;
                 }
-                this.value = value;
+                else
+                    this.value = value;
                 OnValueChanged();
             }
         }
@@ -676,6 +682,7 @@ namespace Green.Settings
             {
                 s.PropertyChanged += Setting_PropertyChanged;
                 s.ValueChanged += Setting_ValueChanged;
+                s.Group = this;
                 if (!s.HasDefaultValue) HasDefaultValues = false;
             }
         }
@@ -734,6 +741,17 @@ namespace Green.Settings
             SettingGroups = new ObservableCollection<SettingGroup>();
         }
 
+        public Dictionary<string, Setting> GetSettingsDictionary()
+        {
+            Dictionary<string, Setting> settings = new Dictionary<string, Setting>();
+            foreach(SettingGroup settingGroup in SettingGroups)
+                foreach (Setting setting in settingGroup.Settings)
+                {
+                    settings.Add(settingGroup.Name + '.' + setting.Name, setting);
+                }
+            return settings;
+        }
+
         public bool Save(string path)
         {
             try
@@ -763,13 +781,7 @@ namespace Green.Settings
         {
             try
             {
-                Dictionary<string, Setting> settings = new Dictionary<string, Setting>();
-                foreach (SettingGroup SG in SettingGroups)
-                    foreach (Setting S in SG.Settings)
-                    {
-                        settings.Add(SG.Name + '.' + S.Name, S);
-                    }
-
+                Dictionary<string, Setting> settings = GetSettingsDictionary();
                 string group = "", setting, value;
                 string[] items;
                 using (StreamReader SR = new StreamReader(path))

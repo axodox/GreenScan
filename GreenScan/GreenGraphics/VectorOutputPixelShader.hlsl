@@ -25,5 +25,5 @@ float4 main(VertexPositionTextureOut v) : SV_TARGET
 	if(CalculateWorld(v.Texture, pos))	
 		return 0.f;
 	else
-		return float4(pos.x, -pos.y, pos.z, 1.f);
+		return mul(float4(pos.x, pos.y, pos.z, 1.f), SaveTransform);
 }

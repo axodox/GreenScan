@@ -133,6 +133,23 @@ bool STLSave(LPWSTR path, XMFLOAT4* const sVertices, int width, int height)
 	return true;
 }
 
+bool FL4Save(LPWSTR path, XMFLOAT4* const sVertices, int width, int height)
+{
+	WCHAR filename[MAX_PATH];
+	wcscpy_s(filename, path);
+	wcscat_s(filename, L".fl4");
+
+	FILE* file = _wfopen(filename, L"wb");
+	if(!file) return false;
+		
+	fwrite(&width, 4, 1, file);
+	fwrite(&height, 4, 1, file);
+	fwrite(sVertices, 16, width * height, file);
+	fclose(file);
+
+	return true;
+}
+
 int FBXCheckAndCalculateTriangle(XMFLOAT4* const pVertices, XMFLOAT3* const pNormals, byte* const pCounts, int a, int b, int c, int &triangleCount)
 {
 	XMFLOAT4 *vA = pVertices + a, *vB = pVertices + b, *vC = pVertices + c;

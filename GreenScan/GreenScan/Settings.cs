@@ -3,6 +3,7 @@ using Green.Settings;
 using Green.Kinect;
 using Green.Graphics;
 using System.Windows;
+using System.IO;
 
 namespace Green.Scan
 {
@@ -63,20 +64,14 @@ namespace Green.Scan
         public SettingGroup TurntableProperties { get; private set; }
         public RectangleSetting TurntableEllipse { get; private set; }
         public RectangleSetting TurntableRectangle { get; private set; }
-        public NumericSetting<float> TurntableTranslationX { get; private set; }
-        public NumericSetting<float> TurntableTranslationY { get; private set; }
-        public NumericSetting<float> TurntableTranslationZ { get; private set; }
-        public NumericSetting<float> TurntableRotationX { get; private set; }
-        public NumericSetting<float> TurntableRotationY { get; private set; }
-        public NumericSetting<float> TurntableRotationZ { get; private set; }
+        public MatrixSetting TurntableTransform { get; private set; }
         public NumericSetting<float> TurntableClippingHeight { get; private set; }
         public NumericSetting<float> TurntableClippingRadius { get; private set; }
         public NumericSetting<float> TurntableCoreX { get; private set; }
         public NumericSetting<float> TurntableCoreY { get; private set; }
-        
-
         public SizeSetting TurntableModelResolution { get; private set; }
         public SizeSetting TurntableTextureResolution { get; private set; }
+        public EnumSetting<RotatingScanner.Views> TurntableView { get; private set; }
 
         public ScanSettings()
             : base()
@@ -187,7 +182,7 @@ namespace Green.Scan
             SettingGroups.Add(SaveProperties);
 
             SaveDirectory = new PathSetting("Directory", "") { FriendlyName = "Directory" };
-            SaveLabel = new StringSetting("Label", "") { FriendlyName = "Label" };
+            SaveLabel = new StringSetting("Label", "", Path.GetInvalidFileNameChars()) { FriendlyName = "Label" };
             SaveModelResolution = new SizeSetting("ModelResolution", 640, 480, 8, 8, 640, 480) { FriendlyName = "Model resolution (vertices)" };
             SaveTextureResolution = new SizeSetting("TextureResolution", 640, 480, 8, 8, 1024, 1024) { FriendlyName = "Texture resolution (pixels)" };
             SaveProperties.Settings.Add(SaveDirectory);
@@ -199,39 +194,31 @@ namespace Green.Scan
             TurntableProperties = new SettingGroup("Turntable") { FriendlyName = "Turntable", IsHidden = true };
             SettingGroups.Add(TurntableProperties);
 
-            TurntableEllipse = new RectangleSetting("SelectionEllipse", new Rect(0d, 0d, 0d, 0d)) { IsHidden = true };
-            TurntableRectangle = new RectangleSetting("SelectionRectangle", new Rect(0d, 0d, 0d, 0d)) { IsHidden = true };
-            TurntableProperties.Settings.Add(TurntableEllipse);
-            TurntableProperties.Settings.Add(TurntableRectangle);
+            TurntableView = new EnumSetting<RotatingScanner.Views>("View", RotatingScanner.Views.Overlay) { FriendlyValue = "View" };
+            TurntableProperties.Settings.Add(TurntableView);
 
-            TurntableTranslationX = new NumericSetting<float>("TranslationX", 0f, -1f, 1f, 3) { FriendlyName = "Translation X (meters)" };
-            TurntableTranslationY = new NumericSetting<float>("TranslationY", 0f, -1f, 1f, 3) { FriendlyName = "Translation Y (meters)" };
-            TurntableTranslationZ = new NumericSetting<float>("TranslationZ", 1.5f, 0f, 3f, 3) { FriendlyName = "Translation Z (meters)" };
-            TurntableProperties.Settings.Add(TurntableTranslationX);
-            TurntableProperties.Settings.Add(TurntableTranslationY);
-            TurntableProperties.Settings.Add(TurntableTranslationZ);
+            TurntableCoreX = new NumericSetting<float>("CoreX", 0.11f, 0f, 0.5f, 3) { FriendlyName = "Leg distance (meters)" };
+            TurntableCoreY = new NumericSetting<float>("CoreY", -0.11f, -0.5f, 0.5f, 3) { FriendlyName = "Leg position (meters)" };
+            TurntableProperties.Settings.Add(TurntableCoreX);
+            TurntableProperties.Settings.Add(TurntableCoreY);
 
-            TurntableRotationX = new NumericSetting<float>("RotationX", 0f, -90f, 90f, 3) { FriendlyName = "Rotation X (degrees)" };
-            TurntableRotationY = new NumericSetting<float>("RotationY", 0f, -90f, 90f, 3) { FriendlyName = "Rotation Y (degrees)" };
-            TurntableRotationZ = new NumericSetting<float>("RotationZ", 0f, -180f, 180f, 3) { FriendlyName = "Rotation Z (degrees)" };
-            TurntableProperties.Settings.Add(TurntableRotationX);
-            TurntableProperties.Settings.Add(TurntableRotationY);
-            TurntableProperties.Settings.Add(TurntableRotationZ);
+            TurntableClippingHeight = new NumericSetting<float>("ClippingHeight", 0.5f, 0f, 2f, 3) { FriendlyName = "Clipping height (meters)" };
+            TurntableClippingRadius = new NumericSetting<float>("ClippingRadius", 0.3f, 0f, 2f, 3) { FriendlyName = "Clipping radius (meters)" };
+            TurntableProperties.Settings.Add(TurntableClippingHeight);
+            TurntableProperties.Settings.Add(TurntableClippingRadius);
 
             TurntableModelResolution = new SizeSetting("ModelResolution", 640, 480, 64, 64, 1024, 1024) { FriendlyName = "Model resolution (vertices/leg)" };
             TurntableTextureResolution = new SizeSetting("TextureResolution", 640, 480, 64, 64, 1024, 1024) { FriendlyName = "Texture resolution (pixels/leg)" };
             TurntableProperties.Settings.Add(TurntableModelResolution);
             TurntableProperties.Settings.Add(TurntableTextureResolution);
 
-            TurntableClippingHeight = new NumericSetting<float>("ClippingHeight", 1f, 0f, 2f, 3) { FriendlyName = "Clipping height (meters)" };
-            TurntableClippingRadius = new NumericSetting<float>("ClippingRadius", 0.3f, 0f, 2f, 3) { FriendlyName = "Clipping radius (meters)" };
-            TurntableProperties.Settings.Add(TurntableClippingHeight);
-            TurntableProperties.Settings.Add(TurntableClippingRadius);
+            TurntableTransform = new MatrixSetting("TurntableTransform", new float[,] { { 1f, 0f, 0f, 0f }, { 0f, 1f, 0f, 0f }, { 0f, 0f, 1f, 0f }, { 0f, 0f, 0f, 1f } }) { FriendlyName = "Turntable matrix" };
+            TurntableProperties.Settings.Add(TurntableTransform);
 
-            TurntableCoreX = new NumericSetting<float>("CoreX", 0.11f, 0f, 0.5f, 3) { FriendlyName = "Leg distance (meters)" };
-            TurntableCoreY = new NumericSetting<float>("CoreY", -0.11f, -0.5f, 0.5f, 3) { FriendlyName = "Leg position (meters)" };
-            TurntableProperties.Settings.Add(TurntableCoreX);
-            TurntableProperties.Settings.Add(TurntableCoreY);
+            TurntableEllipse = new RectangleSetting("SelectionEllipse", new Rect(0d, 0d, 0d, 0d)) { IsHidden = true };
+            TurntableRectangle = new RectangleSetting("SelectionRectangle", new Rect(0d, 0d, 0d, 0d)) { IsHidden = true };
+            TurntableProperties.Settings.Add(TurntableEllipse);
+            TurntableProperties.Settings.Add(TurntableRectangle);
         }
     }
 }

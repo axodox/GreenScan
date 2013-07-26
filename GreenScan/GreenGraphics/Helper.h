@@ -141,3 +141,38 @@ array<float, 2>^ Expand4x4(array<float, 2>^ input)
 	output[3, 3] = 1.f;
 	return output;
 }
+
+using namespace System;
+namespace Green
+{
+	namespace Extensions
+	{
+		public ref class StatusEventArgs : public EventArgs
+		{
+		public:
+			String^ Text;
+			Boolean ShowProgress;
+			Double Progress;
+			StatusEventArgs(String^ text)
+			{
+				Text = text;
+				ShowProgress = false;
+				Progress = float::NaN;
+			}
+			StatusEventArgs(String^ text, Boolean showProgress)
+			{
+				Text = text;
+				ShowProgress = true;
+				Progress = float::NaN;
+			}
+			StatusEventArgs(String^ text, Boolean showProgress, Double progress)
+			{
+				Text = text;
+				ShowProgress = showProgress;
+				Progress = progress;
+			}
+		};
+
+		public delegate void StatusEventHandler(Object^ sender, StatusEventArgs^ e);
+	}
+}

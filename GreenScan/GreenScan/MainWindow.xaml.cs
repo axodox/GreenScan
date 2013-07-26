@@ -40,8 +40,8 @@ namespace Green.Scan
             //MIShading.DataContext = SS.ShadingMode;
             SMC.DataContext = SS;
 
-            DT = new DispatcherTimer();
-            DT.Interval = new TimeSpan(0, 0, 0, 0, 10);
+            DT = new DispatcherTimer(DispatcherPriority.Send);
+            DT.Interval = new TimeSpan(0, 0, 0, 0, 30);
             DT.Tick += DT_Tick;
             DT.IsEnabled = true;
         }        
@@ -76,6 +76,10 @@ namespace Green.Scan
             if (SW != null)
             {
                 SW.Close();
+            }
+            if (RS != null)
+            {
+                RS.Dispose();
             }
             KM.CloseKinect();
             SS.Save("Settings.ini");
@@ -172,16 +176,13 @@ namespace Green.Scan
                 SS.TurntableTextureResolution.Width,
                 SS.TurntableTextureResolution.Height);
             RS.SetCalibration(
-                SS.TurntableTranslationX.Value,
-                SS.TurntableTranslationY.Value,
-                SS.TurntableTranslationZ.Value,
-                SS.TurntableRotationX.Value,
-                SS.TurntableRotationY.Value,
-                SS.TurntableRotationZ.Value,
+                SS.TurntableTransform.Value,
                 SS.TurntableClippingHeight.Value,
                 SS.TurntableClippingRadius.Value,
                 SS.TurntableCoreX.Value,
                 SS.TurntableCoreY.Value);
+            RS.SetShading(
+                SS.TurntableView.Value);
         }
 
         void Settings_Click(object sender, RoutedEventArgs e)
@@ -317,6 +318,11 @@ namespace Green.Scan
             SaveModel(GraphicsCanvas.SaveFormats.OBJ);
         }
 
+        private void SaveFL4_Click(object sender, RoutedEventArgs e)
+        {
+            SaveModel(GraphicsCanvas.SaveFormats.FL4);
+        }
+
         private void SaveDialog(bool ok)
         {
             if (ok)
@@ -387,7 +393,12 @@ namespace Green.Scan
             RS = new RotatingScanner(KM, GC);
             MITurntable.DataContext = RS;
             RS.PropertyChanged += RS_PropertyChanged;
-            
+            RS.StatusChanged += RS_StatusChanged;
+        }
+
+        void RS_StatusChanged(object sender, Extensions.StatusEventArgs e)
+        {
+            ShowStatus(e.Text, e.ShowProgress, e.Progress);
         }
 
         void RS_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -398,10 +409,8 @@ namespace Green.Scan
                     SS.TurntableProperties.IsHidden = !RS.Connected;
                     if (RS.Connected)
                     {
-                        ShowStatus("Turntable connected.");
                         SetTurntable();
                     }
-                    else ShowStatus("Turntable disconnected.");
                     break;
             }
         }
@@ -423,6 +432,14 @@ namespace Green.Scan
             if (PBStatus.IsIndeterminate != newIndeterminity) PBStatus.IsIndeterminate = newIndeterminity;
             PBStatus.IsIndeterminate = double.IsNaN(progress);
             if (PBStatus.Value != progress && !PBStatus.IsIndeterminate) PBStatus.Value = progress;
+        }
+
+        private void TurntableScan_Click(object sender, RoutedEventArgs e)
+        {
+            if (RS.Connected)
+            {
+                RS.Scan();
+            }
         }
     }
 }

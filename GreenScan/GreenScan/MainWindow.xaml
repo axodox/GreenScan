@@ -13,7 +13,6 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <Grid>
             <Grid.ColumnDefinitions>
@@ -39,6 +38,7 @@
                             <MenuItem Header="AutoCAD DXF" Click="SaveDXF_Click"/>
                             <MenuItem Header="Collada DAE" Click="SaveDAE_Click"/>
                             <MenuItem Header="Alias OBJ" Click="SaveOBJ_Click"/>
+                            <MenuItem Header="Vector4 FL4" Click="SaveFL4_Click"/>
                         </MenuItem>
                     </MenuItem>
                     <MenuItem Header="Device">
@@ -50,6 +50,7 @@
                     <!--<MenuItem Header="Reset view" Click="ResetView_Click"/>-->
                     <!--<MenuItem Header="Settings" Click="Settings_Click"/>-->
                     <MenuItem x:Name="MITurntable" Header="Turntable" Visibility="{Binding Connected, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                        <MenuItem Header="Scan" Click="TurntableScan_Click"/>
                         <MenuItem Header="Calibrate..." Click="TurntableCalibrate_Click"/>
                     </MenuItem>
                 </Menu>
@@ -60,6 +61,6 @@
             </Grid>
             <s:SettingManagerControl x:Name="SMC" Grid.Column="2"/>
         </Grid>
-        <ProgressBar x:Name="PBStatus" Grid.Row="1" Visibility="Collapsed" Height="3" Maximum="1"/>
+        <ProgressBar x:Name="PBStatus" Grid.Row="0" Visibility="Collapsed" Height="3" Maximum="1" VerticalAlignment="Bottom" BorderBrush="{x:Null}" Background="{x:Null}"/>
     </Grid>
 </Window>
