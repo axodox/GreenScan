@@ -16,7 +16,7 @@ namespace Green
 			virtual void EndProcessing() = 0;
 			virtual void ProcessFrame(RenderTargetPair* depth, Texture2D* color) = 0;
 			virtual void Draw() = 0;
-			virtual void SetCameras(XMFLOAT4X4 depthIntrinsics, XMFLOAT4X4 depthInvIntrinsics, XMFLOAT4X4 worldToColorTransform) { }
+			virtual void SetCameras(XMFLOAT4X4 depthIntrinsics, XMFLOAT4X4 depthInvIntrinsics, XMFLOAT4X4 worldToColorTransform, XMFLOAT4X4 depthToTexture, XMFLOAT2 textureMove, XMFLOAT2 textureScale) { }
 			virtual void SetView(XMFLOAT4X4 world) { }
 		};
 	}

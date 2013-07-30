@@ -24,6 +24,7 @@ namespace Green
 			friend class Texture1D;
 			friend class Texture2D;
 			friend class RenderTarget;
+			friend class RenderTargetGroup;
 			friend class ReadableRenderTarget;
 			friend class Quad;
 			friend class Plane;
@@ -827,6 +828,7 @@ namespace Green
 
 		class RenderTarget : public Texture2D
 		{
+			friend class RenderTargetGroup;
 		protected:
 			ID3D11RenderTargetView* RenderTargetView;
 			D3D11_VIEWPORT* ViewPort;
@@ -874,6 +876,40 @@ namespace Green
 			{
 				RenderTargetView->Release();
 				delete ViewPort;
+			}
+		};
+
+		class RenderTargetGroup
+		{
+		private:
+			GraphicsDevice* Host;
+			ID3D11RenderTargetView** RenderTargetViews;
+			D3D11_VIEWPORT* ViewPorts;
+			int Count;
+		public:
+			RenderTargetGroup(GraphicsDevice* device, int count, RenderTarget* targets[])
+			{
+				Host = device;
+				Count = count;
+				RenderTargetViews = new ID3D11RenderTargetView*[count];
+				ViewPorts = new D3D11_VIEWPORT[count];
+				for(int i = 0; i < count; i++)
+				{
+					RenderTargetViews[i] = targets[i]->RenderTargetView;
+					ViewPorts[i] = *targets[i]->ViewPort;
+				}
+			}
+
+			void SetRenderTargets()
+			{
+				Host->DeviceContext->OMSetRenderTargets(Count, RenderTargetViews, 0);
+				Host->DeviceContext->RSSetViewports(Count, ViewPorts);
+			}
+
+			~RenderTargetGroup()
+			{
+				delete [Count] ViewPorts;
+				delete [Count] RenderTargetViews;
 			}
 		};
 

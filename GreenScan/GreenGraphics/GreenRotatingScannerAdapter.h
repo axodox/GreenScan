@@ -72,7 +72,9 @@ namespace Green
 		public:
 			enum class Views {
 				Overlay,
-				Polar
+				Depth,
+				TextureL,
+				TextureR
 			};
 
 			void SetShading(Views view)

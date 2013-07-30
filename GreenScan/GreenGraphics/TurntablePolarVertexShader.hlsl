@@ -13,19 +13,26 @@ VertexPolar main(VertexPositionTextureIn vi)
 		1);
 
 	float4 posWorld = mul(posDepth, DepthToTurntableTransform);
-	
+
 	int side = sign(posWorld.x);
 
 	float4 posCore = float4(posWorld.x - CorePosition.x * side, posWorld.y, posWorld.z - CorePosition.y, 1.f);
-	
+
 	float4 posOutput;
 	posOutput.x = atan2(posCore.z, posCore.x) / Pi;
-	posOutput.y = posCore.y / ClipLimit.y;
+	posOutput.y = posCore.y / ClipLimit.y * 2.f - 1.f;
 	posOutput.z = sqrt(posCore.x * posCore.x + posCore.z * posCore.z);
 	posOutput.w = 1.f;
+
+	if(depth == 0.f) posOutput.z = 0.f;
+
+	float4 posTex = mul(posDepth, DepthToTextureTransform);
+	posTex.xyz /= posTex.z;
+	posTex.xy /= ColorResolution;
 
 	VertexPolar vo;
 	vo.Position = posOutput;
 	vo.World = posWorld;
+	vo.Texture = posTex.xy;
 	return vo;
 }

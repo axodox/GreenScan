@@ -346,6 +346,7 @@ namespace Green
 
 					if(!Params.UseModuleShading || (overlayMode && !backgroundDone))
 					{
+						BOpaque->Apply();
 						CBDepthAndColor->SetForVS(1);
 						CBDepthAndColor->SetForGS(1);
 						RTPDepth->SetForVS();
@@ -719,7 +720,7 @@ namespace Green
 				{
 					if(Modules[i] != nullptr)
 					{
-						Modules[i]->SetCameras(Params.DepthIntrinsics, Params.DepthInvIntrinsics, DepthAndColorOptions.WorldToColorTransform);
+						Modules[i]->SetCameras(Params.DepthIntrinsics, Params.DepthInvIntrinsics, DepthAndColorOptions.WorldToColorTransform, DepthAndColorOptions.DepthToColorTransform, DepthAndColorOptions.ColorMove, DepthAndColorOptions.ColorScale);
 					}
 				}
 			}
@@ -815,7 +816,7 @@ namespace Green
 					{
 						module->CreateResources(Device);
 						module->SetView(Params.World);
-						module->SetCameras(Params.DepthIntrinsics, Params.DepthInvIntrinsics, DepthAndColorOptions.WorldToColorTransform); 
+						module->SetCameras(Params.DepthIntrinsics, Params.DepthInvIntrinsics, DepthAndColorOptions.WorldToColorTransform, DepthAndColorOptions.DepthToColorTransform, DepthAndColorOptions.ColorMove, DepthAndColorOptions.ColorScale);
 						Modules[i] = module;	
 						ModuleCount++;
 						return true;

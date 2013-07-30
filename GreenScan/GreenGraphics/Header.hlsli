@@ -40,6 +40,7 @@ struct VertexPolar
 {
     float4 Position : SV_POSITION;
 	float3 World : POSITION1;
+	float2 Texture : TEXCOORD0;
 };
 
 cbuffer CommonConstants : register(b0)
@@ -77,9 +78,13 @@ cbuffer TurntableConstants : register(b1)
 {
 	float4x4 TurntableToScreenTransform;
 	float4x4 DepthToTurntableTransform;
+	float4x4 DepthToTextureTransform;
 	float2 CorePosition;
 	float2 ClipLimit;
+	float2 TextureMove;
+	float2 TextureScale;
 	int2 DepthResolution;
+	int2 ColorResolution;
 };
 
 float ToDepth(float raw)

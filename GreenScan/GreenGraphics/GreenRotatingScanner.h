@@ -11,16 +11,19 @@ namespace Green
 		public:
 			enum class Views {
 				Overlay,
-				Polar
+				Depth,
+				TextureL,
+				TextureR
 			};
 		private:
 			GraphicsDevice* Device;
-			RenderTarget *ModelTarget, *TextureTarget;
+			RenderTarget *ModelTarget, *TextureTargetL, *TextureTargetR;
+			RenderTargetGroup *PolarTargetGroup;
 			int NextModelWidth, NextModelHeight, NextTextureWidth, NextTextureHeight;
 			bool Processing;
 			struct RenderingParameters
 			{
-				XMFLOAT4X4 DepthIntrinsics, World, TurntableTransform;
+				XMFLOAT4X4 DepthIntrinsics, DepthInvIntrinsics, World, TurntableTransform;
 				float Rotation;
 				Views View;
 			} Params;
@@ -29,9 +32,13 @@ namespace Green
 			{
 				XMFLOAT4X4 TurntableToScreenTransform;
 				XMFLOAT4X4 DepthToTurntableTransform;
+				XMFLOAT4X4 DepthToTextureTransform;
 				XMFLOAT2 CorePosition;
 				XMFLOAT2 ClipLimit;
+				XMFLOAT2 TextureMove;
+				XMFLOAT2 TextureScale;
 				XMINT2 DepthResolution;
+				XMINT2 ColorResolution;
 			} TurntableOptions;
 
 			ConstantBuffer<TurntableConstants>* Constants;
@@ -39,8 +46,8 @@ namespace Green
 			VertexBuffer<VertexPositionColor>* Cross;
 			VertexShader *VSOverlay, *VSPolar, *VSCommon;
 			GeometryShader *GSPolar;
-			PixelShader *PSOverlay, *PSPolar, *PSPolarDepth;
-			Blend *BOpaque, *BAdditive;
+			PixelShader *PSOverlay, *PSPolar, *PSPolarDepth, *PSPolarTexture, *PSTest;
+			Blend *BOpaque, *BAdditive, *BAlpha;
 			ID3D11DeviceContext *Context;
 			Plane *PDepth;
 			Quad *QMain;
@@ -88,6 +95,8 @@ namespace Green
 				PSOverlay = new PixelShader(Device, L"TurntableOverlayPixelShader.cso");
 				PSPolar = new PixelShader(Device, L"TurntablePolarPixelShader.cso");
 				PSPolarDepth = new PixelShader(Device, L"TurntablePolarDepthPixelShader.cso");
+				PSPolarTexture = new PixelShader(Device, L"TurntablePolarTexturePixelShader.cso");
+				PSTest = new PixelShader(Device, L"TurntableTestPixelShader.cso");
 
 				Context = Device->GetImmediateContext();
 				
@@ -102,6 +111,8 @@ namespace Green
 				delete PSOverlay;
 				delete PSPolar;
 				delete PSPolarDepth;
+				delete PSPolarTexture;
+				delete PSTest;
 				Context->Release();
 			}
 
@@ -109,7 +120,11 @@ namespace Green
 			{
 				Processing = true;
 				ModelTarget = new RenderTarget(Device, NextModelWidth, NextModelHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);
-				TextureTarget = new RenderTarget(Device, NextTextureWidth, NextTextureHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);
+				TextureTargetL = new RenderTarget(Device, NextTextureWidth, NextTextureHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);
+				TextureTargetR = new RenderTarget(Device, NextTextureWidth, NextTextureHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);
+				RenderTarget* targets[] = {ModelTarget, TextureTargetL, TextureTargetR};
+
+				PolarTargetGroup = new RenderTargetGroup(Device, 3, targets);
 
 				CrossVertices = new VertexPositionColor[CrossVertexCount];
 				CrossVertices[0] = VertexPositionColor(XMFLOAT3(-0.1f, 0.f, 0.f), XMFLOAT4(1.f, 0.f, 0.f, 1.f));
@@ -124,9 +139,11 @@ namespace Green
 
 				Constants = new ConstantBuffer<TurntableConstants>(Device);
 				TurntableOptions.DepthResolution = XMINT2(KinectDevice::DepthWidth, KinectDevice::DepthHeight);
+				TurntableOptions.ColorResolution = XMINT2(KinectDevice::ColorWidth, KinectDevice::ColorHeight);
 
 				BOpaque = new Blend(Device, Blend::Opaque);
 				BAdditive = new Blend(Device, Blend::Additive);
+				BAlpha = new Blend(Device, Blend::AlphaBlend);
 				PDepth = new Plane(Device, KinectDevice::DepthWidth, KinectDevice::DepthHeight);
 
 				QMain = new Quad(Device);
@@ -138,11 +155,14 @@ namespace Green
 				if (!Processing) return;
 				Processing = false;
 				delete ModelTarget;
-				delete TextureTarget;
+				delete TextureTargetL;
+				delete TextureTargetR;
+				delete PolarTargetGroup;
 				delete Cross;
 				delete Constants;				
 				delete BOpaque;
 				delete BAdditive;
+				delete BAlpha;
 				delete PDepth;
 				delete QMain;
 				delete SLinearClamp;
@@ -151,11 +171,23 @@ namespace Green
 			virtual void ProcessFrame(RenderTargetPair* depth, Texture2D* color) override
 			{
 				if (!Processing) return;
+				BAdditive->Apply();
 				Constants->Update(&TurntableOptions);
-				ModelTarget->SetAsRenderTarget();
+				Constants->SetForVS(1);
+				Constants->SetForGS(1);
+				Constants->SetForPS(1);
+				PolarTargetGroup->SetRenderTargets();
 				Device->SetShaders(VSPolar, PSPolar, GSPolar);
 				depth->SetForVS();
+				color->SetForPS();
+				SLinearClamp->SetForPS();
 				PDepth->Draw();
+				
+				/*Device->SetAsRenderTarget();
+				Device->SetShaders(VSPolar, PSTest, GSPolar);
+				
+				depth->SetForVS();
+				PDepth->Draw();*/
 			}
 
 			virtual void Draw() override
@@ -164,12 +196,29 @@ namespace Green
 				Device->SetAsRenderTarget();
 				switch (Params.View)
 				{
-				case Views::Polar:
+				case Views::Depth:
+					BAlpha->Apply();
 					Device->SetShaders(VSCommon, PSPolarDepth);
 					ModelTarget->SetForPS();
+					SLinearClamp->SetForPS();
+					QMain->Draw();
+					break;
+				case Views::TextureL:
+					BAlpha->Apply();
+					Device->SetShaders(VSCommon, PSPolarTexture);
+					TextureTargetL->SetForPS();
+					SLinearClamp->SetForPS();
+					QMain->Draw();
+					break;
+				case Views::TextureR:
+					BAlpha->Apply();
+					Device->SetShaders(VSCommon, PSPolarTexture);
+					TextureTargetR->SetForPS();
+					SLinearClamp->SetForPS();
 					QMain->Draw();
 					break;
 				default:
+					BOpaque->Apply();
 					if (CrossChanged)
 					{
 						Cross->Load(CrossVertices, CrossVertexCount);
@@ -181,8 +230,7 @@ namespace Green
 					Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 					Context->Draw(CrossVertexCount, 0);
 					break;
-				}
-				
+				}				
 			}
 
 			void SetPerformance(int modelWidth, int modelHeight, int textureWidth, int textureHeight)
@@ -205,9 +253,13 @@ namespace Green
 				if(Processing) SetCross();
 			}
 
-			virtual void SetCameras(XMFLOAT4X4 depthIntrinsics, XMFLOAT4X4 depthInvIntrinsics, XMFLOAT4X4 worldToColorTransform) override
+			virtual void SetCameras(XMFLOAT4X4 depthIntrinsics, XMFLOAT4X4 depthInvIntrinsics, XMFLOAT4X4 worldToColorTransform, XMFLOAT4X4 depthToTexture, XMFLOAT2 textureMove, XMFLOAT2 textureScale) override
 			{
 				Params.DepthIntrinsics = depthIntrinsics;
+				Params.DepthInvIntrinsics = depthInvIntrinsics;
+				TurntableOptions.DepthToTextureTransform = depthToTexture;
+				TurntableOptions.TextureMove = textureMove;
+				TurntableOptions.TextureScale = textureScale;
 				SetTurntableOptions();
 			}
 
@@ -232,11 +284,13 @@ namespace Green
 			void SetTurntableOptions()
 			{
 				XMMATRIX DepthIntrinsics = XMLoadFloat4x4(&Params.DepthIntrinsics);
+				XMMATRIX DepthInvIntrinsics = XMLoadFloat4x4(&Params.DepthInvIntrinsics);
 				XMMATRIX World = XMLoadFloat4x4(&Params.World);
 				XMMATRIX TurntableTransform = XMLoadFloat4x4(&Params.TurntableTransform) * XMMatrixRotationY(Params.Rotation);
-
 				XMMATRIX TurntableToScreenTransform = DepthIntrinsics * World * TurntableTransform;
+				XMMATRIX DepthToTurntableTransform = XMMatrixInverse(0, TurntableTransform) * DepthInvIntrinsics;
 				XMStoreFloat4x4(&TurntableOptions.TurntableToScreenTransform, TurntableToScreenTransform);
+				XMStoreFloat4x4(&TurntableOptions.DepthToTurntableTransform, DepthToTurntableTransform);
 			}
 		};
 	}
