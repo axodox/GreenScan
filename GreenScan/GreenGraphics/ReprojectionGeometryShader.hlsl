@@ -14,4 +14,5 @@ void main(
 	{
 		output.Append(input[i]);
 	}
+	output.RestartStrip();
 }

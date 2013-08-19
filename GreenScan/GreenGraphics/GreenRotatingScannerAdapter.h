@@ -14,7 +14,7 @@ namespace Green
 {
 	namespace Graphics
 	{
-		public ref class RotatingScanner : public INotifyPropertyChanged
+		public ref class RotatingScanner : public INotifyPropertyChanged, IModelSaver
 		{
 		private:
 			Turntable^ Table;
@@ -22,20 +22,31 @@ namespace Green
 			GraphicsCanvas^ Canvas;
 			DispatcherTimer^ ProgressTimer;
 			RotatingScannerModule* ScannerModule;
-			bool connected;
+			bool isConnected, isScanning;
+
+			void OnPropertyChanged(String^ name)
+			{
+				PropertyChanged(this, gcnew PropertyChangedEventArgs(name));
+			}
+
+			void ToOrigin()
+			{
+				Table->ToOrigin();
+				StatusChanged(this, gcnew StatusEventArgs("Finding origin...", true));
+			}
+
 			void OnTableConnected(Object^ sender, EventArgs^ e)
 			{
 				ScannerModule = new RotatingScannerModule();
 				Canvas->GetDirectXWindow()->LoadModule(ScannerModule);
 
 				Table = Turntable::DefaultDevice;
-				Table->MotorStopped += gcnew EventHandler(this, &RotatingScanner::OnMotorStopped);
-				Table->ToOrigin();
+				Table->MotorStopped += gcnew EventHandler(this, &RotatingScanner::OnMotorStopped);				
 				Table->PositionChanged += gcnew EventHandler(this, &RotatingScanner::OnPositionChanged);
-				StatusChanged(this, gcnew StatusEventArgs("Finding origin...", true));
+				ToOrigin();
 
-				connected = true;
-				PropertyChanged(this, gcnew PropertyChangedEventArgs("Connected"));				
+				isConnected = true;
+				OnPropertyChanged("IsConnected");				
 			}
 
 			void OnPositionChanged(Object^ sender, EventArgs^ e)
@@ -53,6 +64,8 @@ namespace Green
 			{
 				ProgressTimer->Stop();
 				StatusChanged(this, gcnew StatusEventArgs("Turntable ready."));
+				EndScan();
+				OnPropertyChanged("IsAtOrigin");
 			}
 
 			void OnTableDisconnected(Object^ sender, EventArgs^ e)
@@ -63,29 +76,55 @@ namespace Green
 					return;
 				}
 
-				connected = false;
-				PropertyChanged(this, gcnew PropertyChangedEventArgs("Connected"));
+				isConnected = false;
+				OnPropertyChanged("IsConnected");
 
 				Canvas->GetDirectXWindow()->UnloadModule(ScannerModule);
 				SafeDelete(ScannerModule);
 			}
+
+			void EndScan()
+			{
+				if (!isScanning) return;
+				if (isConnected) Table->Stop();
+				if (ScannerModule) ScannerModule->Stop();
+				isScanning = false;
+				OnPropertyChanged("IsScanning");
+			}
 		public:
 			enum class Views {
 				Overlay,
-				Depth,
+				DepthL,
+				DepthR,
 				TextureL,
-				TextureR
+				TextureR,
+				Model
 			};
 
 			void SetShading(Views view)
 			{
-				if(ScannerModule)
+				if (ScannerModule)
 					ScannerModule->SetShading((RotatingScannerModule::Views)view);
 			}
 
 			virtual event StatusEventHandler^ StatusChanged;
 			virtual event PropertyChangedEventHandler^ PropertyChanged;
-			property bool Connected { bool get() { return connected; }}
+			property bool IsConnected { bool get() { return isConnected; }}
+			property bool IsScanning { bool get() { return isScanning; }}
+			property bool IsAtOrigin 
+			{ 
+				bool get() 
+				{
+					return isConnected && Table->AtOrigin;
+				}
+			}
+			property bool CanSave
+			{ 
+				bool get() 
+				{
+					return isConnected && ScannerModule->Processing;
+				}
+			}
 			RotatingScanner(KinectManager^ kinectManager, GraphicsCanvas^ graphicsCanvas)
 			{
 				Kinect = kinectManager;
@@ -101,14 +140,58 @@ namespace Green
 
 			void SetPerformance(int modelWidth, int modelHeight, int textureWidth, int textureHeight)
 			{
-				if(ScannerModule) ScannerModule->SetPerformance(modelWidth, modelHeight, textureWidth, textureHeight);
+				if (ScannerModule) ScannerModule->SetPerformance(modelWidth, modelHeight, textureWidth, textureHeight);
 			}
 
 			void Scan()
 			{
-				if(!connected) return;
+				if(!isConnected || isScanning) return;
+				isScanning = true;
 				Table->TurnOnce();
 				ProgressTimer->Start();
+				if (ScannerModule) ScannerModule->Scan();
+				OnPropertyChanged("IsScanning");
+			}
+
+			virtual bool SaveModel(String^ path, SaveFormats format)
+			{
+				if (!ScannerModule) return false;
+				LPWSTR npath = StringToLPWSTR(path);
+				bool ok = ScannerModule->SaveModel(npath, (ModelFormats)format);
+				LPWSTRDelete(npath);
+				return ok;
+			}
+
+			virtual bool OpenRaw(String^ path)
+			{
+				if (!ScannerModule) return false;
+				LPWSTR npath = StringToLPWSTR(path);
+				ScannerModule->PrepareForStaticInput();
+				bool ok = ScannerModule->OpenRaw(npath);
+				if (!ok) ScannerModule->EndProcessing();
+				LPWSTRDelete(npath);
+				return ok;
+			}
+
+			virtual bool SaveRaw(String^ path)
+			{
+				if (!ScannerModule) return false;
+				LPWSTR npath = StringToLPWSTR(path);
+				bool ok = ScannerModule->SaveRaw(npath);
+				LPWSTRDelete(npath);
+				return ok;
+			}
+
+			void Stop()
+			{
+				if(!isConnected || !isScanning) return;
+				EndScan();
+			}
+
+			void ReturnToOrigin()
+			{
+				if(!isConnected || isScanning || Table->AtOrigin) return;
+				ToOrigin();
 			}
 
 			void SetCalibration(
@@ -117,14 +200,14 @@ namespace Green
 				float coreX, float coreY)
 			{
 				pin_ptr<float> pTurntableTransform = &turntableTransform[0, 0];
-				if(ScannerModule) ScannerModule->SetCalibration(
+				if (ScannerModule) ScannerModule->SetCalibration(
 					pTurntableTransform, height, radius, coreX, coreY);
 			}
 
 			~RotatingScanner()
 			{
 				Canvas->GetDirectXWindow()->UnloadModule(ScannerModule);
-				if(Table)
+				if (Table)
 				{
 					delete Table;
 				}

@@ -55,7 +55,7 @@ namespace Turntables
 
         [Flags]
         private enum States : ushort { None = 0, Rotating = 0x0100, RotatingUp = 0x0200, MagneticSwitch = 0x0004}
-        public enum Commands : int { About = 0, Stop, StartUp, StartDown, Status, Step, StepBack, ClearCounter, TurnOff, ToOrigin }
+        public enum Commands : int { About = 0, Stop, StartUp, StartDown, Status, Step, StepBack, ClearCounter, TurnOff, ToOrigin };
         private static readonly string[] CommandStrings = new string[] { "?", "S", "U", "D", "C", "A", "V", "Z", "E", "O" };
         private const string DeviceSignal = "Basch-step";
         private SerialPort Port;
@@ -138,6 +138,11 @@ namespace Turntables
             return devices.ToArray();
         }
 
+        public void Stop()
+        {
+            SendCommandAsync(Commands.Stop);
+        }
+
         public void TurnOff()
         {
             SendCommandAsync(Commands.TurnOff);
@@ -164,6 +169,7 @@ namespace Turntables
                     Port.ReadLine();
                     if (command == CommandStrings[(int)Commands.ToOrigin])
                     {
+                        AtOrigin = true;
                         CommandQueue.Enqueue(CommandStrings[(int)Commands.ClearCounter]);
                         SyncContext.Post(MotorStoppedCallback, null);                        
                     }
@@ -268,6 +274,7 @@ namespace Turntables
         public bool Rotating { get; private set; }
         public bool RotationDirection { get; private set; }
         public bool MagneticSwitch { get; private set; }
+        public bool AtOrigin { get; private set; }
         public bool StopAtMagneticSwitch { get; set; }
         public string StatusWord { get; private set; }
         public Turntable(string portName)
@@ -277,6 +284,7 @@ namespace Turntables
             InitPort(Port);
             Port.Open();
             OpenedDevices++;
+            AtOrigin = false;
 
             CommandQueue = new Queue<string>();
             SendARE = new AutoResetEvent(true);
@@ -293,6 +301,16 @@ namespace Turntables
 
         public void SendCommandAsync(Commands command, int steps = 0)
         {
+            switch (command)
+            {
+                case Commands.StartDown:
+                case Commands.StartUp:
+                case Commands.Step:
+                case Commands.StepBack:
+                case Commands.ToOrigin:
+                    AtOrigin = false;
+                    break;               
+            }
             string s = CommandStrings[(int)command];
             if (steps != 0)
             {

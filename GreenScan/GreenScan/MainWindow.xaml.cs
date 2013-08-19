@@ -6,15 +6,18 @@ using System.Threading;
 using Green.Kinect;
 using System.Windows.Input;
 using System.Windows.Threading;
+using System.Windows.Media.Animation;
 using Microsoft.Win32;
 using GreenScan;
 using System.ComponentModel;
+using ExcaliburSecurity;
+
 namespace Green.Scan
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class MainWindow : Window, INotifyPropertyChanged
     {
         ScanSettings SS;
         KinectManager KM;
@@ -24,20 +27,43 @@ namespace Green.Scan
         public MainWindow()
         {
             InitializeComponent();
-            KM = new KinectManager();
+            ShowStatus("Loading...", true);
+
+            BackgroundWorker SecurityWorker = new BackgroundWorker();
+            SecurityWorker.DoWork += SecurityWorker_DoWork;
+            SecurityWorker.RunWorkerCompleted += SecurityWorker_RunWorkerCompleted;
+            SecurityWorker.RunWorkerAsync();
+
             SS = new ScanSettings();
+            KM = new KinectManager();
             GC.Loaded += GC_Loaded;
             InitGUI();
             InitSettings();
         }
 
+        void SecurityWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            if ((bool)e.Result == true)
+            {
+                ShowStatus("Ready.");
+                IsEnabled = true;
+            }
+            else
+                Close();            
+        }
+
+        void SecurityWorker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            SecurityClient SC = new SecurityClient();
+            e.Result = SC.HasPermissionToRun;
+        }
+
         void InitGUI()
         {
-            KinectManagerToDeviceListConverter.ModeSetting = SS.KinectMode;
-
-            DataContext = KM;
+            MIStart.DataContext = KM;
             MIMode.DataContext = SS.KinectMode;
-            //MIShading.DataContext = SS.ShadingMode;
+            MITurntable.DataContext = RS;
+            MIExport.DataContext = KM;
             SMC.DataContext = SS;
 
             DT = new DispatcherTimer(DispatcherPriority.Send);
@@ -61,6 +87,7 @@ namespace Green.Scan
 
         void GC_Loaded(object sender, RoutedEventArgs e)
         {
+            GC.SetKinectDevice(KM);
             SetPreprocessing();
             SetView();
             SetCameras();
@@ -73,16 +100,42 @@ namespace Green.Scan
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            if (SW != null)
-            {
-                SW.Close();
-            }
-            if (RS != null)
-            {
-                RS.Dispose();
-            }
+            if (SW != null) SW.Close();
+            if (RS != null) RS.Dispose();
+            if (TCW != null) TCW.Close();
             KM.CloseKinect();
             SS.Save("Settings.ini");
+        }
+
+        void SetKinectToDepthAndColorMode(Action completedCallback)
+        {
+            ShowStatus("Preparing Kinect...", true);
+            BackgroundWorker StartUpWorker = new BackgroundWorker();
+            StartUpWorker.DoWork += StartUpWorker_DoWork;
+            StartUpWorker.RunWorkerCompleted += StartUpWorker_RunWorkerCompleted;
+            StartUpWorker.RunWorkerAsync(completedCallback);
+        }
+
+        void StartUpWorker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            e.Result = e.Argument;
+            if (KM.DeviceCount == 0) return;
+            if (!KM.DeviceOpened)
+                if (!KM.OpenKinect(0)) return;
+            if (!KM.Processing || KM.Mode != KinectManager.Modes.DepthAndColor)
+                if (!KM.StartKinect(KinectManager.Modes.DepthAndColor)) return;
+        }
+
+        void StartUpWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            (sender as BackgroundWorker).Dispose();
+            if (KM.Processing && KM.Mode == KinectManager.Modes.DepthAndColor)
+            {
+                ShowStatus("Ready.");
+                (e.Result as Action)();
+            }
+            else
+                ShowStatus("Cannot connect to Kinect.");
         }
 
         #region Settings
@@ -283,44 +336,14 @@ namespace Green.Scan
             return SS.SaveDirectory.AbsolutePath + fileName;
         }
 
-        private void SaveRaw_Click(object sender, RoutedEventArgs e)
+        private void SaveRaw()
         {
             SaveDialog(KM.SaveRaw(GenerateFilename(".gsr")));
         }
 
-        private void SaveImage_Click(object sender, RoutedEventArgs e)
+        private void SaveImage()
         {
             SaveDialog(GC.SaveImage(GenerateFilename(".png")));
-        }
-
-        private void SaveSTL_Click(object sender, RoutedEventArgs e)
-        {
-            SaveModel(GraphicsCanvas.SaveFormats.STL);
-        }
-
-        private void SaveFBX_Click(object sender, RoutedEventArgs e)
-        {
-            SaveModel(GraphicsCanvas.SaveFormats.FBX);
-        }
-
-        private void SaveDXF_Click(object sender, RoutedEventArgs e)
-        {
-            SaveModel(GraphicsCanvas.SaveFormats.DXF);
-        }
-
-        private void SaveDAE_Click(object sender, RoutedEventArgs e)
-        {
-            SaveModel(GraphicsCanvas.SaveFormats.DAE);
-        }
-
-        private void SaveOBJ_Click(object sender, RoutedEventArgs e)
-        {
-            SaveModel(GraphicsCanvas.SaveFormats.OBJ);
-        }
-
-        private void SaveFL4_Click(object sender, RoutedEventArgs e)
-        {
-            SaveModel(GraphicsCanvas.SaveFormats.FL4);
         }
 
         private void SaveDialog(bool ok)
@@ -328,44 +351,53 @@ namespace Green.Scan
             if (ok)
                 ShowStatus("Save complete.");
             else
+            {
+                ShowStatus("Ready.");
                 MessageBox.Show("Saving was unsuccessful.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         class SaveTask
         {
+            public IModelSaver ModelSaver;
             public String Filename;
-            public GraphicsCanvas.SaveFormats Format;
-            public SaveTask(string filename, GraphicsCanvas.SaveFormats format)
+            public SaveFormats Format;
+            public SaveTask(IModelSaver modelSaver, string filename, SaveFormats format)
             {
+                ModelSaver = modelSaver;
                 Filename = filename;
                 Format = format;
             }
         }
 
-        private void SaveModel(GraphicsCanvas.SaveFormats format)
+        public bool SavingInProgress { get; private set; }
+        private void SaveModel(IModelSaver modelSaver, SaveFormats format)
         {
-            //SaveWindow saveWindow = new SaveWindow(GC, GenerateFilename(""), format);
-            //SaveDialog((bool)saveWindow.ShowDialog());
+            if (SavingInProgress) return;
+            SavingInProgress = true;
+            NotifyPropertyChanged("SavingInProgress");
             BackgroundWorker SaveWorker = new BackgroundWorker();
             SaveWorker.DoWork += SaveWorker_DoWork;
             SaveWorker.RunWorkerCompleted += SaveWorker_RunWorkerCompleted;
-            SaveWorker.RunWorkerAsync(new SaveTask(GenerateFilename(), format));
+            SaveWorker.RunWorkerAsync(new SaveTask(modelSaver, GenerateFilename(), format));
             ShowStatus("Saving in progress...", true, double.NaN);
         }
 
         void SaveWorker_DoWork(object sender, DoWorkEventArgs e)
         {
             SaveTask ST = (SaveTask)e.Argument;
-            e.Result = GC.SaveModel(ST.Filename, ST.Format);
+            e.Result = ST.ModelSaver.SaveModel(ST.Filename, ST.Format);
         }
 
         void SaveWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             SaveDialog((bool)e.Result);
             (sender as BackgroundWorker).Dispose();
+            SavingInProgress = false;
+            NotifyPropertyChanged("SavingInProgress");
         }
 
-        private void Open_Click(object sender, RoutedEventArgs e)
+        private void OpenRaw()
         {
             OpenFileDialog OFD = new OpenFileDialog();
             OFD.Filter = "GreenScan RAW files (*.gsr)|*.gsr";
@@ -380,7 +412,10 @@ namespace Green.Scan
 
         private void OpenDialog(bool ok)
         {
-            if (!ok) MessageBox.Show("Opening was unsuccessful.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            if (ok)
+                ShowStatus("File loaded successfully.");
+            else
+                MessageBox.Show("Opening was unsuccessful.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
 
         #endregion
@@ -405,9 +440,9 @@ namespace Green.Scan
         {
             switch (e.PropertyName)
             {
-                case "Connected":
-                    SS.TurntableProperties.IsHidden = !RS.Connected;
-                    if (RS.Connected)
+                case "IsConnected":
+                    SS.TurntableProperties.IsHidden = !RS.IsConnected;
+                    if (RS.IsConnected)
                     {
                         SetTurntable();
                     }
@@ -415,12 +450,16 @@ namespace Green.Scan
             }
         }
 
-        private void TurntableCalibrate_Click(object sender, RoutedEventArgs e)
+        TurntableCalibrationWindow TCW;
+        private void CalibrateTurntable()
         {
-            TurntableCalibrationWindow TCW = new TurntableCalibrationWindow(GC, SS);
-            TCW.Show();
+            SetKinectToDepthAndColorMode(() =>
+            {
+                SS.UseModuleShading.Value = false;
+                TCW = new TurntableCalibrationWindow(GC, SS);
+                TCW.Show();
+            });
         }
-
         #endregion
 
         void ShowStatus(string text, bool showProgress = false, double progress = double.NaN)
@@ -436,10 +475,236 @@ namespace Green.Scan
 
         private void TurntableScan_Click(object sender, RoutedEventArgs e)
         {
-            if (RS.Connected)
+            if (RS.IsConnected)
             {
                 RS.Scan();
             }
         }
+
+        #region Commanding
+        void ProcessingCmdCanExecute(object sender, CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = KM.Processing;
+        }
+
+        void StartCmdCanExecute(object target, CanExecuteRoutedEventArgs e)
+        {
+            int index;
+            if (int.TryParse((string)e.Parameter, out index))
+            {
+                e.CanExecute = KM.DeviceCount > index;
+            }
+            else e.CanExecute = false;
+        }
+
+        void StartCmdExecuted(object target, ExecutedRoutedEventArgs e)
+        {
+            int index;
+            if (int.TryParse((string)e.Parameter, out index))
+            {
+                ShowStatus("Starting...", true);
+                BackgroundWorker StartWorker = new BackgroundWorker();
+                StartWorker.DoWork += StartWorker_DoWork;
+                StartWorker.RunWorkerCompleted += StartWorker_RunWorkerCompleted;
+                StartWorker.RunWorkerAsync(index);                
+            }
+        }
+
+        void StartWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            (sender as BackgroundWorker).Dispose();
+            if((bool)e.Result)
+                ShowStatus("Ready.");
+            else
+                ShowStatus("The Kinect cannot be opened, may already be in use.");
+        }
+
+        void StartWorker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            KM.OpenKinect((int)e.Argument);
+            e.Result = KM.StartKinect(SS.KinectMode.Value);
+        }
+
+        void OpenCmdCanExecute(object target, CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = !SavingInProgress;
+        }
+
+        void OpenCmdExecuted(object target, ExecutedRoutedEventArgs e)
+        {
+            OpenRaw();
+        }
+
+        void SaveCmdExecuted(object target, ExecutedRoutedEventArgs e)
+        {
+            SaveRaw();
+        }
+
+        void SaveCmdCanExecute(object target, CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = KM.Processing && !SavingInProgress;
+        }
+
+        void ExportCmdExecuted(object target, ExecutedRoutedEventArgs e)
+        {
+            switch ((string)e.Parameter)
+            {
+                case "PNG":
+                    SaveImage();
+                    break; 
+                default:
+                    SaveModel(GC, (SaveFormats)Enum.Parse(typeof(SaveFormats), (string)e.Parameter));
+                    break;
+            }
+        }
+
+        void ExportCmdCanExecute(object sender, CanExecuteRoutedEventArgs e)
+        {
+            switch ((string)e.Parameter)
+            {
+                case "PNG":
+                    e.CanExecute = KM.Processing && !SavingInProgress;
+                    break;
+                default:
+                    e.CanExecute = KM.Processing && KM.Mode == KinectManager.Modes.DepthAndColor && !SavingInProgress;
+                    break;
+            }
+        }
+
+        void StopCmdCanExecute(object target, CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = KM.Processing && !SavingInProgress;
+        }
+
+        void StopCmdExecuted(object target, ExecutedRoutedEventArgs e)
+        {
+            ShowStatus("Stopping...", true);
+            BackgroundWorker StopWorker = new BackgroundWorker();
+            StopWorker.DoWork += StopWorker_DoWork;
+            StopWorker.RunWorkerCompleted += StopWorker_RunWorkerCompleted;
+            StopWorker.RunWorkerAsync();            
+        }
+
+        void StopWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            (sender as BackgroundWorker).Dispose();
+            ShowStatus("Ready.");
+        }
+
+        void StopWorker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            KM.StopKinect();
+        }
+
+        void CloseCmdExecuted(object target, ExecutedRoutedEventArgs e)
+        {
+            Close();
+        }
+
+        void TurntableScanCmdCanExecute(object target, CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = RS.IsConnected && !RS.IsScanning && RS.IsAtOrigin;
+        }
+
+        void TurntableScanCmdExecuted(object target, ExecutedRoutedEventArgs e)
+        {
+            SetKinectToDepthAndColorMode(() => { RS.Scan(); });            
+        }
+
+        void TurntableStopCmdCanExecute(object target, CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = RS.IsConnected && RS.IsScanning;
+        }
+
+        void TurntableStopCmdExecuted(object target, ExecutedRoutedEventArgs e)
+        {
+            RS.Stop();
+        }
+
+        void TurntableToOriginCmdCanExecute(object target, CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = RS.IsConnected && !RS.IsScanning && !RS.IsAtOrigin;
+        }
+
+        void TurntableToOriginCmdExecuted(object target, ExecutedRoutedEventArgs e)
+        {
+            RS.ReturnToOrigin();
+        }
+
+        void TurntableExportCmdCanExecute(object target, CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = RS.CanSave && !SavingInProgress;
+        }
+
+        void TurntableExportCmdExecuted(object target, ExecutedRoutedEventArgs e)
+        {
+            SaveModel(RS, (SaveFormats)Enum.Parse(typeof(SaveFormats), (string)e.Parameter));
+        }
+
+        void TurntableSaveCmdCanExecute(object target, CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = RS.CanSave && !SavingInProgress;
+        }
+
+        void TurntableSaveCmdExecuted(object target, ExecutedRoutedEventArgs e)
+        {
+            SaveDialog(RS.SaveRaw(GenerateFilename(".gtr")));
+        }
+
+        void TurntableOpenCmdCanExecute(object target, CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = RS.IsConnected && !RS.IsScanning;
+        }
+
+        void TurntableOpenCmdExecuted(object target, ExecutedRoutedEventArgs e)
+        {
+            OpenFileDialog OFD = new OpenFileDialog();
+            OFD.Filter = "GreenScan Turntable RAW files (*.gtr)|*.gtr";
+            OFD.InitialDirectory = SS.SaveDirectory.AbsolutePath;
+            OFD.Title = "Open file";
+            if (OFD.ShowDialog(this) == true)
+            {
+                KM.StopKinect();
+                OpenDialog(RS.OpenRaw(OFD.FileName));
+            }
+        }
+
+        void TurntableCalibrateCmdCanExecute(object target, CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = KM.Processing || KM.DeviceCount > 0;
+        }
+
+        void TurntableCalibrateCmdExecuted(object target, ExecutedRoutedEventArgs e)
+        {
+            CalibrateTurntable();
+        }
+        #endregion
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        void NotifyPropertyChanged(string name)
+        {
+            if (PropertyChanged != null) PropertyChanged(this, new PropertyChangedEventArgs(name));
+        }
+    }
+
+    public static class GreenScanCommands
+    {
+        public static RoutedUICommand Open = new RoutedUICommand("Opens the specified model file.", "Open", typeof(MainWindow), new InputGestureCollection() { new KeyGesture(Key.O, ModifierKeys.Control) });
+        public static RoutedUICommand Save = new RoutedUICommand("Saves the current model.", "Save", typeof(MainWindow), new InputGestureCollection() { new KeyGesture(Key.S, ModifierKeys.Control) });
+        public static RoutedUICommand Close = new RoutedUICommand("Closes the application.", "Close", typeof(MainWindow), new InputGestureCollection() { new KeyGesture(Key.Escape) });
+        public static RoutedUICommand Export = new RoutedUICommand("Exports the current scene to the specified format.", "Export", typeof(MainWindow));
+        public static RoutedUICommand Start = new RoutedUICommand("Start the Kinect with the specified index.", "Start", typeof(MainWindow));
+        public static RoutedUICommand Stop = new RoutedUICommand("Stops the Kinect.", "Stop", typeof(MainWindow));
+    }
+
+    public static class TurntableCommands
+    {
+        public static RoutedUICommand Scan = new RoutedUICommand("Starts the scanning process. Turntable must be at origin. The command sets the Kinect to the required state.", "Turntable.Scan", typeof(MainWindow), new InputGestureCollection() { new KeyGesture(Key.F6) });
+        public static RoutedUICommand Stop = new RoutedUICommand("Stops the scanning and the turntable.", "Turntable.Stop", typeof(MainWindow), new InputGestureCollection() { new KeyGesture(Key.F12) });
+        public static RoutedUICommand Calibrate = new RoutedUICommand("Shows the calibration window.", "Turntable.Calibrate", typeof(MainWindow));
+        public static RoutedUICommand ToOrigin = new RoutedUICommand("Returns the turntable to its origin.", "Turntable.ToOrigin", typeof(MainWindow), new InputGestureCollection() { new KeyGesture(Key.F7) });
+        public static RoutedUICommand Export = new RoutedUICommand("Exports the model in various formats. The format should be given as parameter.", "Turntable.Export", typeof(MainWindow));
+        public static RoutedUICommand Open = new RoutedUICommand("Opens the specified turntable model file.", "Turntable.Open", typeof(MainWindow));
+        public static RoutedUICommand Save = new RoutedUICommand("Saves the model.", "Turntable.Save", typeof(MainWindow));
     }
 }

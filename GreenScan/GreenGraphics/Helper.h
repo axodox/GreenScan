@@ -95,6 +95,8 @@ byte ClampToByte(float x)
 	else return (byte)(x * 255);
 }
 
+typedef void (*Callback)(void* param); 
+
 
 #pragma managed
 #include <vcclr.h>

@@ -133,8 +133,8 @@ namespace Green.Scan
             ViewProperties.Settings.Add(TranslationY);
             ViewProperties.Settings.Add(TranslationZ); 
 
-            RotationX = new NumericSetting<float>("RotationX", 0f, -90f, 90f, 2) { FriendlyName = "Rotation X (degrees)" };
-            RotationY = new NumericSetting<float>("RotationY", 0f, -90f, 90f, 2) { FriendlyName = "Rotation Y (degrees)" };
+            RotationX = new NumericSetting<float>("RotationX", 0f, -180f, 180f, 2) { FriendlyName = "Rotation X (degrees)" };
+            RotationY = new NumericSetting<float>("RotationY", 0f, -180f, 180f, 2) { FriendlyName = "Rotation Y (degrees)" };
             RotationZ = new NumericSetting<float>("RotationZ", 0f, -180f, 180f, 2) { FriendlyName = "Rotation Z (degrees)" };
             ViewProperties.Settings.Add(RotationX);
             ViewProperties.Settings.Add(RotationY);

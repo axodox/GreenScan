@@ -14,7 +14,6 @@ namespace Green.Scan
     [ValueConversion(typeof(KinectManager), typeof(MenuItem[]))]
     class KinectManagerToDeviceListConverter:IValueConverter
     {
-        public static EnumSetting<KinectManager.Modes> ModeSetting;
         public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         {
             if (!(value is KinectManager)) return null;
@@ -24,23 +23,30 @@ namespace Green.Scan
             MenuItem[] items = new MenuItem[count];
             for (int i = 0; i < count; i++)
             {
-                items[i] = new MenuItem() { Header = "Device " + i, Tag = i };
-                items[i].Click += KinectManagerToDeviceListConverter_Click;
+                items[i] = new MenuItem() { Header = "Device " + i };
+                items[i].Command = GreenScanCommands.Start;
+                items[i].CommandParameter = i.ToString();
             }
             return items;
-        }
-
-        void KinectManagerToDeviceListConverter_Click(object sender, System.Windows.RoutedEventArgs e)
-        {
-            KinectManager manager = (KinectManager)(sender as MenuItem).DataContext;
-            int index = (int)(sender as MenuItem).Tag;
-            manager.OpenKinect(index);
-            manager.StartKinect(ModeSetting.Value);
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         {
             throw new NotImplementedException();
+        }
+    }
+
+    [ValueConversion(typeof(bool), typeof(bool))]
+    class BooleanInverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            return !(bool)value;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            return !(bool)value;
         }
     }
 

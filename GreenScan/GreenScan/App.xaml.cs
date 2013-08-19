@@ -4,6 +4,7 @@ using System.Configuration;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Markup;
 
 namespace GreenScan
 {

@@ -12,8 +12,8 @@ namespace Green
 	{
 		class GraphicsDevice
 		{
-			friend class Blend;
-			friend class Rasterizer;
+			friend class BlendState;
+			friend class RasterizerState;
 			friend class VertexShader;
 			template <class T> friend class VertexBuffer;
 			template <class T> friend class IndexBuffer;
@@ -167,11 +167,11 @@ namespace Green
 			}
 		};
 
-		class Blend
+		class BlendState
 		{
 		private:
 			GraphicsDevice* Host;
-			ID3D11BlendState* BlendState;
+			ID3D11BlendState* State;
 		public:
 			enum BlendType
 			{
@@ -180,7 +180,7 @@ namespace Green
 				AlphaBlend
 			};
 
-			Blend(GraphicsDevice* graphicsDevice, BlendType type)
+			BlendState(GraphicsDevice* graphicsDevice, BlendType type)
 			{
 				Host = graphicsDevice;
 
@@ -222,34 +222,36 @@ namespace Green
 				ZeroMemory(&bd, sizeof(bd));
 				bd.RenderTarget[0] = rtbd;
 
-				Host->Device->CreateBlendState(&bd, &BlendState);
+				Host->Device->CreateBlendState(&bd, &State);
 			}
 
 			void Apply()
 			{
-				Host->DeviceContext->OMSetBlendState(BlendState, 0, 0xffffffff);
+				Host->DeviceContext->OMSetBlendState(State, 0, 0xffffffff);
 			}
 
-			~Blend()
+			~BlendState()
 			{
-				BlendState->Release();
+				State->Release();
 			}
 		};
 
-		class Rasterizer
+		class RasterizerState
 		{
 		private:
 			GraphicsDevice* Host;
-			ID3D11RasterizerState* RasterizerState;
+			ID3D11RasterizerState* State;
 		public:
 			enum RasterizerType
 			{
 				Default,
 				CullNone,
+				CullClockwise,
+				CullCounterClockwise,
 				Wireframe
 			};
 
-			Rasterizer(GraphicsDevice* graphicsDevice, RasterizerType type)
+			RasterizerState(GraphicsDevice* graphicsDevice, RasterizerType type)
 			{
 				Host = graphicsDevice;
 
@@ -271,23 +273,29 @@ namespace Green
 				case RasterizerType::CullNone:
 					rd.CullMode = D3D11_CULL_NONE;
 					break;
+				case RasterizerType::CullClockwise:
+					rd.CullMode = D3D11_CULL_FRONT;
+					break;
+				case RasterizerType::CullCounterClockwise:
+					rd.CullMode = D3D11_CULL_BACK;
+					break;
 				case RasterizerType::Wireframe:
 					rd.CullMode = D3D11_CULL_NONE;
 					rd.FillMode = D3D11_FILL_WIREFRAME;
 					break;
 				}
 
-				Error(Host->Device->CreateRasterizerState(&rd, &RasterizerState));
+				Error(Host->Device->CreateRasterizerState(&rd, &State));
 			}
 
 			void Set()
 			{
-				Host->DeviceContext->RSSetState(RasterizerState);
+				Host->DeviceContext->RSSetState(State);
 			}
 
-			~Rasterizer()
+			~RasterizerState()
 			{
-				RasterizerState->Release();
+				State->Release();
 			}
 		};
 
@@ -704,10 +712,13 @@ namespace Green
 
 		class Texture2D
 		{
+			friend class RenderTarget;
+			friend class ReadableRenderTarget;
 		protected:
 			GraphicsDevice* Host;
 			ID3D11Texture2D* Texture;
 			ID3D11ShaderResourceView* ResourceView;
+			DXGI_FORMAT Format;
 			int Width, Height;
 
 			Texture2D(GraphicsDevice* graphicsDevice)
@@ -715,14 +726,28 @@ namespace Green
 				Host = graphicsDevice;
 				Texture = Host->BackBufferTexture;
 				Texture->AddRef();
+				Format = graphicsDevice->Format;
 				ResourceView = nullptr;
 				Width = Host->BackBufferWidth;
 				Height = Host->BackBufferHeight;
+			}
+
+			Texture2D(Texture2D* texture)
+			{
+				Host = texture->Host;
+				Texture = texture->Texture;
+				Texture->AddRef();
+				ResourceView = texture->ResourceView;
+				ResourceView->AddRef();
+				Width = texture->Width;
+				Height = texture->Height;
+				Format = texture->Format;
 			}
 		public:
 			Texture2D(GraphicsDevice* graphicsDevice, int width, int height, DXGI_FORMAT format, void* data = 0, int stride = 0) : Width(width), Height(height)
 			{
 				Host = graphicsDevice;
+				Format = format;
 
 				D3D11_TEXTURE2D_DESC desc;
 				ZeroMemory(&desc, sizeof(desc));
@@ -831,13 +856,20 @@ namespace Green
 			friend class RenderTargetGroup;
 		protected:
 			ID3D11RenderTargetView* RenderTargetView;
-			D3D11_VIEWPORT* ViewPort;
+			D3D11_VIEWPORT* Viewport;
 
 			RenderTarget(GraphicsDevice* device) : Texture2D(device)
 			{
 				RenderTargetView = device->RenderTargetView;
 				RenderTargetView->AddRef();
-				ViewPort = new D3D11_VIEWPORT(*device->Viewport);
+				Viewport = new D3D11_VIEWPORT(*device->Viewport);
+			}
+
+			RenderTarget(RenderTarget* target) : Texture2D(target)
+			{
+				RenderTargetView = target->RenderTargetView;
+				RenderTargetView->AddRef();
+				Viewport = new D3D11_VIEWPORT(*target->Viewport);
 			}
 		public:
 			RenderTarget(GraphicsDevice* graphicsDevice, int width, int height, DXGI_FORMAT format) 
@@ -851,13 +883,13 @@ namespace Green
 
 				Error(Host->Device->CreateRenderTargetView(Texture, &rtvd, &RenderTargetView));
 
-				ViewPort = new D3D11_VIEWPORT();
-				ViewPort->TopLeftX = 0;
-				ViewPort->TopLeftY = 0;
-				ViewPort->Width = width;
-				ViewPort->Height = Height;
-				ViewPort->MinDepth = D3D11_MIN_DEPTH;
-				ViewPort->MaxDepth = D3D11_MAX_DEPTH;
+				Viewport = new D3D11_VIEWPORT();
+				Viewport->TopLeftX = 0;
+				Viewport->TopLeftY = 0;
+				Viewport->Width = width;
+				Viewport->Height = Height;
+				Viewport->MinDepth = D3D11_MIN_DEPTH;
+				Viewport->MaxDepth = D3D11_MAX_DEPTH;
 			}
 
 			void Clear()
@@ -869,13 +901,16 @@ namespace Green
 			void SetAsRenderTarget()
 			{
 				Host->DeviceContext->OMSetRenderTargets(1, &RenderTargetView, 0);
-				Host->DeviceContext->RSSetViewports(1, ViewPort);
+				Host->DeviceContext->RSSetViewports(1, Viewport);
 			}
+
+			int GetWidth() { return Width; }
+			int GetHeight() { return Height; }
 
 			~RenderTarget()
 			{
 				RenderTargetView->Release();
-				delete ViewPort;
+				delete Viewport;
 			}
 		};
 
@@ -896,7 +931,16 @@ namespace Green
 				for(int i = 0; i < count; i++)
 				{
 					RenderTargetViews[i] = targets[i]->RenderTargetView;
-					ViewPorts[i] = *targets[i]->ViewPort;
+					ViewPorts[i] = *targets[i]->Viewport;
+				}
+			}
+
+			void Clear()
+			{
+				float color[] =  {0.f, 0.f, 0.f, 0.f};
+				for(int i = 0; i < Count; i++)
+				{
+					Host->DeviceContext->ClearRenderTargetView(RenderTargetViews[i], color);
 				}
 			}
 
@@ -983,12 +1027,17 @@ namespace Green
 				desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
 				Error(Host->Device->CreateTexture2D(&desc, 0, &StagingTexture));
 			}
-
 		public:
 			ReadableRenderTarget(GraphicsDevice* device)
 				: RenderTarget(device)
 			{
 				CreateStagingTexture(Width, Height, device->Format);
+			}
+
+			ReadableRenderTarget(RenderTarget* target)
+				: RenderTarget(target)
+			{
+				CreateStagingTexture(Width, Height, target->Format);
 			}
 
 			ReadableRenderTarget(GraphicsDevice* graphicsDevice, int width, int height, DXGI_FORMAT format) 
@@ -1001,6 +1050,7 @@ namespace Green
 			{
 				Host->DeviceContext->OMSetRenderTargets(0, 0, 0);
 				Host->DeviceContext->CopyResource(StagingTexture, Texture);
+				Host->DeviceContext->Flush();
 			}
 
 			ID3D11Texture2D* GetStagingTexture()
@@ -1013,7 +1063,7 @@ namespace Green
 				D3D11_MAPPED_SUBRESOURCE ms;
 				Error(Host->DeviceContext->Map(StagingTexture, 0, D3D11_MAP_READ, 0, &ms));
 				for(int row = 0; row < Height; row++)
-					memcpy_s(data + row * Width, ms.DepthPitch, (byte*)ms.pData + row * ms.RowPitch, Width * sizeof(T));
+					memcpy(data + row * Width, (byte*)ms.pData + row * ms.RowPitch, Width * sizeof(T));
 				Host->DeviceContext->Unmap(StagingTexture, 0);
 			}
 

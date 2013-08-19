@@ -186,46 +186,54 @@ namespace Green
 			bool StartKinect(Modes mode)
 			{
 				if(Sensor == nullptr || KinectWorking) return false;
-				HRESULT hr;
-				
-				ColorStream = 0;
-				DepthStream = 0;
-				DWORD initalizeFlags = 0;
-				if(mode & (Modes::Color | Modes::Infrared))
-					initalizeFlags |= NUI_INITIALIZE_FLAG_USES_COLOR;	
-				if(mode & Modes::Depth)
-					initalizeFlags |= NUI_INITIALIZE_FLAG_USES_DEPTH;
-				hr = Sensor->NuiInitialize(initalizeFlags);
-				if(FAILED(hr)) return false;
-				
-				if(mode & (Modes::Color | Modes::Infrared))
+				try
 				{
-					NUI_IMAGE_TYPE imageType;
-					if(mode & Modes::Color)
-						imageType = NUI_IMAGE_TYPE_COLOR;
-					else
-						imageType = NUI_IMAGE_TYPE_COLOR_INFRARED;
+					HRESULT hr;
+				
+					ColorStream = 0;
+					DepthStream = 0;
+					DWORD initalizeFlags = 0;
+					if(mode & (Modes::Color | Modes::Infrared))
+						initalizeFlags |= NUI_INITIALIZE_FLAG_USES_COLOR;	
+					if(mode & Modes::Depth)
+						initalizeFlags |= NUI_INITIALIZE_FLAG_USES_DEPTH;
+					hr = Sensor->NuiInitialize(initalizeFlags);
+					if(FAILED(hr)) throw 0;
+				
+					if(mode & (Modes::Color | Modes::Infrared))
+					{
+						NUI_IMAGE_TYPE imageType;
+						if(mode & Modes::Color)
+							imageType = NUI_IMAGE_TYPE_COLOR;
+						else
+							imageType = NUI_IMAGE_TYPE_COLOR_INFRARED;
 					
-					hr = Sensor->NuiImageStreamOpen(
-						imageType, NUI_IMAGE_RESOLUTION_640x480, 0, 2,
-						NextFrameEvents[0], &ColorStream);
-					if(FAILED(hr)) return false;
-				}
+						hr = Sensor->NuiImageStreamOpen(
+							imageType, NUI_IMAGE_RESOLUTION_640x480, 0, 2,
+							NextFrameEvents[0], &ColorStream);
+						if(FAILED(hr)) throw 0;
+					}
 				
-				if(mode & Modes::Depth)
+					if(mode & Modes::Depth)
+					{
+						hr = Sensor->NuiImageStreamOpen(
+							NUI_IMAGE_TYPE_DEPTH, NUI_IMAGE_RESOLUTION_640x480, 0, 2,
+							NextFrameEvents[1], &DepthStream);
+						if(FAILED(hr)) throw 0;
+					}
+				
+					if(KinectStarting != nullptr) KinectStarting(mode, CallbackObject);
+					Mode = mode;
+					WorkerThreadOn = true;
+					CreateThread(0, 0, &WorkerThread, this, 0, 0);
+					KinectWorking = true;
+					return true;		
+				}
+				catch(int i)
 				{
-					hr = Sensor->NuiImageStreamOpen(
-						NUI_IMAGE_TYPE_DEPTH, NUI_IMAGE_RESOLUTION_640x480, 0, 2,
-						NextFrameEvents[1], &DepthStream);
-					if(FAILED(hr)) return false;
+					Sensor->NuiShutdown();
+					return false;
 				}
-				
-				if(KinectStarting != nullptr) KinectStarting(mode, CallbackObject);
-				Mode = mode;
-				WorkerThreadOn = true;
-				CreateThread(0, 0, &WorkerThread, this, 0, 0);
-				KinectWorking = true;
-				return true;				
 			}
 
 			static const int SaveVersion = 1;
@@ -366,7 +374,7 @@ namespace Green
 				if(Sensor == nullptr || !KinectWorking) return;
 				Sensor->NuiShutdown();
 				WorkerThreadOn = false;
-				WaitForSingleObject(KinectStopped, INFINITE);	
+				WaitForSingleObject(KinectStopped, 1000);	
 				KinectStopping(CallbackObject);
 				KinectWorking = false;
 			}
@@ -401,8 +409,6 @@ namespace Green
 				CloseHandle(KinectStopped);
 				delete NextFrameEvents;
 			}
-		private:
-
 		};
 	}
 }

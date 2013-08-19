@@ -32,10 +32,21 @@
 //		return float4(0, 0, -i, 1.f);
 //}
 
-float4 main(VertexPolar v) : SV_TARGET
+//float4 main(VertexPolar v) : SV_TARGET
+//{
+//	if(sign(v.World.x) == 1)
+//		return float4(v.Position.z * 5, 0.f, 0.f, 1.f);
+//	else
+//		return float4(0.f, 0.f, v.Position.z * 5, 1.f);
+//}
+Texture2D<float2> ModelTexture : register(t0);
+
+float4 main(VertexPositionTextureOut vi) : SV_TARGET
 {
-	if(sign(v.World.x) == 1)
-		return float4(v.Position.z * 5, 0.f, 0.f, 1.f);
-	else
-		return float4(0.f, 0.f, v.Position.z * 5, 1.f);
+	int3 id = int3((int)(vi.Texture.x * ModelResolution.x), (int)(vi.Texture.y * ModelResolution.y), 0);
+	float2 data = ModelTexture.Load(id);
+
+	//if(data.y > 0)
+		return float4(ModelResolution.x, vi.Texture.y, 0, 1);
+	//else return 0;
 }

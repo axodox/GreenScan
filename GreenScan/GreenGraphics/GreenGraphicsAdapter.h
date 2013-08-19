@@ -17,7 +17,21 @@ namespace Green
 {
 	namespace Graphics
 	{
-		public ref class GraphicsCanvas : public HwndHost
+		public enum class SaveFormats {
+			STL = 0,
+			FBX,
+			DXF,
+			DAE,
+			OBJ,
+			FL4
+		};
+
+		public interface class IModelSaver
+		{
+			bool SaveModel(String^ path, SaveFormats format);
+		};
+
+		public ref class GraphicsCanvas : public HwndHost, IModelSaver
 		{
 		private:
 			DirectXWindow* XWindow;
@@ -25,15 +39,6 @@ namespace Green
 			static GraphicsCanvas()
 			{
 				VertexDefinition::Init();
-			}
-
-			void InitXWindowForKinect()
-			{
-				KinectManager^ KM = (KinectManager^)DataContext;
-				if(KM != nullptr && XWindow != nullptr)
-				{
-					XWindow->InitKinect(KM->Device);
-				}
 			}
 		protected:
 			virtual HandleRef BuildWindowCore(HandleRef hwndParent) override
@@ -49,7 +54,6 @@ namespace Green
 					0, nullptr, 0);
 				String^ root = Path::GetDirectoryName(Assembly::GetExecutingAssembly()->Location);
 				XWindow = new DirectXWindow(Host, StringToLPWSTR(root));
-				InitXWindowForKinect();
 				return HandleRef(this, (IntPtr)Host);
 			}
 
@@ -81,18 +85,15 @@ namespace Green
 				handled = false;
 				return IntPtr::Zero;
 			}
-
-			void OnDataContextChanged(Object^ sender, 
-	DependencyPropertyChangedEventArgs e)
+		public:
+			void SetKinectDevice(KinectManager^ manager)
 			{
-				InitXWindowForKinect();
+				XWindow->InitKinect(manager->Device);
 			}
 
-		public:
 			GraphicsCanvas()
 			{
 				XWindow = nullptr;
-				DataContextChanged += gcnew DependencyPropertyChangedEventHandler(this, &GraphicsCanvas::OnDataContextChanged);
 			}
 
 			~GraphicsCanvas()
@@ -129,19 +130,10 @@ namespace Green
 				return ok;
 			}
 
-			enum class SaveFormats {
-				STL = 0,
-				FBX,
-				DXF,
-				DAE,
-				OBJ,
-				FL4
-			};
-
-			bool SaveModel(String^ path, SaveFormats format)
+			virtual bool SaveModel(String^ path, SaveFormats format)
 			{
 				LPWSTR npath = StringToLPWSTR(path);
-				bool ok = XWindow->SaveModel(npath, (DirectXWindow::SaveFormats)format);
+				bool ok = XWindow->SaveModel(npath, (ModelFormats)format);
 				LPWSTRDelete(npath);
 				return ok;
 			}

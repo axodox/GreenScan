@@ -79,12 +79,15 @@ cbuffer TurntableConstants : register(b1)
 	float4x4 TurntableToScreenTransform;
 	float4x4 DepthToTurntableTransform;
 	float4x4 DepthToTextureTransform;
+	float4x4 ModelToScreenTransform;
 	float2 CorePosition;
 	float2 ClipLimit;
 	float2 TextureMove;
 	float2 TextureScale;
 	int2 DepthResolution;
 	int2 ColorResolution;
+	int2 ModelResolution;
+	float Side;
 };
 
 float ToDepth(float raw)

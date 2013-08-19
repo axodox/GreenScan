@@ -48,34 +48,41 @@ namespace Green
 				OnPropertyChanged("DeviceCount");
 			}
 		public:
-			void OpenKinect(int index)
+			bool OpenKinect(int index)
 			{
 				deviceOpened = Device->OpenKinect(index);
 				OnPropertyChanged("DeviceOpened");
+				return deviceOpened;
 			}
 
-			void StartKinect(Modes mode)
+			bool StartKinect(Modes mode)
 			{
-				StopKinect();				
+				if(!deviceOpened) return false;
+				StopKinect();	
+				bool ok = false;
 				switch (mode)
 				{
 				case Modes::Color:
-					Device->StartKinect(KinectDevice::Color);
+					ok = Device->StartKinect(KinectDevice::Color);
 					break;
 				case Modes::Depth:
-					Device->StartKinect(KinectDevice::Depth);
+					ok = Device->StartKinect(KinectDevice::Depth);
 					break;
 				case Modes::DepthAndColor:
-					Device->StartKinect(KinectDevice::DepthAndColor);
+					ok = Device->StartKinect(KinectDevice::DepthAndColor);
 					break;
 				case Modes::Infrared:
-					Device->StartKinect(KinectDevice::Infrared);
+					ok = Device->StartKinect(KinectDevice::Infrared);
 					break;
 				}
-				this->mode = mode;
-				OnPropertyChanged("Mode");
-				processing = true;
-				OnPropertyChanged("Processing");
+				if(ok)
+				{
+					this->mode = mode;
+					OnPropertyChanged("Mode");
+					processing = true;
+					OnPropertyChanged("Processing");
+				}
+				return ok;
 			}
 
 			bool SaveRaw(String^ path)

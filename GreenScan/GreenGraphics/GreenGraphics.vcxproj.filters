@@ -178,6 +178,21 @@
     <FxCompile Include="TurntablePolarTexturePixelShader.hlsl">
       <Filter>Source Files\TurntableShaders</Filter>
     </FxCompile>
+    <FxCompile Include="TurntableModelVertexShader.hlsl">
+      <Filter>Source Files\TurntableShaders</Filter>
+    </FxCompile>
+    <FxCompile Include="TurntableModelGeometryShader.hlsl">
+      <Filter>Source Files\TurntableShaders</Filter>
+    </FxCompile>
+    <FxCompile Include="TurntableModelPixelShader.hlsl">
+      <Filter>Source Files\TurntableShaders</Filter>
+    </FxCompile>
+    <FxCompile Include="TurntableOutputModelPixelShader.hlsl">
+      <Filter>Source Files\TurntableShaders</Filter>
+    </FxCompile>
+    <FxCompile Include="TurntableOutputTexturePixelShader.hlsl">
+      <Filter>Source Files\TurntableShaders</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Header.hlsli">

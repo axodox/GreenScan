@@ -24,9 +24,9 @@ namespace GreenScan
     {
         GraphicsCanvas Canvas;
         String Filename;
-        GraphicsCanvas.SaveFormats Format;
+        SaveFormats Format;
         BackgroundWorker Worker; 
-        public SaveWindow(GraphicsCanvas canvas, string filename, GraphicsCanvas.SaveFormats format)
+        public SaveWindow(GraphicsCanvas canvas, string filename, SaveFormats format)
         {
             InitializeComponent();
             Canvas = canvas;

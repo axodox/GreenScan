@@ -114,12 +114,13 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>WIN32;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>Create</PrecompiledHeader>
       <AdditionalIncludeDirectories>C:\Program Files\Autodesk\FBX\FBX SDK\2014.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies />
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <AdditionalDependencies>libfbxsdk-md.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>C:\Program Files\Autodesk\FBX\FBX SDK\2014.1\lib\vs2012\x86\release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <FxCompile>
@@ -272,6 +273,34 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
     </FxCompile>
     <FxCompile Include="TextureOutputPixelShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Remote|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="TurntableModelGeometryShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Remote|Win32'">Geometry</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Remote|Win32'">4.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Geometry</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Geometry</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="TurntableOutputModelPixelShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Remote|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="TurntableModelPixelShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Remote|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="TurntableModelVertexShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Remote|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="TurntableOutputTexturePixelShader.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Remote|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
