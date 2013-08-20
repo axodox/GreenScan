@@ -1,8 +1,10 @@
 ﻿<Window x:Class="GreenRemoteModuleTest.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="MainWindow" Height="350" Width="525">
-    <Grid>
-        
-    </Grid>
+        Title="MainWindow" Height="350" Width="525" Closing="Window_Closing">
+    <StackPanel>
+        <Button Click="Connect_Click">Connect</Button>
+        <Button Click="Setting_Click">Test setting</Button>
+        <Button Click="Close_Click">Close</Button>
+    </StackPanel>
 </Window>

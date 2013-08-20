@@ -12,6 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using Green.Remoting;
 
 namespace GreenRemoteModuleTest
 {
@@ -20,9 +21,41 @@ namespace GreenRemoteModuleTest
     /// </summary>
     public partial class MainWindow : Window
     {
+        RemoteControlTester RC;
         public MainWindow()
         {
             InitializeComponent();
+            RemoteControlTester.Init();
+            
         }
+
+        private void Connect_Click(object sender, RoutedEventArgs e)
+        {
+            RC = new RemoteControlTester();
+        }
+
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            if (RC != null)
+            {
+                RC.Close();
+                RC.Disconnect();
+            }
+            RemoteControlTester.Shutdown();
+        }
+
+        private void Close_Click(object sender, RoutedEventArgs e)
+        {
+            if (RC != null)
+                RC.Close();
+        }
+
+        private void Setting_Click(object sender, RoutedEventArgs e)
+        {
+            if (RC != null)
+                RC.TestSetting();
+        }
+
+
     }
 }

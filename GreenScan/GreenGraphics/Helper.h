@@ -1,11 +1,11 @@
 #pragma once
 #pragma unmanaged
 #include "Stdafx.h"
-#define Throw(p) { if(p) { throw (p); } }
-#define SafeDelete(p) { if(p) { delete (p); (p)=nullptr; } }
-#define SafeRelease(p) { if(p) { (p)->Release(); (p)=nullptr; } }
-#define LPWSTRDelete(str) { if(str) { delete [wcslen(str) + 1] (str); (str)=nullptr; } }
-#define LPSTRDelete(str) { if(str) { delete [strlen(str) + 1] (str); (str)=nullptr; } }
+#define Throw(p) { if(p) { throw p; } }
+#define SafeDelete(p) { if(p) { delete p; p=nullptr; } }
+#define SafeRelease(p) { if(p) { p->Release(); p=nullptr; } }
+#define LPWSTRDelete(str) { if(str) { delete [wcslen(str) + 1] str; str=nullptr; } }
+#define LPSTRDelete(str) { if(str) { delete [strlen(str) + 1] str; str=nullptr; } }
 using namespace DirectX;
 using namespace Gdiplus;
 int GetEncoderClsid(const WCHAR* form, CLSID* pClsid)

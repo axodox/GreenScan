@@ -156,6 +156,29 @@ namespace Excalibur
             AnnounceThread.Start();
         }
 
+        public void SendMessageToAll(string text, int id = -1)
+        {
+            foreach (ExcaliburClient client in Clients)
+            {
+                try
+                {
+                    client.SendMessage(text, id);
+                }
+                catch
+                {
+
+                }
+            }
+        }
+
+        public void DisconnectAll()
+        {
+            foreach (ExcaliburClient client in Clients)
+            {
+                client.Disconnect();
+            }
+        }
+
         public int Port
         {
             get
@@ -273,13 +296,13 @@ namespace Excalibur
 
     public class ExcaliburClient
     {
-        private const int TIMEOUT = 1000000;
-        private const int PACKETSIZE = 128;
+        private const int TIMEOUT = int.MaxValue;
+        private const int PACKETSIZE = 4096;
         private const byte FRAMEDELIMITER = 170;
         Socket ClientSocket;
         long ProtocolIdentifier;
         Thread ReceiveThread, SendThread;
-        IPEndPoint ClientEndPoint;
+        public IPEndPoint RemoteEndPoint { get; private set; }
         SynchronizationContext SyncContext;
         int NextSendID = 0;
         Dictionary<int, Packet> PacketsSending, PacketsReceiving;
@@ -312,7 +335,7 @@ namespace Excalibur
         {
             ClientSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             ProtocolIdentifier = protocolIdentifier;
-            ClientEndPoint = clientEndPoint;
+            RemoteEndPoint = clientEndPoint;
             CommonInit();
             ReceiveThread = new Thread(ConnectAndReceiveWorker);
             ReceiveThread.Start();
@@ -322,7 +345,7 @@ namespace Excalibur
         {
             try
             {
-                ClientSocket.Connect(ClientEndPoint);
+                ClientSocket.Connect(RemoteEndPoint);
                 ClientSocket.Send(BitConverter.GetBytes(ProtocolIdentifier));
                 byte[] identifier = new byte[8];
                 ClientSocket.Receive(identifier);
@@ -341,7 +364,7 @@ namespace Excalibur
         internal ExcaliburClient(Socket clientSocket, long protocolIdentifier, SynchronizationContext sc)
         {
             ProtocolIdentifier = protocolIdentifier;
-            ClientEndPoint = clientSocket.LocalEndPoint as IPEndPoint;
+            RemoteEndPoint = clientSocket.LocalEndPoint as IPEndPoint;
             ClientSocket = clientSocket;
             SyncContext = sc;
             CommonInit();
@@ -502,7 +525,7 @@ namespace Excalibur
 
         void ReceiveWorker()
         {
-            Thread.CurrentThread.Name = "Receive from " + ClientEndPoint.ToString();
+            Thread.CurrentThread.Name = "Receive from " + RemoteEndPoint.ToString();
             byte[] lengthBuffer = new byte[5];
             byte[] buffer = new byte[PacketSize];
             MemoryStream bufferStream = new MemoryStream(buffer);
@@ -632,7 +655,7 @@ namespace Excalibur
                         break;
                     case MessageTypes.TextMessage:
                         string text = bufferReader.ReadString();
-                        SyncContext.Post(MessageReceivedCallback, text);
+                        SyncContext.Post(MessageReceivedCallback, new object[] { text, internalID });
                         break;
                     case MessageTypes.Close:
                         DisconnectType = DisconnectTypes.Indirect;
@@ -648,9 +671,11 @@ namespace Excalibur
 
         public class MessageEventArgs : EventArgs
         {
+            public int Id { get; private set; }
             public string Text { get; private set; }
-            public MessageEventArgs(string text)
+            public MessageEventArgs(string text, int id)
             {
+                Id = id;
                 Text = text;
             }
         }
@@ -658,7 +683,11 @@ namespace Excalibur
         public event MessageEventHandler MessageReceived;
         private void MessageReceivedCallback(object o)
         {
-            if (MessageReceived != null) MessageReceived(this, new MessageEventArgs(o as string));
+            if (MessageReceived != null)
+            {
+                object[] args = (object[])o; 
+                MessageReceived(this, new MessageEventArgs((string)args[0], (int)args[1]));
+            }
         }
 
         class NodeChangedData
@@ -764,14 +793,14 @@ namespace Excalibur
                 throw new ClientDisconnectedException();
         }
 
-        public int SendMessage(string text)
+        public int SendMessage(string text, int id = -1)
         {
             if (IsConnected)
             {
                 Packet P = new Packet();
                 P.InternalID = NextSendID++;
                 P.Text = text;
-                P.ID = -1;
+                P.ID = id;
                 P.Type = Packet.Types.Text;
                 lock (PacketsToSend)
                 {
@@ -787,7 +816,7 @@ namespace Excalibur
 
         private void SendWorker()
         {
-            Thread.CurrentThread.Name = "Send to " + ClientEndPoint.ToString();
+            Thread.CurrentThread.Name = "Send to " + RemoteEndPoint.ToString();
             byte[] buffer = new byte[PacketSize];
             MemoryStream bufferStream = new MemoryStream(buffer);
             BinaryWriter bufferWriter = new BinaryWriter(bufferStream, ASCIIEncoding.ASCII);
@@ -963,7 +992,7 @@ namespace Excalibur
                                 break;
                             case Packet.Types.Text:
                                 bufferWriter.Write((byte)MessageTypes.TextMessage);
-                                bufferWriter.Write(P.InternalID);
+                                bufferWriter.Write(P.ID);
                                 bufferWriter.Write(P.Text);
                                 P.Processing = false;
                                 PacketsSending.Remove(P.InternalID);

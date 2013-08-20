@@ -10,7 +10,49 @@
         <local:KinectManagerToDeviceListConverter x:Key="KinectManagerToDeviceListConverter"/>
         <local:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         <local:BooleanInverter x:Key="BooleanInverter"/>
+        <Storyboard x:Key="RemotingIn">
+        	<ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.Visibility)" Storyboard.TargetName="BRemoting">
+        		<DiscreteObjectKeyFrame KeyTime="0" Value="{x:Static Visibility.Visible}"/>
+        	</ObjectAnimationUsingKeyFrames>
+        	<DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(FrameworkElement.LayoutTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleY)" Storyboard.TargetName="BRemoting">
+        		<EasingDoubleKeyFrame KeyTime="0" Value="0"/>
+        		<EasingDoubleKeyFrame KeyTime="0:0:0.3" Value="1"/>
+        	</DoubleAnimationUsingKeyFrames>
+        	<DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.Opacity)" Storyboard.TargetName="TBRemoting">
+        		<EasingDoubleKeyFrame KeyTime="0:0:0.3" Value="0"/>
+        		<EasingDoubleKeyFrame KeyTime="0:0:0.5" Value="1"/>
+        	</DoubleAnimationUsingKeyFrames>
+        </Storyboard>
+        <Storyboard x:Key="RemotingOut">
+        	<DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.Opacity)" Storyboard.TargetName="TBRemoting">
+        		<EasingDoubleKeyFrame KeyTime="0" Value="1"/>
+        		<EasingDoubleKeyFrame KeyTime="0:0:0.2" Value="0"/>
+        	</DoubleAnimationUsingKeyFrames>
+        	<DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(FrameworkElement.LayoutTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleY)" Storyboard.TargetName="BRemoting">
+        		<EasingDoubleKeyFrame KeyTime="0:0:0.2" Value="1"/>
+        		<EasingDoubleKeyFrame KeyTime="0:0:0.5" Value="0"/>
+        	</DoubleAnimationUsingKeyFrames>
+        	<ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.Visibility)" Storyboard.TargetName="BRemoting">
+        		<DiscreteObjectKeyFrame KeyTime="0" Value="{x:Static Visibility.Visible}"/>
+        		<DiscreteObjectKeyFrame KeyTime="0:0:0.2">
+        			<DiscreteObjectKeyFrame.Value>
+        				<Visibility>Visible</Visibility>
+        			</DiscreteObjectKeyFrame.Value>
+        		</DiscreteObjectKeyFrame>
+        		<DiscreteObjectKeyFrame KeyTime="0:0:0.5">
+        			<DiscreteObjectKeyFrame.Value>
+        				<Visibility>Collapsed</Visibility>
+        			</DiscreteObjectKeyFrame.Value>
+        		</DiscreteObjectKeyFrame>
+        	</ObjectAnimationUsingKeyFrames>
+        </Storyboard>
     </Window.Resources>
+	<Window.Triggers>
+		<EventTrigger RoutedEvent="FrameworkElement.Loaded">
+			<BeginStoryboard Storyboard="{StaticResource RemotingIn}"/>
+			<BeginStoryboard Storyboard="{StaticResource RemotingOut}"/>
+		</EventTrigger>
+	</Window.Triggers>
     <Window.CommandBindings>
         <CommandBinding Command="{x:Static local:GreenScanCommands.Open}" Executed="OpenCmdExecuted" CanExecute="OpenCmdCanExecute"/>
         <CommandBinding Command="{x:Static local:GreenScanCommands.Save}" Executed="SaveCmdExecuted" CanExecute="SaveCmdCanExecute"/>
@@ -94,7 +136,25 @@
                     <StatusBarItem x:Name="SBIStatusText" Content="Ready."/>
                 </StatusBar>
             </Grid>
-            <s:SettingManagerControl x:Name="SMC" Grid.Column="2"/>
+            <Grid Grid.Column="2">
+                <Grid.RowDefinitions>
+                    <RowDefinition/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <s:SettingManagerControl x:Name="SMC"/>
+                <Border Grid.Row="1" Background="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}" Padding="6" x:Name="BRemoting" Visibility="Collapsed" RenderTransformOrigin="0.5,0.5">
+                	<Border.LayoutTransform>
+                		<TransformGroup>
+                			<ScaleTransform/>
+                			<SkewTransform/>
+                			<RotateTransform/>
+                			<TranslateTransform/>
+                		</TransformGroup>
+                	</Border.LayoutTransform>
+                    <TextBlock HorizontalAlignment="Center" Foreground="{DynamicResource {x:Static SystemColors.HighlightTextBrushKey}}" x:Name="TBRemoting" Opacity="0" Text="Remoted from 127.0.0.1"/>
+                </Border>
+            </Grid>
+            
         </Grid>
         <ProgressBar x:Name="PBStatus" Grid.Row="0" Visibility="Collapsed" Height="3" Maximum="1" VerticalAlignment="Bottom" BorderBrush="{x:Null}" Background="{x:Null}"/>
     </Grid>

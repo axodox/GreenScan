@@ -1,16 +1,15 @@
-﻿using System;
-using System.Windows;
-using System.Windows.Interop;
+﻿using ExcaliburSecurity;
 using Green.Graphics;
-using System.Threading;
 using Green.Kinect;
-using System.Windows.Input;
-using System.Windows.Threading;
-using System.Windows.Media.Animation;
-using Microsoft.Win32;
+using Green.Remoting;
 using GreenScan;
+using Microsoft.Win32;
+using System;
 using System.ComponentModel;
-using ExcaliburSecurity;
+using System.Windows;
+using System.Windows.Input;
+using System.Windows.Media.Animation;
+using System.Windows.Threading;
 
 namespace Green.Scan
 {
@@ -23,6 +22,7 @@ namespace Green.Scan
         KinectManager KM;
         DispatcherTimer DT;
         SettingsWindow SW;
+        RemoteReceiver RR;
         
         public MainWindow()
         {
@@ -34,11 +34,14 @@ namespace Green.Scan
             SecurityWorker.RunWorkerCompleted += SecurityWorker_RunWorkerCompleted;
             SecurityWorker.RunWorkerAsync();
 
+            
+
             SS = new ScanSettings();
             KM = new KinectManager();
             GC.Loaded += GC_Loaded;
             InitGUI();
             InitSettings();
+            InitRemoting();
         }
 
         void SecurityWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
@@ -100,10 +103,12 @@ namespace Green.Scan
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
+            RR.Dispose();
             if (SW != null) SW.Close();
             if (RS != null) RS.Dispose();
             if (TCW != null) TCW.Close();
             KM.CloseKinect();
+            KM.Dispose();
             SS.Save("Settings.ini");
         }
 
@@ -151,6 +156,44 @@ namespace Green.Scan
             SS.PerformanceProperties.ValueChanged += (object sender, EventArgs e) => { SetPerformance(); };
             SS.SaveProperties.ValueChanged += (object sender, EventArgs e) => { SetSave(); };
             SS.TurntableProperties.ValueChanged += (object sender, EventArgs e) => { SetTurntable(); };
+        }
+
+        void InitRemoting()
+        {
+            RoutedUICommand[] commands = {
+                GreenScanCommands.Close, 
+                GreenScanCommands.Export, 
+                GreenScanCommands.Open, 
+                GreenScanCommands.Save, 
+                GreenScanCommands.Start, 
+                GreenScanCommands.Stop,
+                                     
+                TurntableCommands.Export, 
+                TurntableCommands.Open,
+                TurntableCommands.Save,
+                TurntableCommands.Scan,
+                TurntableCommands.Stop, 
+                TurntableCommands.ToOrigin
+            };
+
+            RR = new RemoteReceiver(SS, commands, this, 5656, 101);
+
+            RR.RemoteConnected += (object sender, RemoteEventArgs e) =>
+            {
+                if (RR.RemoteCount == 1)
+                    TBRemoting.Text = "Remoted from " + e.RemoteEndPoint.ToString();
+                else
+                    TBRemoting.Text = RR.RemoteCount+ " remote(s) connected.";
+                if (RR.RemoteCount == 1)
+                    (Resources["RemotingIn"] as Storyboard).Begin();
+            };
+            RR.RemoteDisconnected += (object sender, RemoteEventArgs e) =>
+            {
+                TBRemoting.Text = RR.RemoteCount + " remote(s) connected.";
+                if (RR.RemoteCount == 0)
+                    (Resources["RemotingOut"] as Storyboard).Begin();
+            };
+
         }
 
         void SetPreprocessing()
