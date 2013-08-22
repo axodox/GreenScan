@@ -35,10 +35,10 @@ namespace Green
 						switch(text[0])
 						{
 						case 'c':
-							rc->OnCommandDescriptionReceived(rc->CallbackArgument, name, value);
+							if(rc->OnCommandDescriptionReceived) rc->OnCommandDescriptionReceived(rc->CallbackArgument, name, value);
 							break;
 						case 's':
-							rc->OnSettingValueReceived(rc->CallbackArgument, name, value);
+							if(rc->OnSettingValueReceived) rc->OnSettingValueReceived(rc->CallbackArgument, name, value);
 							break;
 						}
 						delete [namelen + 1] name;

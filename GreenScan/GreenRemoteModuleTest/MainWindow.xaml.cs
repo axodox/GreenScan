@@ -47,7 +47,9 @@ namespace GreenRemoteModuleTest
         private void Close_Click(object sender, RoutedEventArgs e)
         {
             if (RC != null)
-                RC.Close();
+            {
+                RC.Disconnect();
+            }
         }
 
         private void Setting_Click(object sender, RoutedEventArgs e)

@@ -89,6 +89,7 @@
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.Web.Extensions" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xaml">
       <RequiredTargetFramework>4.0</RequiredTargetFramework>
     </Reference>
@@ -101,14 +102,25 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="Helper.cs" />
-    <Compile Include="Settings.cs" />
-    <Compile Include="SettingsWindow.xaml.cs">
-      <DependentUpon>SettingsWindow.xaml</DependentUpon>
+    <Compile Include="AboutBox.xaml.cs">
+      <DependentUpon>AboutBox.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Helper.cs" />
+    <Compile Include="KinectCalibrationWindow.xaml.cs">
+      <DependentUpon>KinectCalibrationWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Settings.cs" />
     <Compile Include="TurntableCalibrationWindow.xaml.cs">
       <DependentUpon>TurntableCalibrationWindow.xaml</DependentUpon>
     </Compile>
+    <Page Include="AboutBox.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="KinectCalibrationWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -122,10 +134,6 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Page Include="SettingsWindow.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
     <Page Include="TurntableCalibrationWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -208,6 +216,12 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="icon.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="axodoxOpacity4.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="axodoxTM.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

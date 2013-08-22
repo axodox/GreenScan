@@ -257,6 +257,32 @@ namespace Green
 					TColor->SetForPS();
 					SLinearWrap->SetForPS();	
 					QMain->Draw();
+
+					if(!SaveTextureReady && RRTSaveTexture != nullptr)
+					{
+						SaveTextureReady = true;
+						RRTSaveTexture->SetAsRenderTarget();
+						Device->SetShaders(VSSimple, PSColor);
+						QMain->Draw();
+						RRTSaveTexture->CopyToStage();
+						if(!StaticInput) SetEvent(SaveEvent);
+					}
+					break;					
+				case KinectDevice::Infrared:
+					Device->SetShaders(VSCommon, PSInfrared);
+					TColor->SetForPS();
+					SLinearWrap->SetForPS();				
+					QMain->Draw();
+
+					if(!SaveTextureReady && RRTSaveTexture != nullptr)
+					{
+						SaveTextureReady = true;
+						RRTSaveTexture->SetAsRenderTarget();
+						Device->SetShaders(VSSimple, PSInfrared);
+						QMain->Draw();
+						RRTSaveTexture->CopyToStage();
+						if(!StaticInput) SetEvent(SaveEvent);
+					}
 					break;
 				case KinectDevice::DepthAndColor:
 					//Depth averaging
@@ -437,12 +463,6 @@ namespace Green
 
 						if(!StaticInput) SetEvent(SaveEvent);
 					}
-					break;
-				case KinectDevice::Infrared:
-					Device->SetShaders(VSCommon, PSInfrared);
-					TColor->SetForPS();
-					SLinearWrap->SetForPS();				
-					QMain->Draw();
 					break;
 				default:
 					break;
@@ -926,6 +946,41 @@ namespace Green
 					ok = PNGSave(path, ReadableBackBuffer->GetStagingTexture());
 				}
 				delete ReadableBackBuffer;
+				return ok;
+			}
+
+			bool SaveRawImage(LPWSTR path)
+			{
+				bool ok = false;
+				SaveTextureReady = true;
+
+				switch (KinectMode)
+				{
+				case Green::Kinect::KinectDevice::Color:
+				case Green::Kinect::KinectDevice::Infrared:
+					RRTSaveTexture = new ReadableRenderTarget(Device, TColor->GetWidth(), TColor->GetHeight(), DXGI_FORMAT_R8G8B8A8_UNORM);	
+					break;
+				default:
+					return false;
+				}	
+				SaveTextureReady = false;
+				ResetEvent(SaveEvent);
+
+				if(StaticInput)
+				{
+					Draw();
+					ok = true;
+				}
+				else
+				{
+					ok = WaitForSingleObject(SaveEvent, 1000) == WAIT_OBJECT_0;	
+				}
+				
+				if(ok)
+				{
+					ok = PNGSave(path, RRTSaveTexture->GetStagingTexture());
+				}
+				delete RRTSaveTexture;
 				return ok;
 			}
 

@@ -197,11 +197,12 @@ namespace Green
 			void SetCalibration(
 				array<float, 2>^ turntableTransform,
 				float height, float radius, 
-				float coreX, float coreY)
+				float coreX, float coreY, int piSteps)
 			{
 				pin_ptr<float> pTurntableTransform = &turntableTransform[0, 0];
 				if (ScannerModule) ScannerModule->SetCalibration(
 					pTurntableTransform, height, radius, coreX, coreY);
+				if(Table) Table->PiSteps = piSteps;
 			}
 
 			~RotatingScanner()

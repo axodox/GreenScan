@@ -96,6 +96,17 @@ namespace Green.Settings
                 OnPropertyChanged("IsHidden");
             }
         }
+
+        public string StoredValue { get; private set; }
+        public void StoreValue()
+        {
+            StoredValue = StringValue;
+        }
+
+        public void RestoreValue()
+        {
+            StringValue = StoredValue;
+        }
     }
 
     public class MatrixSetting : Setting
@@ -324,20 +335,36 @@ namespace Green.Settings
             Type = Types.Path;
         }
 
+        protected override void OnValueChanged()
+        {
+            base.OnValueChanged();
+            OnPropertyChanged("AbsolutePath");
+            OnPropertyChanged("Exists");
+        }
+
+        public static string GetAbsolutePath(string path)
+        {
+            if (Path.IsPathRooted(path))
+            {
+                if (!path.EndsWith("\\")) path += "\\";
+                return path;
+            }
+            else
+            {
+                string cd = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                if (!cd.EndsWith("\\")) cd += "\\";
+                string value = path;
+                if (value.StartsWith("\\")) value = path.Substring(1);
+                if (value != "" && !value.EndsWith("\\")) value += "\\";
+                return cd + value;
+            }
+        }
+
         public string AbsolutePath
         {
             get
             {
-                if (Path.IsPathRooted(Value))
-                    return Value;
-                else
-                {
-                    string cd = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-                    if (!cd.EndsWith("\\")) cd += "\\";
-                    string value = Value;
-                    if (value.StartsWith("\\")) value = Value.Substring(1);
-                    return cd + value;
-                }
+                return GetAbsolutePath(Value);
             }
         }
 
@@ -667,6 +694,7 @@ namespace Green.Settings
             }
         }
         public string Name { get; private set; }
+        public string Footer { get; set; }
         public ObservableCollection<Setting> Settings { get; private set; }
         public SettingGroup(string name)
         {

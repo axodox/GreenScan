@@ -47,19 +47,16 @@
         	</ObjectAnimationUsingKeyFrames>
         </Storyboard>
     </Window.Resources>
-	<Window.Triggers>
-		<EventTrigger RoutedEvent="FrameworkElement.Loaded">
-			<BeginStoryboard Storyboard="{StaticResource RemotingIn}"/>
-			<BeginStoryboard Storyboard="{StaticResource RemotingOut}"/>
-		</EventTrigger>
-	</Window.Triggers>
     <Window.CommandBindings>
         <CommandBinding Command="{x:Static local:GreenScanCommands.Open}" Executed="OpenCmdExecuted" CanExecute="OpenCmdCanExecute"/>
         <CommandBinding Command="{x:Static local:GreenScanCommands.Save}" Executed="SaveCmdExecuted" CanExecute="SaveCmdCanExecute"/>
+        <CommandBinding Command="{x:Static local:GreenScanCommands.Browse}" Executed="BrowseCmdExecuted"/>
         <CommandBinding Command="{x:Static local:GreenScanCommands.Close}" Executed="CloseCmdExecuted"/>
-        <CommandBinding Command="{x:Static local:GreenScanCommands.Stop}" Executed="StopCmdExecuted" CanExecute="StopCmdCanExecute"/>
-        <CommandBinding Command="{x:Static local:GreenScanCommands.Export}" Executed="ExportCmdExecuted" CanExecute="ExportCmdCanExecute"/>
+        <CommandBinding Command="{x:Static local:GreenScanCommands.About}" Executed="AboutCmdExecuted"/>
         <CommandBinding Command="{x:Static local:GreenScanCommands.Start}" Executed="StartCmdExecuted" CanExecute="StartCmdCanExecute"/>
+        <CommandBinding Command="{x:Static local:GreenScanCommands.Stop}" Executed="StopCmdExecuted" CanExecute="StopCmdCanExecute"/>
+        <CommandBinding Command="{x:Static local:GreenScanCommands.Calibrate}" Executed="CalibrateCmdExecuted" CanExecute="CalibrateCmdCanExecute"/>
+        <CommandBinding Command="{x:Static local:GreenScanCommands.Export}" Executed="ExportCmdExecuted" CanExecute="ExportCmdCanExecute"/>
         <CommandBinding Command="{x:Static local:TurntableCommands.Scan}" Executed="TurntableScanCmdExecuted" CanExecute="TurntableScanCmdCanExecute"/>
         <CommandBinding Command="{x:Static local:TurntableCommands.Stop}" Executed="TurntableStopCmdExecuted" CanExecute="TurntableStopCmdCanExecute"/>
         <CommandBinding Command="{x:Static local:TurntableCommands.Calibrate}" Executed="TurntableCalibrateCmdExecuted" CanExecute="TurntableCalibrateCmdCanExecute"/>
@@ -94,7 +91,10 @@
                         <MenuItem Header="Save model" Command="{x:Static local:GreenScanCommands.Save}"/>
                         <Separator/>
                         <MenuItem x:Name="MIExport" Header="Export as" IsEnabled="{Binding Processing, Mode=OneWay}">
-                            <MenuItem Header="Image PNG" Command="{x:Static local:GreenScanCommands.Export}" CommandParameter="PNG"/>
+                            <MenuItem Header="Image PNG">
+                                <MenuItem Header="As screenshot" Command="{x:Static local:GreenScanCommands.Export}" CommandParameter="PNG"/>
+                                <MenuItem Header="As original" Command="{x:Static local:GreenScanCommands.Export}" CommandParameter="PNG/raw"/>
+                            </MenuItem>
                             <MenuItem Header="Binary STL" Command="{x:Static local:GreenScanCommands.Export}" CommandParameter="STL"/>
                             <MenuItem Header="Autodesk FBX" Command="{x:Static local:GreenScanCommands.Export}" CommandParameter="FBX"/>
                             <MenuItem Header="AutoCAD DXF" Command="{x:Static local:GreenScanCommands.Export}" CommandParameter="DXF"/>
@@ -102,6 +102,7 @@
                             <MenuItem Header="Alias OBJ" Command="{x:Static local:GreenScanCommands.Export}" CommandParameter="OBJ"/>
                             <MenuItem Header="Vector4 FL4" Command="{x:Static local:GreenScanCommands.Export}" CommandParameter="FL4"/>
                         </MenuItem>
+                        <MenuItem Header="Browse save directory..." Command="{x:Static local:GreenScanCommands.Browse}"/>
                         <Separator/>
                         <MenuItem Header="Exit" Command="{x:Static local:GreenScanCommands.Close}"/>
                     </MenuItem>
@@ -110,6 +111,8 @@
                         <MenuItem Header="Stop" Command="{x:Static local:GreenScanCommands.Stop}"/>
                         <Separator/>
                         <s:EnumMenu x:Name="MIMode" Header="Mode" IsEnabled="{Binding SavingInProgress, Converter={StaticResource BooleanInverter}, ElementName=MW}" />
+                        <Separator/>
+                        <MenuItem Header="Calibrate..." Command="{x:Static local:GreenScanCommands.Calibrate}"/>
                     </MenuItem>
                     <MenuItem x:Name="MITurntable" Header="Turntable" Visibility="{Binding IsConnected, Converter={StaticResource BooleanToVisibilityConverter}}">
                         <MenuItem Header="Scan" Command="{x:Static local:TurntableCommands.Scan}"/>
@@ -129,9 +132,9 @@
                         <Separator/>
                         <MenuItem Header="Calibrate..." Command="{x:Static local:TurntableCommands.Calibrate}"/>
                     </MenuItem>
-                    <MenuItem Header="About"/>
+                    <MenuItem Header="About" Command="{x:Static local:GreenScanCommands.About}"/>
                 </Menu>
-                <g:GraphicsCanvas x:Name="GC" Grid.Row="1" />
+                <g:GraphicsCanvas x:Name="GraphicsCore" Grid.Row="1" />
                 <StatusBar Grid.Row="2">
                     <StatusBarItem x:Name="SBIStatusText" Content="Ready."/>
                 </StatusBar>

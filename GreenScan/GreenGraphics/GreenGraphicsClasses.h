@@ -809,6 +809,10 @@ namespace Green
 				return texture;
 			}
 
+			int GetWidth() { return Width; }
+			int GetHeight() { return Height; }
+			DXGI_FORMAT GetFormat() { return Format; }
+
 			template <class T> void Load(T* data)
 			{
 				D3D11_MAPPED_SUBRESOURCE ms;
@@ -903,9 +907,6 @@ namespace Green
 				Host->DeviceContext->OMSetRenderTargets(1, &RenderTargetView, 0);
 				Host->DeviceContext->RSSetViewports(1, Viewport);
 			}
-
-			int GetWidth() { return Width; }
-			int GetHeight() { return Height; }
 
 			~RenderTarget()
 			{

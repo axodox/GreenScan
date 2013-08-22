@@ -68,7 +68,7 @@ namespace Green
 			bool KinectWorking;
 			Modes Mode;
 			byte *DepthImage, *ColorImage;
-			bool CapturedColor, CapturedDepth;
+			bool CapturedColor, CapturedDepth, EmitterEnabled;
 			HANDLE CapturedAll;
 			static DWORD WINAPI WorkerThread(LPVOID o)
 			{
@@ -131,7 +131,7 @@ namespace Green
 				SetEvent(device->KinectStopped);
 				return 0;
 			}
-		public:			
+		public:
 			void SetCountChangedCallback(KinectCountChangedCallback callback)
 			{
 				KinectCountChanged = callback;
@@ -147,6 +147,12 @@ namespace Green
 				DepthFrameReady = callback;
 			}
 
+			void SetEmitter(bool enabled)
+			{
+				EmitterEnabled = enabled;
+				if(Sensor) Sensor->NuiSetForceInfraredEmitterOff(!EmitterEnabled);
+			}
+
 			bool OpenKinect(int index)
 			{
 				CloseKinect();
@@ -154,7 +160,11 @@ namespace Green
 				hr = NuiCreateSensorByIndex(index, &Sensor);
 				if(FAILED(hr)) return false;
 				hr = Sensor->NuiStatus();
-				if(S_OK == hr) return true;
+				if(S_OK == hr) 
+				{
+					Sensor->NuiSetForceInfraredEmitterOff(!EmitterEnabled);
+					return true;
+				}
 				Sensor->Release();
 				Sensor = nullptr;
 				return false;
@@ -393,6 +403,7 @@ namespace Green
 				NuiSetDeviceStatusCallback(&StatusChangedCallback, this);
 				KinectStopped = CreateEvent(0, 0, 0, 0);
 				KinectWorking = false;
+				EmitterEnabled = true;
 
 				//Image capturing
 				DepthImage = ColorImage = nullptr;

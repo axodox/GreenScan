@@ -89,7 +89,7 @@ namespace Turntables
             }
         }
 
-        public const int PiSteps = 10989;
+        public int PiSteps { get; set; }
 
         private static void InitPort(SerialPort port)
         {
@@ -279,6 +279,7 @@ namespace Turntables
         public string StatusWord { get; private set; }
         public Turntable(string portName)
         {
+            PiSteps = 10989;
             Port = new SerialPort();
             Port.PortName = portName;
             InitPort(Port);

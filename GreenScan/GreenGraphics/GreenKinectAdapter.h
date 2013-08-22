@@ -111,6 +111,11 @@ namespace Green
 				}
 			}
 
+			void SetEmitter(bool enabled)
+			{
+				Device->SetEmitter(enabled);
+			}
+
 			void StopKinect()
 			{
 				if(!processing) return;

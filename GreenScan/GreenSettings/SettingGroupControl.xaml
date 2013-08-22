@@ -21,6 +21,7 @@
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
+            <TextBlock Padding="3" Text="{Binding Footer}" Visibility="{Binding Footer, Converter={StaticResource ReferenceValueToVisibilityConverter}}" FontSize="10"/>
         </StackPanel>
     </Expander>
 </UserControl>

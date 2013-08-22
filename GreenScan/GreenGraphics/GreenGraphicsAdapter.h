@@ -130,6 +130,14 @@ namespace Green
 				return ok;
 			}
 
+			bool SaveRawImage(String^ path)
+			{
+				LPWSTR npath = StringToLPWSTR(path);
+				bool ok = XWindow->SaveRawImage(npath);
+				LPWSTRDelete(npath);
+				return ok;
+			}
+
 			virtual bool SaveModel(String^ path, SaveFormats format)
 			{
 				LPWSTR npath = StringToLPWSTR(path);

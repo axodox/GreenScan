@@ -17,7 +17,7 @@ namespace Green.Remoting
         }
     }
 
-    public class RemoteReceiver : IDisposable
+    public class RemotingServer : IDisposable
     {
         public int RemoteCount { get; private set; }
         
@@ -29,7 +29,55 @@ namespace Green.Remoting
         ExcaliburServer Server;
         IInputElement Target;
 
-        public RemoteReceiver(SettingManager manager, RoutedUICommand[] commands, IInputElement target, int port, long protocolId)
+        public bool ExecuteCommand(string name, string argument = "")
+        {
+            if (Commands.ContainsKey(name))
+            {
+                RoutedUICommand command = Commands[name];
+                bool ok = command.CanExecute(argument, Target);
+                if (ok) command.Execute(argument, Target);
+                return ok;
+            }
+            else throw new Exception();
+        }
+
+        public void SetOption(string name, string value)
+        {
+            if (Settings.ContainsKey(name))
+            {
+                Settings[name].StringValue = value;
+            }
+            else throw new Exception();
+        }
+
+        public string GetOption(string name)
+        {
+            if (Settings.ContainsKey(name))
+            {
+                return Settings[name].StringValue;
+            }
+            else throw new Exception();
+        }
+
+        public void StoreOption(string name)
+        {
+            if (Settings.ContainsKey(name))
+            {
+                Settings[name].StoreValue();
+            }
+            else throw new Exception();
+        }
+
+        public void RestoreOption(string name)
+        {
+            if (Settings.ContainsKey(name))
+            {
+                Settings[name].RestoreValue();
+            }
+            else throw new Exception();
+        }
+
+        public RemotingServer(SettingManager manager, RoutedUICommand[] commands, IInputElement target, int port, long protocolId)
         {
             RemoteCount = 0;
             Target = target;
@@ -87,20 +135,12 @@ namespace Green.Remoting
                 switch (e.Text[0])
                 {
                     case 's':
-                        if (Settings.ContainsKey(key))
-                        {
-                            Settings[key].StringValue = value;
-                        }
+                        SetOption(key, value);
                         break;
                     case 'c':
-                        if (Commands.ContainsKey(key))
-                        {
-                            RoutedUICommand command = Commands[key];
-                            bool ok = command.CanExecute(value, Target);
-                            string answer = "c?" + (ok ? "succeded" : "failed");
-                            Server.SendMessageToAll(answer, e.Id);
-                            if (ok) command.Execute(value, Target); 
-                        }
+                        bool ok = ExecuteCommand(key, value);
+                        string answer = "c?" + (ok ? "succeded" : "failed");
+                        Server.SendMessageToAll(answer, e.Id);
                         break;
                 }
             }

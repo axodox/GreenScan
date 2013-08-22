@@ -308,7 +308,7 @@ namespace Excalibur
         Dictionary<int, Packet> PacketsSending, PacketsReceiving;
         Queue<Packet> PacketsToSend;
         AutoResetEvent SendARE, ConnectARE, NodeARE;
-        enum MessageTypes : byte { Header = 254, Data = 1, AcceptPacket = 2, KeepAlive = 3, CancelBySender = 4, CancelByReceiver = 5, AnnounceNode = 6, ReadNode = 7, WriteNode = 8, NodeValue = 9, TextMessage=32, Close = 127, Footer = 255 };
+        enum MessageTypes : byte { Header = 254, Data = 1, AcceptPacket = 2, KeepAlive = 3, CancelBySender = 4, CancelByReceiver = 5, AnnounceNode = 6, ReadNode = 7, WriteNode = 8, NodeValue = 9, TextMessage = 32, Close = 127, Footer = 255 };
         Timer KeepAliveTimer;
         bool AnnounceInProgress;
         public bool IsConnected { get; private set; }
@@ -725,8 +725,8 @@ namespace Excalibur
                 }
             }
             PacketsReceiving.Clear();
-            PacketsReceiving = null;            
-            if (DisconnectType == DisconnectTypes.Direct)
+            PacketsReceiving = null;
+            if (DisconnectType != DisconnectTypes.Direct && ClientSocket != null)
             {
                 ClientSocket.Dispose();
                 ClientSocket = null;
@@ -769,6 +769,16 @@ namespace Excalibur
                 IsConnected = false;
                 DisconnectType = DisconnectTypes.Direct;
                 SendARE.Set();
+                try
+                {
+                    SendThread.Join();
+                }
+                catch { }
+                try
+                {
+                    ReceiveThread.Join();
+                }
+                catch { }
             }
         }
 
@@ -857,7 +867,7 @@ namespace Excalibur
                             ClientSocket.Disconnect(false);
                             ClientSocket.Close();
                         }
-                        else
+                        else if(ClientSocket != null)
                         {
                             ClientSocket.Dispose();
                             ClientSocket = null;

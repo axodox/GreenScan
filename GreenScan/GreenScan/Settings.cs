@@ -11,6 +11,7 @@ namespace Green.Scan
     {
         public SettingGroup KinectProperties { get; private set; }
         public EnumSetting<KinectManager.Modes> KinectMode { get; private set; }
+        public BooleanSetting EmitterEnabled { get; private set; }
 
         public SettingGroup PreprocessingProperties { get; private set; }
         public NumericSetting<int> DepthAveraging { get; private set; }
@@ -57,9 +58,11 @@ namespace Green.Scan
 
         public SettingGroup SaveProperties { get; private set; }
         public PathSetting SaveDirectory { get; private set; }
+        public BooleanSetting SaveNoTimestamp { get; private set; }
         public StringSetting SaveLabel { get; private set; }
         public SizeSetting SaveModelResolution { get; private set; }
         public SizeSetting SaveTextureResolution { get; private set; }
+        public PathSetting SaveCalibrationDirectory { get; private set; }
 
         public SettingGroup TurntableProperties { get; private set; }
         public RectangleSetting TurntableEllipse { get; private set; }
@@ -72,16 +75,19 @@ namespace Green.Scan
         public SizeSetting TurntableModelResolution { get; private set; }
         public SizeSetting TurntableTextureResolution { get; private set; }
         public EnumSetting<RotatingScanner.Views> TurntableView { get; private set; }
+        public NumericSetting<int> TurntablePiSteps { get; private set; }
 
         public ScanSettings()
             : base()
         {
             //Kinect
-            KinectProperties = new SettingGroup("Kinect") { FriendlyName = "Kinect", IsHidden = true };
+            KinectProperties = new SettingGroup("Kinect") { FriendlyName = "Kinect", Footer = "*Applies to Kinect for Windows only" };
             SettingGroups.Add(KinectProperties);
 
             KinectMode = new EnumSetting<KinectManager.Modes>("Mode", KinectManager.Modes.DepthAndColor) { FriendlyName = "Mode" };
+            EmitterEnabled = new BooleanSetting("EmitterEnabled", true) { FriendlyName = "Emitter enabled*" };
             KinectProperties.Settings.Add(KinectMode);
+            KinectProperties.Settings.Add(EmitterEnabled);
 
             //Preprocessing
             PreprocessingProperties = new SettingGroup("Preprocessing") { FriendlyName = "Preprocessing" };
@@ -183,12 +189,16 @@ namespace Green.Scan
 
             SaveDirectory = new PathSetting("Directory", "") { FriendlyName = "Directory" };
             SaveLabel = new StringSetting("Label", "", Path.GetInvalidFileNameChars()) { FriendlyName = "Label" };
+            SaveNoTimestamp = new BooleanSetting("NoTimestamp", false) { FriendlyName = "No timestamp if label specified" };
             SaveModelResolution = new SizeSetting("ModelResolution", 640, 480, 8, 8, 640, 480) { FriendlyName = "Model resolution (vertices)" };
             SaveTextureResolution = new SizeSetting("TextureResolution", 640, 480, 8, 8, 1024, 1024) { FriendlyName = "Texture resolution (pixels)" };
+            SaveCalibrationDirectory = new PathSetting("CalibrationDirectory", "") { FriendlyName = "Calibration directory", IsHidden = true };
             SaveProperties.Settings.Add(SaveDirectory);
             SaveProperties.Settings.Add(SaveLabel);
+            SaveProperties.Settings.Add(SaveNoTimestamp);
             SaveProperties.Settings.Add(SaveModelResolution);
             SaveProperties.Settings.Add(SaveTextureResolution);
+            SaveProperties.Settings.Add(SaveCalibrationDirectory);
 
             //Turntable
             TurntableProperties = new SettingGroup("Turntable") { FriendlyName = "Turntable", IsHidden = true };
@@ -217,8 +227,10 @@ namespace Green.Scan
 
             TurntableEllipse = new RectangleSetting("SelectionEllipse", new Rect(0d, 0d, 0d, 0d)) { IsHidden = true };
             TurntableRectangle = new RectangleSetting("SelectionRectangle", new Rect(0d, 0d, 0d, 0d)) { IsHidden = true };
+            TurntablePiSteps = new NumericSetting<int>("PiSteps", 10989, 360, 1000000) { IsHidden = true };
             TurntableProperties.Settings.Add(TurntableEllipse);
             TurntableProperties.Settings.Add(TurntableRectangle);
+            TurntableProperties.Settings.Add(TurntablePiSteps);
         }
     }
 }

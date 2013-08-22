@@ -76,6 +76,7 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
+    <Text Include="Shelve.txt" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="app.rc">
