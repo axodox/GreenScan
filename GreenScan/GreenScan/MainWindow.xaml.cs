@@ -48,6 +48,7 @@ namespace Green.Scan
             if ((bool)e.Result == true)
             {
                 ShowStatus("Ready.");
+                Remote.IsEnabled = true;
                 IsEnabled = true;
             }
             else

@@ -20,7 +20,8 @@ namespace Green.Remoting
     public class RemotingServer : IDisposable
     {
         public int RemoteCount { get; private set; }
-        
+        public bool IsEnabled { get; set; }
+
         public delegate void RemoteEventHandler(object sender, RemoteEventArgs e);
         public event RemoteEventHandler RemoteConnected, RemoteDisconnected;
 
@@ -135,12 +136,17 @@ namespace Green.Remoting
                 switch (e.Text[0])
                 {
                     case 's':
-                        SetOption(key, value);
+                        if (IsEnabled) SetOption(key, value);
                         break;
                     case 'c':
-                        bool ok = ExecuteCommand(key, value);
-                        string answer = "c?" + (ok ? "succeded" : "failed");
-                        Server.SendMessageToAll(answer, e.Id);
+                        if (IsEnabled)
+                        {
+                            bool ok = ExecuteCommand(key, value);
+                            string answer = "c?" + (ok ? "succeded" : "failed");
+                            Server.SendMessageToAll(answer, e.Id);
+                        }
+                        else
+                            Server.SendMessageToAll("c?failed", e.Id);
                         break;
                 }
             }
