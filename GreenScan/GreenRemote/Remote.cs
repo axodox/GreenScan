@@ -39,7 +39,8 @@ namespace Green.Remoting
                 if (ok) command.Execute(argument, Target);
                 return ok;
             }
-            else throw new Exception();
+            else 
+                return false;
         }
 
         public void SetOption(string name, string value)
@@ -48,7 +49,6 @@ namespace Green.Remoting
             {
                 Settings[name].StringValue = value;
             }
-            else throw new Exception();
         }
 
         public string GetOption(string name)
@@ -57,7 +57,7 @@ namespace Green.Remoting
             {
                 return Settings[name].StringValue;
             }
-            else throw new Exception();
+            else return null;
         }
 
         public void StoreOption(string name)
@@ -66,7 +66,6 @@ namespace Green.Remoting
             {
                 Settings[name].StoreValue();
             }
-            else throw new Exception();
         }
 
         public void RestoreOption(string name)
@@ -75,7 +74,6 @@ namespace Green.Remoting
             {
                 Settings[name].RestoreValue();
             }
-            else throw new Exception();
         }
 
         public RemotingServer(SettingManager manager, RoutedUICommand[] commands, IInputElement target, int port, long protocolId)
@@ -158,8 +156,8 @@ namespace Green.Remoting
             if (!IsDisposed)
             {
                 IsDisposed = true;
-                Server.DisconnectAll();
                 Server.StopListening();
+                Server.DisconnectAll();                
             }
         }
     }

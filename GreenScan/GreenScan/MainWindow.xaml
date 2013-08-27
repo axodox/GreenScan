@@ -90,7 +90,7 @@
                         <MenuItem Header="Open model..." Command="{x:Static local:GreenScanCommands.Open}"/>
                         <MenuItem Header="Save model" Command="{x:Static local:GreenScanCommands.Save}"/>
                         <Separator/>
-                        <MenuItem x:Name="MIExport" Header="Export as" IsEnabled="{Binding Processing, Mode=OneWay}">
+                        <MenuItem x:Name="MIExport" Header="Export as" IsEnabled="{Binding ProvidesData, Mode=OneWay}">
                             <MenuItem Header="Image PNG">
                                 <MenuItem Header="As screenshot" Command="{x:Static local:GreenScanCommands.Export}" CommandParameter="PNG"/>
                                 <MenuItem Header="As original" Command="{x:Static local:GreenScanCommands.Export}" CommandParameter="PNG/raw"/>

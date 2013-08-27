@@ -173,9 +173,10 @@ namespace Excalibur
 
         public void DisconnectAll()
         {
-            foreach (ExcaliburClient client in Clients)
+            while(Clients.Count > 0)
             {
-                client.Disconnect();
+                Clients[0].Disconnect();
+                Clients.RemoveAt(0);
             }
         }
 
@@ -253,7 +254,7 @@ namespace Excalibur
                 try
                 {
                     AnnounceSocket.ReceiveFrom(buffer, ref remoteEndPoint);
-                    if (BitConverter.ToInt64(buffer, 0) == ProtocolIdentifier)
+                    if (ListeningEnabled && BitConverter.ToInt64(buffer, 0) == ProtocolIdentifier)
                     {
                         AnnounceSocket.SendTo(buffer, remoteEndPoint);
                     }
@@ -268,6 +269,7 @@ namespace Excalibur
 
         void EC_Disconnected(object sender, ExcaliburClient.DisconnectEventArgs e)
         {
+            Clients.Remove(sender as ExcaliburClient);
             if (ClientDisconnected != null)
             {
                 ClientDisconnected(this, new ClientEventArgs(sender as ExcaliburClient));

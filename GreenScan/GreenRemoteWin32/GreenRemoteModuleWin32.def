@@ -1,0 +1,16 @@
+LIBRARY GREENREMOTEMODULE
+EXPORTS
+RemoteInit @1
+RemoteShutdown @2
+CreateRemote @3
+DestroyRemote @4
+SetRemoteCallbackArgument @5
+SetRemoteConnectionCallbacks @6
+SetRemoteMessageReceivedCallbacks @7
+RemoteSetOptionAsync @8
+RemoteExecuteCommandAsync @9
+RemoteExecuteCommand @10
+
+CreateExcaliburSeeker @101
+DestroyExcaliburSeeker @102
+SetExcaliburSeekerCallback @103

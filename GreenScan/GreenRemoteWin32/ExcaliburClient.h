@@ -1,21 +1,126 @@
 #pragma once
-#pragma unmanaged
 #include "Stdafx.h"
 #define FRAMEDELIMITER 170
 using namespace std;
-
+inline void SocketThrow(int result, bool throwOnNull = false)
+{
+	if(result == SOCKET_ERROR)
+		throw WSAGetLastError();
+	if(result == 0 && throwOnNull)
+		throw 0;
+}
 
 namespace Green
 {
 	namespace Remoting
 	{
-		public class ExcaliburClient
+		typedef void (*EndPointFoundCallback)(void* argument, sockaddr_in address);
+		class ExcaliburSeeker
+		{
+		private:
+			HANDLE SeekerThread, DiscoveryThread;
+			SOCKET Socket;
+			sockaddr_in BroadcastAddress;
+			bool ThreadsOn;
+			long long ProtocolIdentifier;
+			static DWORD WINAPI SeekerProc(_In_ LPVOID parameter)
+			{
+				ExcaliburSeeker* es = (ExcaliburSeeker*)parameter;
+				while(es->ThreadsOn)
+				{					
+					try
+					{
+						SocketThrow(sendto(
+							es->Socket, 
+							(char*)&es->ProtocolIdentifier, 
+							sizeof(es->ProtocolIdentifier),
+							0,
+							(SOCKADDR*)&(es->BroadcastAddress),
+							sizeof(SOCKADDR)));
+						Sleep(1000);
+					}
+					catch(int e)
+					{
+						es->ThreadsOn = false;
+					}
+				}
+				return 0;
+			}
+
+			static DWORD WINAPI DiscoveryProc(_In_ LPVOID parameter)
+			{
+				ExcaliburSeeker* es = (ExcaliburSeeker*)parameter;
+				long long remoteProtocolIdentifier = 0;
+				sockaddr_in remoteAddr;
+				int remoteAddrSize = sizeof(remoteAddr);
+				int bytes;
+				while(es->ThreadsOn)
+				{
+					try
+					{
+						SocketThrow(bytes = recvfrom(es->Socket, (char*)&remoteProtocolIdentifier, sizeof(remoteProtocolIdentifier), 0, (SOCKADDR*) &remoteAddr, &remoteAddrSize)); 
+						if(bytes == sizeof(remoteProtocolIdentifier) && es->ProtocolIdentifier == remoteProtocolIdentifier && es->OnEndPointFound)
+						{
+							es->OnEndPointFound(es->CallbackArgument, remoteAddr);
+						}
+						Sleep(1000);
+					}
+					catch(int e)
+					{
+						es->ThreadsOn = false;
+					}
+				}
+				return 0;
+			}
+		public:
+			void* CallbackArgument;
+			EndPointFoundCallback OnEndPointFound;
+			ExcaliburSeeker(unsigned short port, long long protocolIdentifier)
+			{
+				CallbackArgument = nullptr;
+				OnEndPointFound = nullptr;
+				ProtocolIdentifier = protocolIdentifier;
+				Socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+				char* optbuf = new char[4];
+				optbuf[0] = 1;
+				SocketThrow(setsockopt(Socket, SOL_SOCKET, SO_BROADCAST, optbuf, 4));
+				*((DWORD*)optbuf) = 10;
+				SocketThrow(setsockopt(Socket, IPPROTO_IP, IP_TTL, optbuf, 2));
+				delete [4] optbuf;
+				
+				sockaddr_in AnyAddress;
+				ZeroMemory(&AnyAddress, sizeof(AnyAddress));
+				AnyAddress.sin_family = AF_INET;
+				AnyAddress.sin_port = htons(0);
+				AnyAddress.sin_addr.S_un.S_addr = htonl(INADDR_ANY);
+				SocketThrow(bind(Socket, (sockaddr*)&AnyAddress, sizeof(AnyAddress)));
+
+				ZeroMemory(&BroadcastAddress, sizeof(BroadcastAddress));
+				BroadcastAddress.sin_family = AF_INET;
+				BroadcastAddress.sin_port = htons(port);
+				BroadcastAddress.sin_addr.S_un.S_addr = htonl(INADDR_BROADCAST);
+
+				ThreadsOn = true;
+				SeekerThread = CreateThread(0, 0, &SeekerProc, this, 0, 0);
+				DiscoveryThread = CreateThread(0, 0, &DiscoveryProc, this, 0, 0);
+			}
+
+			~ExcaliburSeeker()
+			{
+				ThreadsOn = false;
+				closesocket(Socket);
+				CloseHandle(SeekerThread);
+				CloseHandle(DiscoveryThread);
+			}
+		};
+
+		class ExcaliburClient
 		{
 		private:
 			long long ProtocolIdentifier;
 			
 			SOCKET Socket;
-			PADDRINFOW ClientEndPoint;
+			sockaddr_in ClientEndPoint;
 			HANDLE SendThread, ReceiveThread;
 			class Packet
 			{
@@ -63,8 +168,8 @@ namespace Green
 				}
 			};
 
-			queue<Packet*>* PacketsToSend;
-			unordered_map<int, Response*>* Responses;
+			queue<Packet*> PacketsToSend;
+			unordered_map<int, Response*> Responses;
 			UINT NextPacketId;
 			HANDLE SendEvent;
 			CRITICAL_SECTION QueueSection, ResponseSection;
@@ -83,70 +188,55 @@ namespace Green
 			MessageCallback OnMessageReceived;
 			DisconnectedCallback OnDisconnected;
 			void* CallbackArgument;
-			DWORD KeepAliveTimeout; 			
+			DWORD KeepAliveTimeout; 	
 
-			static int Init()
-			{
-				WSAData WSAInitData;
-				int result = WSAStartup(MAKEWORD(2, 2), (LPWSADATA)&WSAInitData);
-				return result;
-			}
-
-			static int Shutdown()
-			{
-				return WSACleanup();
-			}
-
-			static ExcaliburClient* Create(LPWSTR host, LPWSTR port, long protocolIdentifier)
+			static ExcaliburClient* Create(PCSTR host, PCSTR port, long long protocolIdentifier)
 			{
 				int result;
-				ADDRINFOW *address = 0, hints;
+				ADDRINFO *address = 0, hints;
 				ZeroMemory(&hints, sizeof(hints));
 				hints.ai_family = AF_INET;
 				hints.ai_socktype = SOCK_STREAM;
 				hints.ai_protocol = IPPROTO_TCP;
-				result = GetAddrInfoW(host, port, &hints, &address);
+				result = getaddrinfo(host, port, &hints, &address);
 				if(result) return 0;
-				SOCKET clientSocket;
-				clientSocket = socket(address->ai_family, address->ai_socktype, address->ai_protocol);
-				if(clientSocket == INVALID_SOCKET)
-				{
-					FreeAddrInfoW(address);
-					return 0;
-				}
 
-				ExcaliburClient* client = new ExcaliburClient(clientSocket, address, protocolIdentifier);
+				sockaddr_in addrin;
+				ZeroMemory(&addrin, sizeof(addrin));
+				memcpy(&addrin, address, sizeof(addrin));
+				freeaddrinfo(address);
+
+				ExcaliburClient* client = new ExcaliburClient(addrin, protocolIdentifier);				
 				return client;
 			}
 
 			~ExcaliburClient()
 			{
 				Packet* packet;
-				while(!PacketsToSend->empty())
+				while(!PacketsToSend.empty())
 				{
-					packet = PacketsToSend->front();
-					PacketsToSend->pop();
+					packet = PacketsToSend.front();
+					PacketsToSend.pop();
 					delete packet;
 				}
-				delete PacketsToSend;
-				for(pair<int, Response*> h : (*Responses))
+				for(pair<int, Response*> h : Responses)
 				{
 					delete h.second;
 				}
-				delete Responses;
 				DeleteCriticalSection(&QueueSection);
 				DeleteCriticalSection(&ResponseSection);
-				FreeAddrInfoW(ClientEndPoint);
 				CloseHandle(SendEvent);
+				CloseHandle(SendThread);
+				CloseHandle(ReceiveThread);
 			}
 
 			LPSTR SendMessageAndWaitForAnswer(LPSTR text, DWORD timeout)
 			{
 				if(!IsConnected) return 0;
-				int id = SendMessage(text);
+				int id = SendText(text);
 				Response* response = new Response();
 				EnterCriticalSection(&ResponseSection);
-				Responses->emplace(id, response);
+				Responses.emplace(id, response);
 				LeaveCriticalSection(&ResponseSection);
 
 				LPSTR answer;
@@ -158,12 +248,12 @@ namespace Green
 				{
 					answer = 0;
 				}
-				Responses->erase(id);
+				Responses.erase(id);
 				delete response;
 				return answer;
 			}
 
-			int SendMessage(LPSTR text)
+			int SendText(LPSTR text)
 			{
 				if(!IsConnected) return -1;
 				unsigned textlen = strlen(text), lenlen;
@@ -172,7 +262,7 @@ namespace Green
 				memcpy(message + lenlen, text, textlen);
 				Packet* packet = new Packet(NextPacketId++, Packet::Types::Text, message, textlen + 2);
 				EnterCriticalSection(&QueueSection);
-				PacketsToSend->push(packet);
+				PacketsToSend.push(packet);
 				LeaveCriticalSection(&QueueSection);
 				SetEvent(SendEvent);	
 				return packet->Id;
@@ -185,18 +275,16 @@ namespace Green
 					IsConnected = false;
 					DisconnectType = DisconnectTypes::Direct;
 					SetEvent(SendEvent);
-					WaitForSingleObject(SendThread, INFINITE);
 					WaitForSingleObject(ReceiveThread, INFINITE);
+					WaitForSingleObject(SendThread, INFINITE);
 				}
 			}
-		private:
-			ExcaliburClient(SOCKET clientSocket, PADDRINFOW address, long protocolIdentifier)
+
+			ExcaliburClient(sockaddr_in address, long long protocolIdentifier)
 			{
-				Socket = clientSocket;
+				Socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 				ProtocolIdentifier = protocolIdentifier;
 				ClientEndPoint = address;
-				PacketsToSend = new queue<Packet*>();
-				Responses = new unordered_map<int, Response*>();
 				NextPacketId = 0;
 				InitializeCriticalSection(&QueueSection);
 				InitializeCriticalSection(&ResponseSection);
@@ -207,42 +295,37 @@ namespace Green
 				ReceiveThread = CreateThread(0, 0, &ExcaliburClient::ConnectAndReceiveProc, this, 0, 0);
 				KeepAliveTimeout = 500;			
 			}
-
+		private:
 			static DWORD WINAPI ConnectAndReceiveProc(_In_ LPVOID parameter)
 			{
 				ExcaliburClient* client = (ExcaliburClient*)parameter;
-				client->ConnectWorker();
+				client->ConnectWorker();				
 				return 0;
 			}
 
 			static DWORD WINAPI SendProc(_In_ LPVOID parameter)
 			{
 				ExcaliburClient* client = (ExcaliburClient*)parameter;
-				client->SendWorker();
+				client->SendWorker();				
 				return 0;
-			}
-
-			inline void SocketThrow(int result)
-			{
-				if(result == SOCKET_ERROR) throw 0;
-			}
+			}			
 
 			void ConnectWorker()
 			{
 				try
 				{
-					SocketThrow(connect(Socket, ClientEndPoint->ai_addr, ClientEndPoint->ai_addrlen));
+					SocketThrow(connect(Socket, (sockaddr*)&ClientEndPoint, sizeof(ClientEndPoint)));
 					SocketThrow(send(Socket, (char*)&ProtocolIdentifier, 8, 0));
 					
 					long long remoteProtocolIdentifier;
-					SocketThrow(recv(Socket, (char*)&remoteProtocolIdentifier, 8, MSG_WAITALL));
+					SocketThrow(recv(Socket, (char*)&remoteProtocolIdentifier, 8, MSG_WAITALL), true);
 
 					if(ProtocolIdentifier == remoteProtocolIdentifier)
 					{
 						IsConnected = true;
 						CommunicationThreadsEnabled = true;
 						SendThread = CreateThread(0, 0, &ExcaliburClient::SendProc, this, 0, 0);
-						ReceiveWorker();						
+						ReceiveWorker();	
 					}
 					else throw 0;
 				}
@@ -297,29 +380,31 @@ namespace Green
 			
 			void ReceiveWorker()
 			{
-				Packet::Types type;
-				UINT id, length;
-				char* buffer, delimiter;
-
+				Packet::Types type = Packet::Types::Unknown;
+				UINT id = 0, length = 0, bufferlen = 0;
+				char* buffer, delimiter = 0;
+								
 				try
 				{
-					while(CommunicationThreadsEnabled)
+					while(CommunicationThreadsEnabled && IsConnected)
 					{
 						buffer = 0;
 						length = 0;
-						SocketThrow(recv(Socket, (char*)&delimiter, sizeof(delimiter), 0));
+						SocketThrow(recv(Socket, &delimiter, sizeof(delimiter), MSG_WAITALL), true);
 						if((BYTE)delimiter != FRAMEDELIMITER) throw 1;
-						SocketThrow(recv(Socket, (char*)&length, sizeof(length), 0));
+						SocketThrow(recv(Socket, (char*)&length, sizeof(length), MSG_WAITALL), true);
 						length -= sizeof(type) + sizeof(id);
-						SocketThrow(recv(Socket, (char*)&type, sizeof(type), 0));
-						SocketThrow(recv(Socket, (char*)&id, sizeof(id), 0));
-					
-						if(length > 0)
-						{
-							buffer = new char[length];
-							SocketThrow(recv(Socket, buffer, length, 0));
-						}
+						SocketThrow(recv(Socket, (char*)&type, sizeof(type), MSG_WAITALL), true);
+						SocketThrow(recv(Socket, (char*)&id, sizeof(id), MSG_WAITALL), true);
 
+						
+						if(length > 0 && length < 4096)
+						{
+							bufferlen = length;
+							buffer = new char[bufferlen];
+							SocketThrow(recv(Socket, buffer, length, MSG_WAITALL), true);
+						}
+						
 						switch(type)
 						{
 						case Packet::Types::Text:
@@ -327,15 +412,16 @@ namespace Green
 								LPSTR text = ReadDodNetString(buffer);
 
 								EnterCriticalSection(&ResponseSection);
-								if(Responses->count(id) > 0)
+								if(Responses.count(id) > 0)
 								{
-									Response* r = Responses->at(id);
+									Response* r = Responses.at(id);
 									r->Length = strlen(text) + 1;
 									r->Data = new char[r->Length];
 									memcpy(r->Data, text, r->Length);
 									SetEvent(r->ReceivedEvent);
 								}
 								LeaveCriticalSection(&ResponseSection);
+								
 								
 								if(OnMessageReceived) OnMessageReceived(CallbackArgument, id, text);			
 								LPSTRDelete(text);
@@ -349,16 +435,20 @@ namespace Green
 						default:
 							break;
 						}
-						delete [length] buffer;
+						
+						if(bufferlen) 
+						{
+							delete [bufferlen] buffer;
+							bufferlen = 0;
+						}
 					}
 				}
 				catch(int e)
 				{
-					if(buffer) delete [length] buffer;
+					if(bufferlen) delete [bufferlen] buffer;
 					DisconnectType = DisconnectTypes::Unknown;
 					IsConnected = false;
-					SetEvent(SendEvent);
-					if(OnDisconnected) OnDisconnected(CallbackArgument, DisconnectType);
+					SetEvent(SendEvent);					
 				}
 			}
 
@@ -391,12 +481,12 @@ namespace Green
 						{
 							packet = 0;
 							EnterCriticalSection(&QueueSection);
-							if(PacketsToSend->empty())
+							if(PacketsToSend.empty())
 								packet = 0;
 							else
 							{
-								packet = PacketsToSend->front();
-								PacketsToSend->pop();
+								packet = PacketsToSend.front();
+								PacketsToSend.pop();
 							}
 							LeaveCriticalSection(&QueueSection);
 						
@@ -427,12 +517,17 @@ namespace Green
 				catch(int e)
 				{
 					if(packet) delete packet;
-				}
-
+				}				
+						
 				//Free resources
 				CommunicationThreadsEnabled = false;
+				shutdown(Socket, SD_BOTH);
+				char a;
+				recv(Socket, &a, 1, MSG_WAITALL);
 				closesocket(Socket);	
 				Socket = INVALID_SOCKET;
+
+				if(OnDisconnected) OnDisconnected(CallbackArgument, DisconnectType);
 			}
 		};
 	}

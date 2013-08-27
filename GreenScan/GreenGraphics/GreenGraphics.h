@@ -370,7 +370,7 @@ namespace Green
 						}
 					}
 
-					if(!Params.UseModuleShading || (overlayMode && !backgroundDone))
+					if(!Params.UseModuleShading || (Params.UseModuleShading && ModuleCount == 0) || (overlayMode && !backgroundDone))
 					{
 						BOpaque->Apply();
 						CBDepthAndColor->SetForVS(1);

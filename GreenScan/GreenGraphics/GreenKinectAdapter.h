@@ -15,14 +15,14 @@ namespace Green
 		public: 
 			enum class Modes
 			{
-				Color,
-				Depth,
-				DepthAndColor,
-				Infrared
+				Depth = 1,
+				Color = 2,
+				DepthAndColor = 3,
+				Infrared = 4
 			};
 		private:
 			int deviceCount;
-			bool deviceOpened, processing;
+			bool deviceOpened, processing, providesData;
 			Modes mode;
 		public:
 			property Modes Mode	{ Modes get() { return mode; }}
@@ -30,6 +30,7 @@ namespace Green
 			property int DeviceCount { int get() { return deviceCount; }}
 			property bool DeviceOpened { bool get()	{ return deviceOpened; }}
 			property bool Processing { bool get() { return processing; }}
+			property bool ProvidesData { bool get() { return providesData; }}
 			static property int DepthWidth { int get() { return KinectDevice::DepthWidth; }}
 			static property int DepthHeight { int get() { return KinectDevice::DepthHeight; }}
 			static property int ColorWidth { int get() { return KinectDevice::ColorWidth; }}
@@ -60,27 +61,15 @@ namespace Green
 				if(!deviceOpened) return false;
 				StopKinect();	
 				bool ok = false;
-				switch (mode)
-				{
-				case Modes::Color:
-					ok = Device->StartKinect(KinectDevice::Color);
-					break;
-				case Modes::Depth:
-					ok = Device->StartKinect(KinectDevice::Depth);
-					break;
-				case Modes::DepthAndColor:
-					ok = Device->StartKinect(KinectDevice::DepthAndColor);
-					break;
-				case Modes::Infrared:
-					ok = Device->StartKinect(KinectDevice::Infrared);
-					break;
-				}
+				ok = Device->StartKinect((KinectDevice::Modes)mode);
 				if(ok)
 				{
 					this->mode = mode;
 					OnPropertyChanged("Mode");
 					processing = true;
 					OnPropertyChanged("Processing");
+					providesData = true;
+					OnPropertyChanged("ProvidesData");
 				}
 				return ok;
 			}
@@ -105,8 +94,16 @@ namespace Green
 				else
 				{
 					LPWSTR npath = StringToLPWSTR(path);
-					bool ok = Device->OpenRaw(npath);
+					KinectDevice::Modes newmode;
+					bool ok = Device->OpenRaw(npath, newmode);
+					mode = (Modes)newmode;
+					OnPropertyChanged("Mode");
 					LPWSTRDelete(npath);
+					if(ok)
+					{
+						providesData = true;
+						OnPropertyChanged("ProvidesData");
+					}
 					return ok;
 				}
 			}
@@ -121,6 +118,8 @@ namespace Green
 				if(!processing) return;
 				processing = false;
 				OnPropertyChanged("Processing");
+				providesData = false;
+				OnPropertyChanged("ProvidesData");
 				Device->StopKinect();				
 			}
 			

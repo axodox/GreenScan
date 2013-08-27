@@ -322,7 +322,7 @@ namespace Green
 				return ok;
 			}
 
-			bool OpenRaw(LPWSTR path)
+			bool OpenRaw(LPWSTR path, Modes &mode)
 			{
 				if(KinectWorking) return false;
 				if(KinectStopping != nullptr) KinectStopping(CallbackObject);
@@ -331,7 +331,6 @@ namespace Green
 				if(_wfopen_s(&file, path, L"rb") == 0)
 				{
 					int version;
-					Modes mode;
 					int colorWidth, colorHeight, depthWidth, depthHeight; 
 					fread(&version, sizeof(version), 1, file);
 					if(version == SaveVersion)

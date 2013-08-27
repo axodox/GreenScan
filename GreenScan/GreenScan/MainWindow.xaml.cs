@@ -8,6 +8,7 @@ using Microsoft.Win32;
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Animation;
@@ -443,16 +444,24 @@ namespace Green.Scan
             NotifyPropertyChanged("SavingInProgress");
         }
 
-        private void OpenRaw()
+        private void OpenRaw(string path = null)
         {
-            OpenFileDialog OFD = new OpenFileDialog();
-            OFD.Filter = "GreenScan RAW files (*.gsr)|*.gsr";
-            OFD.InitialDirectory = Settings.SaveDirectory.AbsolutePath;
-            OFD.Title = "Open file";
-            if (OFD.ShowDialog(this) == true)
+            if (path == null)
+            {
+                OpenFileDialog OFD = new OpenFileDialog();
+                OFD.Filter = "GreenScan RAW files (*.gsr)|*.gsr";
+                OFD.InitialDirectory = Settings.SaveDirectory.AbsolutePath;
+                OFD.Title = "Open file";
+                if (OFD.ShowDialog(this) == true)
+                {
+                    path = OFD.FileName;                    
+                }
+            }
+
+            if (path != null)
             {
                 DeviceManager.StopKinect();
-                OpenDialog(DeviceManager.OpenRaw(OFD.FileName));
+                OpenDialog(DeviceManager.OpenRaw(path));
             }
         }
 
@@ -585,11 +594,15 @@ namespace Green.Scan
         void OpenCmdCanExecute(object target, CanExecuteRoutedEventArgs e)
         {
             e.CanExecute = !SavingInProgress;
+            if (e.Parameter != null && e.Parameter is String)
+            {
+                e.CanExecute &= (e.Parameter as String).ToLower().EndsWith(".gsr") && File.Exists((string)e.Parameter);
+            }
         }
 
         void OpenCmdExecuted(object target, ExecutedRoutedEventArgs e)
         {
-            OpenRaw();
+            OpenRaw((string)e.Parameter);
         }
 
         void SaveCmdExecuted(object target, ExecutedRoutedEventArgs e)
@@ -629,13 +642,13 @@ namespace Green.Scan
             switch ((string)e.Parameter)
             {
                 case "PNG":
-                    e.CanExecute = DeviceManager.Processing && !SavingInProgress;
+                    e.CanExecute = DeviceManager.ProvidesData && !SavingInProgress;
                     break;
                 case "PNG/raw":
-                    e.CanExecute = DeviceManager.Processing && !SavingInProgress && (DeviceManager.Mode == KinectManager.Modes.Color || DeviceManager.Mode == KinectManager.Modes.Infrared);
+                    e.CanExecute = DeviceManager.ProvidesData && !SavingInProgress && (DeviceManager.Mode == KinectManager.Modes.Color || DeviceManager.Mode == KinectManager.Modes.Infrared);
                     break;
                 default:
-                    e.CanExecute = DeviceManager.Processing && DeviceManager.Mode == KinectManager.Modes.DepthAndColor && !SavingInProgress;
+                    e.CanExecute = DeviceManager.ProvidesData && !SavingInProgress && DeviceManager.Mode == KinectManager.Modes.DepthAndColor;
                     break;
             }
         }
@@ -740,18 +753,31 @@ namespace Green.Scan
         void TurntableOpenCmdCanExecute(object target, CanExecuteRoutedEventArgs e)
         {
             e.CanExecute = TurntableScanner.IsConnected && !TurntableScanner.IsScanning;
+            if (e.Parameter != null && e.Parameter is String)
+            {
+                e.CanExecute &= (e.Parameter as String).ToLower().EndsWith(".gtr") && File.Exists((string)e.Parameter);
+            }
         }
 
         void TurntableOpenCmdExecuted(object target, ExecutedRoutedEventArgs e)
         {
-            OpenFileDialog OFD = new OpenFileDialog();
-            OFD.Filter = "GreenScan Turntable RAW files (*.gtr)|*.gtr";
-            OFD.InitialDirectory = Settings.SaveDirectory.AbsolutePath;
-            OFD.Title = "Open file";
-            if (OFD.ShowDialog(this) == true)
+            string path = (string)e.Parameter;
+            if (path == null)
+            {
+                OpenFileDialog OFD = new OpenFileDialog();
+                OFD.Filter = "GreenScan Turntable RAW files (*.gtr)|*.gtr";
+                OFD.InitialDirectory = Settings.SaveDirectory.AbsolutePath;
+                OFD.Title = "Open file";
+                if (OFD.ShowDialog(this) == true)
+                {
+                    path = OFD.FileName;
+                }
+            }
+
+            if (path != null)
             {
                 DeviceManager.StopKinect();
-                OpenDialog(TurntableScanner.OpenRaw(OFD.FileName));
+                OpenDialog(TurntableScanner.OpenRaw(path));
             }
         }
 
@@ -779,7 +805,7 @@ namespace Green.Scan
         public static RoutedUICommand Browse = new RoutedUICommand("Browses save directory.", "Browse", typeof(MainWindow));
         public static RoutedUICommand Save = new RoutedUICommand("Saves the current model.", "Save", typeof(MainWindow), new InputGestureCollection() { new KeyGesture(Key.S, ModifierKeys.Control) });
         public static RoutedUICommand Close = new RoutedUICommand("Closes the application.", "Close", typeof(MainWindow), new InputGestureCollection() { new KeyGesture(Key.Escape) });
-        public static RoutedUICommand Export = new RoutedUICommand("Exports the current scene to the specified format.", "Export", typeof(MainWindow));
+        public static RoutedUICommand Export = new RoutedUICommand("Exports the current scene to the specified format. Supported formats: PNG, PNG/raw, STL, FBX, DAE, DXF, OBJ, FL4.", "Export", typeof(MainWindow));
         public static RoutedUICommand Start = new RoutedUICommand("Start the Kinect with the specified index.", "Start", typeof(MainWindow));
         public static RoutedUICommand Stop = new RoutedUICommand("Stops the Kinect.", "Stop", typeof(MainWindow));
         public static RoutedUICommand Calibrate = new RoutedUICommand("Starts calibration procedure.", "Calibrate", typeof(MainWindow));
@@ -792,7 +818,7 @@ namespace Green.Scan
         public static RoutedUICommand Stop = new RoutedUICommand("Stops the scanning and the turntable.", "Turntable.Stop", typeof(MainWindow), new InputGestureCollection() { new KeyGesture(Key.F12) });
         public static RoutedUICommand Calibrate = new RoutedUICommand("Shows the calibration window.", "Turntable.Calibrate", typeof(MainWindow));
         public static RoutedUICommand ToOrigin = new RoutedUICommand("Returns the turntable to its origin.", "Turntable.ToOrigin", typeof(MainWindow), new InputGestureCollection() { new KeyGesture(Key.F7) });
-        public static RoutedUICommand Export = new RoutedUICommand("Exports the model in various formats. The format should be given as parameter.", "Turntable.Export", typeof(MainWindow));
+        public static RoutedUICommand Export = new RoutedUICommand("Exports the model in various formats. The format should be given as parameter. Supported formats: STL, FBX, DAE, DXF, OBJ, FL4.", "Turntable.Export", typeof(MainWindow));
         public static RoutedUICommand Open = new RoutedUICommand("Opens the specified turntable model file.", "Turntable.Open", typeof(MainWindow));
         public static RoutedUICommand Save = new RoutedUICommand("Saves the model.", "Turntable.Save", typeof(MainWindow));
     }
