@@ -113,6 +113,11 @@ namespace Green
 				Device->SetEmitter(enabled);
 			}
 
+			void SetNearMode(bool enabled)
+			{
+				Device->SetNearMode(enabled);
+			}
+
 			void StopKinect()
 			{
 				if(!processing) return;

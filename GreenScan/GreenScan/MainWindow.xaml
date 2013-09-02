@@ -5,7 +5,7 @@
         xmlns:g="clr-namespace:Green.Graphics;assembly=GreenGraphics"
         xmlns:local="clr-namespace:Green.Scan" x:Name="MW" x:Class="Green.Scan.MainWindow"
         Closing="Window_Closing" SnapsToDevicePixels="True"
-        Title="GreenScan" Width="720" Height="480" Icon="icon.ico" MouseWheel="Window_MouseWheel" MouseDown="Window_MouseDown" MouseDoubleClick="Window_MouseDoubleClick" IsEnabled="False">
+        Title="GreenScan" Width="720" Height="480" Icon="icon.ico" MouseWheel="Window_MouseWheel" MouseDown="Window_MouseDown" MouseDoubleClick="Window_MouseDoubleClick" IsEnabled="False" ResizeMode="CanResizeWithGrip">
     <Window.Resources>
         <local:KinectManagerToDeviceListConverter x:Key="KinectManagerToDeviceListConverter"/>
         <local:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
@@ -60,6 +60,7 @@
         <CommandBinding Command="{x:Static local:TurntableCommands.Scan}" Executed="TurntableScanCmdExecuted" CanExecute="TurntableScanCmdCanExecute"/>
         <CommandBinding Command="{x:Static local:TurntableCommands.Stop}" Executed="TurntableStopCmdExecuted" CanExecute="TurntableStopCmdCanExecute"/>
         <CommandBinding Command="{x:Static local:TurntableCommands.Calibrate}" Executed="TurntableCalibrateCmdExecuted" CanExecute="TurntableCalibrateCmdCanExecute"/>
+        <CommandBinding Command="{x:Static local:TurntableCommands.CountSteps}" Executed="TurntableCountStepsCmdExecuted" CanExecute="TurntableCountStepsCmdCanExecute"/>
         <CommandBinding Command="{x:Static local:TurntableCommands.ToOrigin}" Executed="TurntableToOriginCmdExecuted" CanExecute="TurntableToOriginCmdCanExecute"/>
         <CommandBinding Command="{x:Static local:TurntableCommands.Export}" Executed="TurntableExportCmdExecuted" CanExecute="TurntableExportCmdCanExecute"/>
         <CommandBinding Command="{x:Static local:TurntableCommands.Open}" Executed="TurntableOpenCmdExecuted" CanExecute="TurntableOpenCmdCanExecute"/>
@@ -112,7 +113,7 @@
                         <Separator/>
                         <s:EnumMenu x:Name="MIMode" Header="Mode" IsEnabled="{Binding SavingInProgress, Converter={StaticResource BooleanInverter}, ElementName=MW}" />
                         <Separator/>
-                        <MenuItem Header="Calibrate..." Command="{x:Static local:GreenScanCommands.Calibrate}"/>
+                        <MenuItem Header="Calibrate..." Command="{x:Static local:GreenScanCommands.Calibrate}"/>                        
                     </MenuItem>
                     <MenuItem x:Name="MITurntable" Header="Turntable" Visibility="{Binding IsConnected, Converter={StaticResource BooleanToVisibilityConverter}}">
                         <MenuItem Header="Scan" Command="{x:Static local:TurntableCommands.Scan}"/>
@@ -131,6 +132,7 @@
                         </MenuItem>
                         <Separator/>
                         <MenuItem Header="Calibrate..." Command="{x:Static local:TurntableCommands.Calibrate}"/>
+                        <MenuItem Header="Count steps..." Command="{x:Static local:TurntableCommands.CountSteps}"/>
                     </MenuItem>
                     <MenuItem Header="About" Command="{x:Static local:GreenScanCommands.About}"/>
                 </Menu>

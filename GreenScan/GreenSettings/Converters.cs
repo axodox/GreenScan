@@ -45,6 +45,20 @@ namespace Green.Settings.UI
         }
     }
 
+    [ValueConversion(typeof(bool), typeof(bool))]
+    class BooleanInverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            return !(bool)value;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            return !(bool)value;
+        }
+    }
+
     [ValueConversion(typeof(SettingGroup), typeof(UIElement))]
     public class SettingGroupToUIConverter : IValueConverter
     {

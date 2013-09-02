@@ -68,7 +68,7 @@ namespace Green
 			bool KinectWorking;
 			Modes Mode;
 			byte *DepthImage, *ColorImage;
-			bool CapturedColor, CapturedDepth, EmitterEnabled;
+			bool CapturedColor, CapturedDepth, EmitterEnabled, NearMode;
 			HANDLE CapturedAll;
 			static DWORD WINAPI WorkerThread(LPVOID o)
 			{
@@ -127,7 +127,8 @@ namespace Green
 						SetEvent(device->CapturedAll);
 					}
 				}
-
+				device->DepthStream = nullptr;
+				device->ColorStream = nullptr;
 				SetEvent(device->KinectStopped);
 				return 0;
 			}
@@ -151,6 +152,15 @@ namespace Green
 			{
 				EmitterEnabled = enabled;
 				if(Sensor) Sensor->NuiSetForceInfraredEmitterOff(!EmitterEnabled);
+			}
+
+			void SetNearMode(bool enabled)
+			{
+				NearMode = enabled;
+				if(DepthStream)
+				{
+					Sensor->NuiImageStreamSetImageFrameFlags(DepthStream, NearMode ? NUI_IMAGE_STREAM_FLAG_ENABLE_NEAR_MODE : 0);
+				}
 			}
 
 			bool OpenKinect(int index)
@@ -229,6 +239,8 @@ namespace Green
 						hr = Sensor->NuiImageStreamOpen(
 							NUI_IMAGE_TYPE_DEPTH, NUI_IMAGE_RESOLUTION_640x480, 0, 2,
 							NextFrameEvents[1], &DepthStream);
+						if(NearMode)
+							Sensor->NuiImageStreamSetImageFrameFlags(DepthStream, NUI_IMAGE_FRAME_FLAG_NEAR_MODE_ENABLED);
 						if(FAILED(hr)) throw 0;
 					}
 				
@@ -381,7 +393,7 @@ namespace Green
 			void StopKinect()
 			{
 				if(Sensor == nullptr || !KinectWorking) return;
-				Sensor->NuiShutdown();
+				Sensor->NuiShutdown();				
 				WorkerThreadOn = false;
 				WaitForSingleObject(KinectStopped, 1000);	
 				KinectStopping(CallbackObject);
@@ -409,6 +421,8 @@ namespace Green
 				CapturedColor = true;
 				CapturedDepth = true;
 				CapturedAll = 0;
+				DepthStream = 0;
+				ColorStream = 0;
 			}
 
 			~KinectDevice()

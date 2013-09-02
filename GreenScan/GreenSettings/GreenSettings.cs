@@ -672,6 +672,20 @@ namespace Green.Settings
 
     public class SettingGroup : INotifyPropertyChanged
     {
+        private bool isReadOnly;
+        public bool IsReadOnly
+        {
+            get
+            {
+                return isReadOnly;
+            }
+            set
+            {
+                isReadOnly = value;
+                OnPropertyChanged("IsReadOnly");
+            }
+        }
+
         private bool isHidden;
         public bool IsHidden
         {
@@ -763,10 +777,36 @@ namespace Green.Settings
 
     public class SettingManager
     {
+        private bool isReadOnly;
+        public bool IsReadOnly
+        {
+            get
+            {
+                return isReadOnly;
+            }
+            set
+            {
+                isReadOnly = value;
+                foreach (SettingGroup sg in SettingGroups)
+                {
+                    sg.IsReadOnly = isReadOnly;
+                }
+            }
+        }
+
         public ObservableCollection<SettingGroup> SettingGroups { get; private set; }
         public SettingManager()
         {
             SettingGroups = new ObservableCollection<SettingGroup>();
+            SettingGroups.CollectionChanged += SettingGroups_CollectionChanged;
+        }
+
+        void SettingGroups_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            foreach (SettingGroup sg in e.NewItems)
+            {
+                sg.IsReadOnly = isReadOnly;
+            }
         }
 
         public Dictionary<string, Setting> GetSettingsDictionary()

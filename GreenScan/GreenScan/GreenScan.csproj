@@ -113,6 +113,9 @@
     <Compile Include="TurntableCalibrationWindow.xaml.cs">
       <DependentUpon>TurntableCalibrationWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="TurntableStepCounterWindow.xaml.cs">
+      <DependentUpon>TurntableStepCounterWindow.xaml</DependentUpon>
+    </Compile>
     <Page Include="AboutBox.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -135,6 +138,10 @@
       <SubType>Code</SubType>
     </Compile>
     <Page Include="TurntableCalibrationWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="TurntableStepCounterWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -187,6 +194,10 @@
     <ProjectReference Include="..\GreenSettings\GreenSettings.csproj">
       <Project>{79e48d1d-2d71-4544-ad04-505929d0dbb4}</Project>
       <Name>GreenSettings</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Turntables\Turntables.csproj">
+      <Project>{126148cb-fabd-4b3b-a813-caabbe42acb7}</Project>
+      <Name>Turntables</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

@@ -187,13 +187,19 @@ namespace Green.Scan
                 else
                     TBRemoting.Text = Remote.RemoteCount+ " remote(s) connected.";
                 if (Remote.RemoteCount == 1)
+                {
+                    Settings.IsReadOnly = true;
                     (Resources["RemotingIn"] as Storyboard).Begin();
+                }
             };
             Remote.RemoteDisconnected += (object sender, RemoteEventArgs e) =>
             {
                 TBRemoting.Text = Remote.RemoteCount + " remote(s) connected.";
                 if (Remote.RemoteCount == 0)
+                {
+                    Settings.IsReadOnly = false;
                     (Resources["RemotingOut"] as Storyboard).Begin();
+                }
             };
 
         }
@@ -201,6 +207,7 @@ namespace Green.Scan
         void SetKinect()
         {
             DeviceManager.SetEmitter(Settings.EmitterEnabled.Value);
+            DeviceManager.SetNearMode(Settings.NearModeEnabled.Value);
         }
 
         void SetPreprocessing()
@@ -239,7 +246,8 @@ namespace Green.Scan
                 Settings.ColorDispositionX.Value,
                 Settings.ColorDispositionY.Value,
                 Settings.ColorScaleX.Value,
-                Settings.ColorScaleY.Value);
+                Settings.ColorScaleY.Value,
+                Settings.DepthCoeffs.Value);
         }
 
         void SetShading()
@@ -268,7 +276,8 @@ namespace Green.Scan
                 Settings.SaveModelResolution.Width,
                 Settings.SaveModelResolution.Height,
                 Settings.SaveTextureResolution.Width,
-                Settings.SaveTextureResolution.Height);
+                Settings.SaveTextureResolution.Height,
+                (float)Math.Pow(10d, Settings.SaveScalingPower.Value));
         }
 
         void SetTurntable()
@@ -515,6 +524,14 @@ namespace Green.Scan
                 TCW.Show();
             });
         }
+
+        private void CountSteps()
+        {
+            TurntableStepCounterWindow TSCW = new TurntableStepCounterWindow(TurntableScanner.Table);
+            TSCW.ShowDialog();
+            if (TSCW.PiSteps > 0)
+                Settings.TurntablePiSteps.Value = TSCW.PiSteps;
+        }
         #endregion
 
         void ShowStatus(string text, bool showProgress = false, double progress = double.NaN)
@@ -645,7 +662,7 @@ namespace Green.Scan
                     e.CanExecute = DeviceManager.ProvidesData && !SavingInProgress;
                     break;
                 case "PNG/raw":
-                    e.CanExecute = DeviceManager.ProvidesData && !SavingInProgress && (DeviceManager.Mode == KinectManager.Modes.Color || DeviceManager.Mode == KinectManager.Modes.Infrared);
+                    e.CanExecute = DeviceManager.ProvidesData && !SavingInProgress && (DeviceManager.Mode == KinectManager.Modes.Color || DeviceManager.Mode == KinectManager.Modes.Infrared || DeviceManager.Mode == KinectManager.Modes.Depth);
                     break;
                 default:
                     e.CanExecute = DeviceManager.ProvidesData && !SavingInProgress && DeviceManager.Mode == KinectManager.Modes.DepthAndColor;
@@ -790,6 +807,16 @@ namespace Green.Scan
         {
             CalibrateTurntable();
         }
+
+        void TurntableCountStepsCmdCanExecute(object target, CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = TurntableScanner.IsConnected && !TurntableScanner.IsScanning;
+        }
+
+        void TurntableCountStepsCmdExecuted(object target, ExecutedRoutedEventArgs e)
+        {
+            CountSteps();
+        }
         #endregion
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -817,6 +844,7 @@ namespace Green.Scan
         public static RoutedUICommand Scan = new RoutedUICommand("Starts the scanning process. Turntable must be at origin. The command sets the Kinect to the required state.", "Turntable.Scan", typeof(MainWindow), new InputGestureCollection() { new KeyGesture(Key.F6) });
         public static RoutedUICommand Stop = new RoutedUICommand("Stops the scanning and the turntable.", "Turntable.Stop", typeof(MainWindow), new InputGestureCollection() { new KeyGesture(Key.F12) });
         public static RoutedUICommand Calibrate = new RoutedUICommand("Shows the calibration window.", "Turntable.Calibrate", typeof(MainWindow));
+        public static RoutedUICommand CountSteps = new RoutedUICommand("Shows the stepcounter window.", "Turntable.CountSteps", typeof(MainWindow));
         public static RoutedUICommand ToOrigin = new RoutedUICommand("Returns the turntable to its origin.", "Turntable.ToOrigin", typeof(MainWindow), new InputGestureCollection() { new KeyGesture(Key.F7) });
         public static RoutedUICommand Export = new RoutedUICommand("Exports the model in various formats. The format should be given as parameter. Supported formats: STL, FBX, DAE, DXF, OBJ, FL4.", "Turntable.Export", typeof(MainWindow));
         public static RoutedUICommand Open = new RoutedUICommand("Opens the specified turntable model file.", "Turntable.Open", typeof(MainWindow));

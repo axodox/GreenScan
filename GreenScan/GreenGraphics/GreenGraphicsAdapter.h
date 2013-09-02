@@ -146,9 +146,9 @@ namespace Green
 				return ok;
 			}
 
-			void SetSave(int width, int height, int texWidth, int texHeight)
+			void SetSave(int width, int height, int texWidth, int texHeight, float scaling)
 			{
-				XWindow->SetSave(width, height, texWidth, texHeight);
+				XWindow->SetSave(width, height, texWidth, texHeight, scaling);
 			}
 
 			void SetView(
@@ -164,7 +164,7 @@ namespace Green
 				bool infraredDistortionCorrectionEnabled, array<float, 2>^ depthToIRMapping,
 				array<float, 2>^ colorIntrinsics, array<float, 2>^ colorRemapping,
 				array<float, 2>^ colorExtrinsics, int colorDispX, int colorDispY, 
-				float colorScaleX, float colorScaleY)
+				float colorScaleX, float colorScaleY, array<float, 2>^ depthCoeffs)
 			{
 				if(Is3x3(infraredIntrinsics) && Is3x3(depthToIRMapping))
 				{
@@ -174,10 +174,11 @@ namespace Green
 					pin_ptr<float> pColorIntrinsics = &To4x4(colorIntrinsics)[0, 0];
 					pin_ptr<float> pColorRemapping = &Expand4x4(colorRemapping)[0, 0];
 					pin_ptr<float> pColorExtrinsics = &colorExtrinsics[0, 0];
+					pin_ptr<float> pDepthCoeffs = &depthCoeffs[0, 0];
 					XWindow->SetCameras(
 						pInfraredIntrinsics, (infraredDistortionCorrectionEnabled ? pInfraredDistortion : nullptr),
 						pDepthToIRMapping, pColorIntrinsics, pColorRemapping, pColorExtrinsics,
-						colorDispX, colorDispY, colorScaleX, colorScaleY);
+						colorDispX, colorDispY, colorScaleX, colorScaleY, pDepthCoeffs);
 				}
 			}
 

@@ -1,0 +1,39 @@
+﻿<Window x:Class="GreenScan.TurntableStepCounterWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Turntable Step Counter" Width="300" SizeToContent="Height" WindowStyle="ToolWindow" ResizeMode="NoResize" Closing="Window_Closing">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <GroupBox Grid.Row="0" Header="Information" Margin="3">
+            <TextBlock TextWrapping="Wrap">With this tool, you can count the steps corresponding to one full rotation of the turntable. Press Start to begin!</TextBlock>
+        </GroupBox>
+        <GroupBox Grid.Row="1" Header="Progress" Margin="3">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock x:Name="TBProgress" Text="Ready." Grid.Column="0" VerticalAlignment="Center"/>
+                <Button x:Name="BStart" Content="Start" Grid.Column="1" Margin="3" Padding="3" Click="BStart_Click"/>
+            </Grid>
+        </GroupBox>
+        <GroupBox Grid.Row="2" Header="Results" Margin="3">
+            <TextBlock>
+                <Run x:Name="RPasses" Text="0"/>
+                <Run Text="pass(es)."/>
+                <LineBreak/>
+                <Run x:Name="RSteps" Text="0"/>
+                <Run Text="steps."/>
+                <LineBreak/>
+                <Run x:Name="RStepsPerRotation" Text="0"/>
+                <Run Text="steps per rotation."/>
+            </TextBlock>
+        </GroupBox>
+        <ProgressBar x:Name="PBProgress" Grid.Row="3" IsIndeterminate="True" Height="6" Background="{x:Null}" BorderBrush="{x:Null}" Visibility="Collapsed"/>
+    </Grid>
+</Window>

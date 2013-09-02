@@ -13,7 +13,7 @@
         <Binding Converter="{StaticResource BooleanToVisibilityConverter}" Mode="OneWay" Path="IsHidden"/>
     </UserControl.Visibility>
     <Expander x:Name="Expander" Header="{Binding FriendlyName}" Margin="3">
-        <StackPanel x:Name="SP" Grid.Row="1">
+        <StackPanel x:Name="SP" Grid.Row="1" IsEnabled="{Binding IsReadOnly, Converter={StaticResource BooleanInverter}}">
             <ItemsControl ItemsSource="{Binding Settings}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>

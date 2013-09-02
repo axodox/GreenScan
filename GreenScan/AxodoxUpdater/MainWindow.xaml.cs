@@ -50,13 +50,21 @@ namespace AxodoxUpdater
             StringDictionary settings = LoadSettings("Updater.ini");
             Server = settings["Server"];
             Application = settings["Application"];
-            PostSetupAction = settings["PostSetupAction"];            
+            PostSetupAction = settings["PostSetupAction"];
+            string excludedFiles = settings["ExcludedFiles"];
+            if (excludedFiles != null)
+            {
+                string[] files = excludedFiles.Split(new char[] {';'}, StringSplitOptions.RemoveEmptyEntries);
+                ProtectedFiles.AddRange(files);
+            }
 
             if (Server == null || Application == null || PostSetupAction == null)
             {
                 ToErrorState("Updater.ini missing or corrupt!");
                 return;
             }
+            ProtectedFiles.Add("AxodoxUpdater.exe");
+            ProtectedFiles.Add("Updater.ini");
             Success = false;
             WC = new WebClient();
             WC.DownloadStringCompleted += WC_DownloadStringCompleted;
@@ -91,7 +99,7 @@ namespace AxodoxUpdater
         }
 
         enum UpdateStates { Connecting, ComparingFiles, FetchingFiles, InstallingUpdates, Done }
-        string[] ProtectedFiles = new string[] { "\\AxodoxUpdater.exe", "\\Updater.ini"};
+        List<string> ProtectedFiles = new List<string>();
         string[] ProtectedFolders = new string[] { "" };
         UpdateStates UpdateState;
         string Server;
@@ -279,7 +287,7 @@ namespace AxodoxUpdater
             {
                 try
                 {
-                    if (!file.Value && !ProtectedFiles.Contains(file.Key)) File.Delete(Root+file.Key);
+                    if (!file.Value && !ProtectedFiles.Contains(file.Key.Substring(1))) File.Delete(Root+file.Key);
                 }
                 catch { }
             }
@@ -288,7 +296,7 @@ namespace AxodoxUpdater
             {
                 try
                 {
-                    if (!dir.Value && !ProtectedFolders.Contains(dir.Key)) Directory.Delete(Root + dir.Key, true);
+                    if (!dir.Value && !ProtectedFolders.Contains(dir.Key.Substring(1))) Directory.Delete(Root + dir.Key, true);
                 }
                 catch { }
             }
@@ -297,6 +305,8 @@ namespace AxodoxUpdater
             {
                 try
                 {
+                    if (File.Exists(f.Target)) 
+                        File.Delete(f.Target);
                     File.Move(f.TempFile, f.Target);
                 }
                 catch { }

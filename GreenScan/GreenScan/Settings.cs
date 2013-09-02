@@ -11,6 +11,7 @@ namespace Green.Scan
     {
         public SettingGroup KinectProperties { get; private set; }
         public EnumSetting<KinectManager.Modes> KinectMode { get; private set; }
+        public BooleanSetting NearModeEnabled { get; private set; }
         public BooleanSetting EmitterEnabled { get; private set; }
 
         public SettingGroup PreprocessingProperties { get; private set; }
@@ -23,6 +24,7 @@ namespace Green.Scan
         public MatrixSetting InfraredDistortion { get; private set; }
         public BooleanSetting InfraredDistortionCorrectionEnabled { get; private set; }
         public MatrixSetting DepthToIRMapping { get; private set; }
+        public MatrixSetting DepthCoeffs { get; private set; }
         public MatrixSetting ColorIntrinsics { get; private set; }
         public MatrixSetting ColorRemapping { get; private set; }
         public MatrixSetting ColorExtrinsics { get; private set; }
@@ -63,6 +65,7 @@ namespace Green.Scan
         public SizeSetting SaveModelResolution { get; private set; }
         public SizeSetting SaveTextureResolution { get; private set; }
         public PathSetting SaveCalibrationDirectory { get; private set; }
+        public NumericSetting<int> SaveScalingPower { get; set; }
 
         public SettingGroup TurntableProperties { get; private set; }
         public RectangleSetting TurntableEllipse { get; private set; }
@@ -85,8 +88,10 @@ namespace Green.Scan
             SettingGroups.Add(KinectProperties);
 
             KinectMode = new EnumSetting<KinectManager.Modes>("Mode", KinectManager.Modes.DepthAndColor) { FriendlyName = "Mode" };
+            NearModeEnabled = new BooleanSetting("NearModeEnabled", true) { FriendlyName = "Near mode*" };
             EmitterEnabled = new BooleanSetting("EmitterEnabled", true) { FriendlyName = "Emitter enabled*" };
             KinectProperties.Settings.Add(KinectMode);
+            KinectProperties.Settings.Add(NearModeEnabled);
             KinectProperties.Settings.Add(EmitterEnabled);
 
             //Preprocessing
@@ -108,6 +113,7 @@ namespace Green.Scan
             InfraredDistortion = new MatrixSetting("InfraredDistortion", new float[,] { { 0.143542f, -0.244779f }, { 0.003839f, -0.000318f } }) { FriendlyName = "Infrared distortion coefficients {K1, K2; P1, P2}" };
             InfraredDistortionCorrectionEnabled = new BooleanSetting("InfraredDistortionCorrectionEnabled", false) { FriendlyName = "Infrared distortion correction enabled" };
             DepthToIRMapping = new MatrixSetting("DepthToIRMapping", new float[,] { { 2f, 0f, 16f }, { 0f, 2f, 17f }, { 0f, 0f, 1f } }) { FriendlyName = "Depth to IR mapping" };
+            DepthCoeffs = new MatrixSetting("DepthCoeffs", new float[,] { { 0.125e-3f, 0f } }) { FriendlyName = "Depth coefficients (units)" };
             ColorIntrinsics = new MatrixSetting("ColorIntrinsics", new float[,] { { 1051.45f, 0f, 641.1544f }, { 0f, 1053.781f, 521.7905f }, { 0f, 0f, 1f } }) { FriendlyName = "Color intrinsic matrix" };
             ColorRemapping = new MatrixSetting("ColorRemapping", new float[,] { { 2f, 0f, 2f }, { 0f, 2f, 0f }, { 0f, 0f, 1f } }) { FriendlyName = "Color remapping" };
             ColorExtrinsics = new MatrixSetting("ColorExtrinsics", new float[,] { { 0.999946f, -0.006657f, 0.00794f, -0.025955f }, { 0.006679f, 0.999974f, -0.002686f, -0.000035f }, { -0.007922f, 0.002739f, 0.999965f, 0.005283f }, { 0f, 0f, 0f, 1f } }) { FriendlyName = "Color extrinsics" };
@@ -115,6 +121,7 @@ namespace Green.Scan
             CameraProperties.Settings.Add(InfraredDistortion);
             CameraProperties.Settings.Add(InfraredDistortionCorrectionEnabled);
             CameraProperties.Settings.Add(DepthToIRMapping);
+            CameraProperties.Settings.Add(DepthCoeffs);
             CameraProperties.Settings.Add(ColorIntrinsics);
             CameraProperties.Settings.Add(ColorRemapping);
             CameraProperties.Settings.Add(ColorExtrinsics);
@@ -162,9 +169,9 @@ namespace Green.Scan
             UseModuleShading = new BooleanSetting("ModuleShading", false) { FriendlyName = "Use module shading (if available)" };
             ShadingMode = new EnumSetting<GraphicsCanvas.ShadingModes>("ShadingMode", GraphicsCanvas.ShadingModes.Rainbow) { FriendlyName = "Mode" };
             DepthMaximum = new NumericSetting<float>("DepthMaximum", 8f, 0f, 8f, 2) { FriendlyName = "Depth maximum (meters)" };
-            DepthMinimum = new NumericSetting<float>("DepthMinimum", 0.8f, 0f, 8f, 2) { FriendlyName = "Depth minimum (meters)" };
+            DepthMinimum = new NumericSetting<float>("DepthMinimum", 0.4f, 0.4f, 8f, 2) { FriendlyName = "Depth minimum (meters)" };
             ShadingPeriode = new NumericSetting<float>("ShadingPeriode", 1f, 0.01f, 2f, 2) { FriendlyName = "Shading periode (meters)" };
-            ShadingPhase = new NumericSetting<float>("ShadingPhase", 0f, 0f, 1f, 2) { FriendlyName = "Shading phase (radians)" };
+            ShadingPhase = new NumericSetting<float>("ShadingPhase", 0f, 0f, 1f, 2) { FriendlyName = "Shading phase (units)" };
             TriangleRemoveLimit = new NumericSetting<float>("TriangleRemoveLimit", 0.0024f, 0.0001f, 0.004f, 4) { FriendlyName = "Triangle remove limit (units)" };
             WireframeShading = new BooleanSetting("WireframeShading", false) { FriendlyName = "Wireframe shading" };
             ShadingProperties.Settings.Add(UseModuleShading);
@@ -193,12 +200,14 @@ namespace Green.Scan
             SaveModelResolution = new SizeSetting("ModelResolution", 640, 480, 8, 8, 640, 480) { FriendlyName = "Model resolution (vertices)" };
             SaveTextureResolution = new SizeSetting("TextureResolution", 640, 480, 8, 8, 1024, 1024) { FriendlyName = "Texture resolution (pixels)" };
             SaveCalibrationDirectory = new PathSetting("CalibrationDirectory", "") { FriendlyName = "Calibration directory", IsHidden = true };
+            SaveScalingPower = new NumericSetting<int>("ScalingPower", 0, -3, 6) { FriendlyName = "Scaling power (10^x)" }; 
             SaveProperties.Settings.Add(SaveDirectory);
             SaveProperties.Settings.Add(SaveLabel);
             SaveProperties.Settings.Add(SaveNoTimestamp);
             SaveProperties.Settings.Add(SaveModelResolution);
             SaveProperties.Settings.Add(SaveTextureResolution);
             SaveProperties.Settings.Add(SaveCalibrationDirectory);
+            SaveProperties.Settings.Add(SaveScalingPower);
 
             //Turntable
             TurntableProperties = new SettingGroup("Turntable") { FriendlyName = "Turntable", IsHidden = true };

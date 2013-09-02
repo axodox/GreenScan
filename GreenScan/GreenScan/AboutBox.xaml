@@ -52,7 +52,7 @@
                 </TransformGroup>
             </Image.RenderTransform>
         </Image>
-        <TextBlock Grid.Row="1" FontSize="24" HorizontalAlignment="Center">
+        <TextBlock Grid.Row="1" FontSize="24" HorizontalAlignment="Center" FontFamily="Century Gothic">
             <Run Foreground="#FF7F7F7F">axodox</Run>
             <Run FontWeight="Bold">progressive™</Run>
         </TextBlock>

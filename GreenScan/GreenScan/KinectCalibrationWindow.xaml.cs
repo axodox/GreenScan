@@ -22,13 +22,12 @@ namespace GreenScan
             Remote.StoreOption("Save.Label");
             Remote.StoreOption("Save.NoTimestamp");
             Remote.StoreOption("Kinect.Mode");
-            Remote.StoreOption("Kinect.EmitterEnabled");
             TBPath.Text = PathSetting.GetAbsolutePath(Remote.GetOption("Save.CalibrationDirectory"));            
             CheckBoxes = new CheckBox[] { CBInfrared, CBColor, CBDepth };
             Modes = new string[] { "Infrared", "Color", "Depth" };
-            Emitter = new string[] { "False", "False", "True" };
             Commands = new string[] { "Export", "Export", "Save" };
             Arguments = new string[] { "PNG/raw", "PNG/raw", "" };
+            Labels = new string[] { "Infrared", "Color", "Depth" };
         }
 
         private void BPath_Click(object sender, RoutedEventArgs e)
@@ -73,7 +72,7 @@ namespace GreenScan
         }
 
         CheckBox[] CheckBoxes;
-        string[] Modes, Commands, Arguments, Emitter;
+        string[] Modes, Commands, Arguments, Labels;
 
         private void PrepareStep()
         {
@@ -87,8 +86,7 @@ namespace GreenScan
                     CheckBoxes[i].IsChecked = Image > i ? true : false;
             }
             Remote.SetOption("Kinect.Mode", Modes[Image]);
-            Remote.SetOption("Kinect.EmitterEnabled", Emitter[Image]);
-            Remote.SetOption("Save.Label", "img" + (SceneNumber + 1));
+            Remote.SetOption("Save.Label", Labels[Image] + string.Format("{0:D3}", (SceneNumber + 1)));
             Remote.SetOption("Save.Directory", TargetPath + Modes[Image]);
         }
 
@@ -116,7 +114,6 @@ namespace GreenScan
             Remote.RestoreOption("Save.Label");
             Remote.RestoreOption("Save.NoTimestamp");
             Remote.RestoreOption("Kinect.Mode");
-            Remote.RestoreOption("Kinect.EmitterEnabled");
         }
     }
 }

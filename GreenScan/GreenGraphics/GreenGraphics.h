@@ -74,15 +74,16 @@ namespace Green
 				int Rotation, DepthGaussIterations, SaveWidth, SaveHeight, SaveTextureWidth, SaveTextureHeight;
 				float GaussCoeffs[GaussCoeffCount];
 				bool WireframeShading, UseModuleShading;
-				float TransX, TransY, TransZ, RotX, RotY, RotZ;
+				float TransX, TransY, TransZ, RotX, RotY, RotZ, SaveScaling;
 			} Params;
 
 			struct CommonConstants
 			{
 				XMFLOAT4X4 SceneRotation;
 				XMFLOAT2 AspectScale;
-				XMFLOAT2 Move;
-				float Scale;			
+				XMFLOAT2 Move;	
+				XMFLOAT2 DepthCoeffs;
+				float Scale;
 			} CommonOptions;
 
 			struct DepthAndColorConstants 
@@ -232,6 +233,19 @@ namespace Green
 				}
 			}
 
+			void DrawToSaveRawImage(PixelShader* pixelShader)
+			{
+				if(!SaveTextureReady && RRTSaveTexture != nullptr)
+				{
+					SaveTextureReady = true;
+					RRTSaveTexture->SetAsRenderTarget();
+					Device->SetShaders(VSSimple, pixelShader);
+					QMain->Draw();
+					RRTSaveTexture->CopyToStage();
+					if(!StaticInput) SetEvent(SaveEvent);
+				}
+			}
+
 			void DrawScene()
 			{
 				if(!KinectReady) return;
@@ -251,6 +265,8 @@ namespace Green
 					SLinearWrap->SetForPS();	
 					CBDepthAndColor->SetForPS(1);
 					QMain->Draw();
+
+					DrawToSaveRawImage(PSDepth);
 					break;
 				case KinectDevice::Color:
 					Device->SetShaders(VSCommon, PSColor);
@@ -258,15 +274,7 @@ namespace Green
 					SLinearWrap->SetForPS();	
 					QMain->Draw();
 
-					if(!SaveTextureReady && RRTSaveTexture != nullptr)
-					{
-						SaveTextureReady = true;
-						RRTSaveTexture->SetAsRenderTarget();
-						Device->SetShaders(VSSimple, PSColor);
-						QMain->Draw();
-						RRTSaveTexture->CopyToStage();
-						if(!StaticInput) SetEvent(SaveEvent);
-					}
+					DrawToSaveRawImage(PSColor);
 					break;					
 				case KinectDevice::Infrared:
 					Device->SetShaders(VSCommon, PSInfrared);
@@ -274,15 +282,7 @@ namespace Green
 					SLinearWrap->SetForPS();				
 					QMain->Draw();
 
-					if(!SaveTextureReady && RRTSaveTexture != nullptr)
-					{
-						SaveTextureReady = true;
-						RRTSaveTexture->SetAsRenderTarget();
-						Device->SetShaders(VSSimple, PSInfrared);
-						QMain->Draw();
-						RRTSaveTexture->CopyToStage();
-						if(!StaticInput) SetEvent(SaveEvent);
-					}
+					DrawToSaveRawImage(PSInfrared);
 					break;
 				case KinectDevice::DepthAndColor:
 					//Depth averaging
@@ -725,7 +725,7 @@ namespace Green
 			void SetCameras(
 				float* infraredIntrinsics, float* infraredDistortion, float* depthToIRMapping,
 				float* colorIntrinsics, float* colorRemapping, float* colorExtrinsics,
-				int colorDispX, int colorDispY, float colorScaleX, float colorScaleY)
+				int colorDispX, int colorDispY, float colorScaleX, float colorScaleY, float* depthCoeffs)
 			{
 				if(infraredDistortion)
 					DepthDistortionMap = GenerateDistortionMap(
@@ -759,6 +759,7 @@ namespace Green
 				DepthAndColorOptions.ColorMove = XMFLOAT2((float)colorDispX / KinectDevice::ColorWidth, (float)colorDispY / KinectDevice::ColorHeight);
 				DepthAndColorOptions.ColorScale = XMFLOAT2(colorScaleX, colorScaleY);
 				DepthAndColorOptions.DepthInvIntrinsics = Params.DepthInvIntrinsics;
+				CommonOptions.DepthCoeffs = XMFLOAT2(depthCoeffs[0], depthCoeffs[1]);
 				SetDepthAndColorOptions();
 				DrawIfNeeded();
 
@@ -790,12 +791,13 @@ namespace Green
 				NextTriangleGridHeight = triangleGridHeight;
 			}
 
-			void SetSave(int width, int height, int texWidth, int texHeight)
+			void SetSave(int width, int height, int texWidth, int texHeight, float scaling)
 			{
 				Params.SaveWidth = width;
 				Params.SaveHeight = height;
 				Params.SaveTextureWidth = texWidth;
 				Params.SaveTextureHeight = texHeight;
+				Params.SaveScaling = scaling;
 				DepthAndColorOptions.SaveSize = XMINT2(width, height);
 				DepthAndColorOptions.DepthSaveStep = XMFLOAT2(1.f / width, 1.f / height);
 
@@ -956,6 +958,7 @@ namespace Green
 
 				switch (KinectMode)
 				{
+				case Green::Kinect::KinectDevice::Depth:
 				case Green::Kinect::KinectDevice::Color:
 				case Green::Kinect::KinectDevice::Infrared:
 					RRTSaveTexture = new ReadableRenderTarget(Device, TColor->GetWidth(), TColor->GetHeight(), DXGI_FORMAT_R8G8B8A8_UNORM);	
@@ -1016,7 +1019,7 @@ namespace Green
 			bool SaveModel(LPWSTR path, ModelFormats format)
 			{
 				if(KinectMode != KinectDevice::DepthAndColor) return false;
-				XMStoreFloat4x4(&DepthAndColorOptions.SaveTransform, XMMatrixScaling(1.f, -1.f, 1.f));
+				XMStoreFloat4x4(&DepthAndColorOptions.SaveTransform, XMMatrixScaling(Params.SaveScaling, -Params.SaveScaling, Params.SaveScaling));
 				bool ok = false;
 				RRTSaveVertices = new ReadableRenderTarget(Device, Params.SaveWidth, Params.SaveHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);
 				RRTSaveTexture = new ReadableRenderTarget(Device, Params.SaveTextureWidth, Params.SaveTextureHeight, DXGI_FORMAT_R8G8B8A8_UNORM);				
@@ -1089,6 +1092,8 @@ namespace Green
 				
 				CBCommon->Update(&CommonOptions);
 				CBCommon->SetForVS(0);
+				CBCommon->SetForGS(0);
+				CBCommon->SetForPS(0);
 
 				Device->Clear(BackgroundColor);
 				if(KinectReady)

@@ -17,7 +17,7 @@ namespace Green
 		public ref class RotatingScanner : public INotifyPropertyChanged, IModelSaver
 		{
 		private:
-			Turntable^ Table;
+			Turntable^ table;
 			KinectManager^ Kinect;
 			GraphicsCanvas^ Canvas;
 			DispatcherTimer^ ProgressTimer;
@@ -31,7 +31,7 @@ namespace Green
 
 			void ToOrigin()
 			{
-				Table->ToOrigin();
+				table->ToOrigin();
 				StatusChanged(this, gcnew StatusEventArgs("Finding origin...", true));
 			}
 
@@ -40,9 +40,9 @@ namespace Green
 				ScannerModule = new RotatingScannerModule();
 				Canvas->GetDirectXWindow()->LoadModule(ScannerModule);
 
-				Table = Turntable::DefaultDevice;
-				Table->MotorStopped += gcnew EventHandler(this, &RotatingScanner::OnMotorStopped);				
-				Table->PositionChanged += gcnew EventHandler(this, &RotatingScanner::OnPositionChanged);
+				table = Turntable::DefaultDevice;
+				table->MotorStopped += gcnew EventHandler(this, &RotatingScanner::OnMotorStopped);				
+				table->PositionChanged += gcnew EventHandler(this, &RotatingScanner::OnPositionChanged);
 				ToOrigin();
 
 				isConnected = true;
@@ -51,12 +51,12 @@ namespace Green
 
 			void OnPositionChanged(Object^ sender, EventArgs^ e)
 			{
-				ScannerModule->SetTurntablePosition(Table->PositionInRadians);
+				ScannerModule->SetTurntablePosition(table->PositionInRadians);
 			}
 
 			void OnProgressChanged(Object^ sender, EventArgs^ e)
 			{
-				double progress = Table->PositionInUnits;
+				double progress = table->PositionInUnits;
 				StatusChanged(this, gcnew StatusEventArgs("Scanning in progress: " + (progress*100.0).ToString("F2") + "%", true, progress));
 			}
 
@@ -86,7 +86,7 @@ namespace Green
 			void EndScan()
 			{
 				if (!isScanning) return;
-				if (isConnected) Table->Stop();
+				if (isConnected) table->Stop();
 				if (ScannerModule) ScannerModule->Stop();
 				isScanning = false;
 				OnPropertyChanged("IsScanning");
@@ -115,7 +115,7 @@ namespace Green
 			{ 
 				bool get() 
 				{
-					return isConnected && Table->AtOrigin;
+					return isConnected && table->AtOrigin;
 				}
 			}
 			property bool CanSave
@@ -125,12 +125,22 @@ namespace Green
 					return isConnected && ScannerModule->Processing;
 				}
 			}
+			property Turntable^ Table 
+			{ 
+				Turntable^ get() 
+				{
+					if(IsConnected)
+						return table;
+					else
+						return nullptr;
+				}
+			}
 			RotatingScanner(KinectManager^ kinectManager, GraphicsCanvas^ graphicsCanvas)
 			{
 				Kinect = kinectManager;
 				Canvas = graphicsCanvas;
 				ScannerModule = nullptr;
-				Table = nullptr;
+				table = nullptr;
 				Turntable::DeviceConnected += gcnew EventHandler(this, &RotatingScanner::OnTableConnected);
 				Turntable::DeviceDisconnected += gcnew EventHandler(this, &RotatingScanner::OnTableDisconnected);
 				ProgressTimer = gcnew DispatcherTimer(DispatcherPriority::Render);
@@ -147,7 +157,7 @@ namespace Green
 			{
 				if(!isConnected || isScanning) return;
 				isScanning = true;
-				Table->TurnOnce();
+				table->TurnOnce();
 				ProgressTimer->Start();
 				if (ScannerModule) ScannerModule->Scan();
 				OnPropertyChanged("IsScanning");
@@ -190,7 +200,7 @@ namespace Green
 
 			void ReturnToOrigin()
 			{
-				if(!isConnected || isScanning || Table->AtOrigin) return;
+				if(!isConnected || isScanning || table->AtOrigin) return;
 				ToOrigin();
 			}
 
@@ -202,15 +212,15 @@ namespace Green
 				pin_ptr<float> pTurntableTransform = &turntableTransform[0, 0];
 				if (ScannerModule) ScannerModule->SetCalibration(
 					pTurntableTransform, height, radius, coreX, coreY);
-				if(Table) Table->PiSteps = piSteps;
+				if(table) table->PiSteps = piSteps;
 			}
 
 			~RotatingScanner()
 			{
 				Canvas->GetDirectXWindow()->UnloadModule(ScannerModule);
-				if (Table)
+				if (table)
 				{
-					delete Table;
+					delete table;
 				}
 			}
 		};

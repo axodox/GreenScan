@@ -398,7 +398,7 @@ namespace Green
 						SocketThrow(recv(Socket, (char*)&id, sizeof(id), MSG_WAITALL), true);
 
 						
-						if(length > 0 && length < 4096)
+						if(length > 0)
 						{
 							bufferlen = length;
 							buffer = new char[bufferlen];
