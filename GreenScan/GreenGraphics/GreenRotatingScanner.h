@@ -9,6 +9,12 @@ namespace Green
 		class RotatingScannerModule : public GraphicsModule
 		{
 		public:
+			enum class Modes
+			{
+				OneAxis,
+				TwoAxis
+			};
+
 			enum class Views {
 				Overlay,
 				DepthL,
@@ -20,11 +26,12 @@ namespace Green
 			bool Processing;
 		private:
 			GraphicsDevice* Device;
-			RenderTarget *ModelTargetL, *ModelTargetR, *TextureTargetL, *TextureTargetR;
+			RenderTarget **ModelTargets, **TextureTargets;
 			RenderTargetGroup *PolarTargetGroup;
-			ReadableRenderTarget *SaveModelTargetL, *SaveModelTargetR, *SaveTextureTargetL, *SaveTextureTargetR;
-			int NextModelWidth, NextModelHeight, NextTextureWidth, NextTextureHeight;
+			ReadableRenderTarget **SaveModelTargets, **SaveTextureTargets;
+			int NextModelWidth, NextModelHeight, NextTextureWidth, NextTextureHeight, TargetCount;
 			bool SaveTextureReady, Scanning, ClearNext, StaticInputNext;
+			Modes NextMode, Mode;
 			struct RenderingParameters
 			{
 				XMFLOAT4X4 DepthIntrinsics, DepthInvIntrinsics, World, TurntableTransform;
@@ -53,9 +60,9 @@ namespace Green
 			ConstantBuffer<TurntableConstants>* Constants;
 			VertexPositionColor* CrossVertices;
 			VertexBuffer<VertexPositionColor>* Cross;
-			VertexShader *VSOverlay, *VSPolar, *VSCommon, *VSModel, *VSSimple;
-			GeometryShader *GSPolar, *GSModel;
-			PixelShader *PSOverlay, *PSPolar, *PSPolarDepth, *PSPolarTexture, *PSTest, *PSModel, *PSModelOutput, *PSTextureOutput, *PSSimple;
+			VertexShader *VSOverlay, *VSTwoAxisPolar, *VSOneAxisPolar, *VSCommon, *VSModel, *VSSimple;
+			GeometryShader *GSTwoAxisPolar, *GSOneAxisPolar, *GSModel;
+			PixelShader *PSOverlay, *PSTwoAxisPolar, *PSOneAxisPolar, *PSPolarDepth, *PSPolarTexture, *PSTest, *PSModel, *PSModelOutput, *PSTextureOutput, *PSSimple;
 			BlendState *BOpaque, *BAdditive, *BAlpha;
 			RasterizerState *RDefault, *RCullNone;
 			ID3D11DeviceContext *Context;
@@ -101,6 +108,7 @@ namespace Green
 				DrawsOverlay = true;
 				StaticInputNext = false;
 				StaticInput = false;
+				Device = nullptr;
 			}
 
 			virtual void CreateResources(GraphicsDevice* device) override
@@ -108,8 +116,10 @@ namespace Green
 				Device = device;
 				VSOverlay = new VertexShader(Device, L"TurntableOverlayVertexShader.cso");
 				VSOverlay->SetInputLayout(VertexDefinition::VertexPositionColor);
-				VSPolar = new VertexShader(Device, L"TurntablePolarVertexShader.cso");
-				VSPolar->SetInputLayout(VertexDefinition::VertexPositionTexture);
+				VSTwoAxisPolar = new VertexShader(Device, L"TurntableTwoAxisPolarVertexShader.cso");
+				VSTwoAxisPolar->SetInputLayout(VertexDefinition::VertexPositionTexture);
+				VSOneAxisPolar = new VertexShader(Device, L"TurntableOneAxisPolarVertexShader.cso");
+				VSOneAxisPolar->SetInputLayout(VertexDefinition::VertexPositionTexture);
 				VSCommon = new VertexShader(Device, L"CommonVertexShader.cso");
 				VSCommon->SetInputLayout(VertexDefinition::VertexPositionTexture);
 				VSModel = new VertexShader(Device, L"TurntableModelVertexShader.cso");
@@ -117,11 +127,13 @@ namespace Green
 				VSSimple = new VertexShader(Device, L"SimpleVertexShader.cso");
 				VSSimple->SetInputLayout(VertexDefinition::VertexPositionTexture);
 
-				GSPolar = new GeometryShader(Device, L"TurntablePolarGeometryShader.cso");
+				GSTwoAxisPolar = new GeometryShader(Device, L"TurntableTwoAxisPolarGeometryShader.cso");
+				GSOneAxisPolar = new GeometryShader(Device, L"TurntableOneAxisPolarGeometryShader.cso");
 				GSModel = new GeometryShader(Device, L"TurntableModelGeometryShader.cso");
 				
 				PSOverlay = new PixelShader(Device, L"TurntableOverlayPixelShader.cso");
-				PSPolar = new PixelShader(Device, L"TurntablePolarPixelShader.cso");
+				PSTwoAxisPolar = new PixelShader(Device, L"TurntableTwoAxisPolarPixelShader.cso");
+				PSOneAxisPolar = new PixelShader(Device, L"TurntableOneAxisPolarPixelShader.cso");
 				PSPolarDepth = new PixelShader(Device, L"TurntablePolarDepthPixelShader.cso");
 				PSPolarTexture = new PixelShader(Device, L"TurntablePolarTexturePixelShader.cso");
 				PSModel = new PixelShader(Device, L"TurntableModelPixelShader.cso");
@@ -137,14 +149,17 @@ namespace Green
 			{
 				EndProcessing();
 				delete VSOverlay;
-				delete VSPolar;
+				delete VSTwoAxisPolar;
+				delete VSOneAxisPolar;
 				delete VSCommon;
 				delete VSModel;
 				delete VSSimple;
-				delete GSPolar;
+				delete GSTwoAxisPolar;
+				delete GSOneAxisPolar;
 				delete GSModel;
 				delete PSOverlay;
-				delete PSPolar;
+				delete PSTwoAxisPolar;
+				delete PSOneAxisPolar;
 				delete PSPolarDepth;
 				delete PSPolarTexture;
 				delete PSModel;
@@ -155,27 +170,14 @@ namespace Green
 				Context->Release();
 			}
 
-			void PrepareForStaticInput()
-			{
-				StaticInputNext = true;
-				StartProcessing();
-			}
-
 			virtual void StartProcessing() override
 			{
-				if (Processing) return;
-				if (StaticInput) EndProcessing();
+				if (!Device) return;
+				if (Processing) EndProcessing();
 				Processing = true;
 				StaticInput = StaticInputNext;
 				StaticInputNext = false;
-				TurntableOptions.ModelResolution = XMINT2(NextModelWidth, NextModelHeight);
-				ModelTargetL = new RenderTarget(Device, NextModelWidth, NextModelHeight, DXGI_FORMAT_R32G32_FLOAT);
-				ModelTargetR = new RenderTarget(Device, NextModelWidth, NextModelHeight, DXGI_FORMAT_R32G32_FLOAT);
-				TextureTargetL = new RenderTarget(Device, NextTextureWidth, NextTextureHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);
-				TextureTargetR = new RenderTarget(Device, NextTextureWidth, NextTextureHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);
-				RenderTarget* targets[] = {ModelTargetL, ModelTargetR, TextureTargetL, TextureTargetR};
-
-				PolarTargetGroup = new RenderTargetGroup(Device, 4, targets);
+				TurntableOptions.ModelResolution = XMINT2(NextModelWidth, NextModelHeight);				
 
 				CrossVertices = new VertexPositionColor[CrossVertexCount];
 				CrossVertices[0] = VertexPositionColor(XMFLOAT3(-0.1f, 0.f, 0.f), XMFLOAT4(1.f, 0.f, 0.f, 1.f));
@@ -202,18 +204,45 @@ namespace Green
 				QMain = new Quad(Device);
 				SLinearClamp = new SamplerState(Device, D3D11_FILTER_MIN_MAG_MIP_LINEAR, D3D11_TEXTURE_ADDRESS_CLAMP);
 				SaveTextureReady = true;
+
+				Mode = NextMode;
+				switch (Mode)
+				{
+				case Modes::OneAxis:
+					TargetCount = 1;
+					break;
+				case Modes::TwoAxis:
+					TargetCount = 2;
+					break;
+				}
+				ModelTargets = new RenderTarget*[TargetCount];
+				TextureTargets = new RenderTarget*[TargetCount];
+				RenderTarget** targets = new RenderTarget*[TargetCount * 2];
+				for(int i = 0; i < TargetCount; i++)
+				{
+					ModelTargets[i] = new RenderTarget(Device, NextModelWidth, NextModelHeight, DXGI_FORMAT_R32G32_FLOAT);
+					targets[2 * i] = ModelTargets[i];
+					TextureTargets[i] = new RenderTarget(Device, NextTextureWidth, NextTextureHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);
+					targets[2 * i + 1] = TextureTargets[i];
+				}
+				PolarTargetGroup = new RenderTargetGroup(Device, TargetCount * 2, targets);
+				delete [TargetCount * 2] targets;
 			}
 
 			virtual void EndProcessing() override
 			{
 				if (!Processing) return;
 				Processing = false;
-				delete ModelTargetL;
-				delete ModelTargetR;
-				delete TextureTargetL;
-				delete TextureTargetR;
+				for(int i = 0; i < TargetCount; i++)
+				{
+					delete ModelTargets[i];
+					delete TextureTargets[i];
+				}
+				delete [TargetCount] ModelTargets;
+				delete [TargetCount] TextureTargets;
 				delete PolarTargetGroup;
 				delete Cross;
+				delete CrossVertices;
 				delete Constants;				
 				delete BOpaque;
 				delete BAdditive;
@@ -227,6 +256,8 @@ namespace Green
 
 			void Scan()
 			{
+				if(Mode != NextMode) StartProcessing();
+				PolarTargetGroup->Clear();
 				Scanning = true;
 			}
 
@@ -255,7 +286,15 @@ namespace Green
 					RCullNone->Set();
 					BAdditive->Apply();
 					PolarTargetGroup->SetRenderTargets();
-					Device->SetShaders(VSPolar, PSPolar, GSPolar);
+					switch (Mode)
+					{
+					case Modes::OneAxis:
+						Device->SetShaders(VSOneAxisPolar, PSOneAxisPolar, GSOneAxisPolar);
+						break;
+					case Modes::TwoAxis:
+						Device->SetShaders(VSTwoAxisPolar, PSTwoAxisPolar, GSTwoAxisPolar);
+						break;
+					}					
 					depth->SetForVS();
 					color->SetForPS();
 					SLinearClamp->SetForPS();
@@ -295,61 +334,53 @@ namespace Green
 				{
 					int version;
 					fread(&version, 4, 1, file);
+					Modes mode;
+					fread(&mode, 4, 1, file);
 					if(version == SaveVersion)
 					{
+						NextMode = mode;
+						StaticInputNext = true;
+						StartProcessing();
 						int modelWidth, modelHeight, texWidth, texHeight;
 						fread(&modelWidth, 4, 1, file);
 						fread(&modelHeight, 4, 1, file);
 						int modelLen = modelWidth * modelHeight;
 						XMFLOAT2* modelData = new XMFLOAT2[modelLen];
 
-						fread(modelData, sizeof(XMFLOAT2), modelLen, file);
-						Texture2D* modelL = new Texture2D(Device, modelWidth, modelHeight, DXGI_FORMAT_R32G32_FLOAT, modelData, modelWidth * sizeof(XMFLOAT2));
-						fread(modelData, sizeof(XMFLOAT2), modelLen, file);
-						Texture2D* modelR = new Texture2D(Device, modelWidth, modelHeight, DXGI_FORMAT_R32G32_FLOAT, modelData, modelWidth * sizeof(XMFLOAT2));
+						RDefault->Set();
+						BOpaque->Apply();
+						SLinearClamp->SetForPS();
+						Device->SetShaders(VSSimple, PSSimple);
+						for(int i = 0; i < TargetCount; i++)
+						{
+							fread(modelData, sizeof(XMFLOAT2), modelLen, file);
+							Texture2D* model = new Texture2D(Device, modelWidth, modelHeight, DXGI_FORMAT_R32G32_FLOAT, modelData, modelWidth * sizeof(XMFLOAT2));
+							ModelTargets[i]->SetAsRenderTarget();
+							model->SetForPS();
+							QMain->Draw();
+							SafeDelete(model);
+						}
 						delete [modelLen] modelData;
 
 						fread(&texWidth, 4, 1, file);
 						fread(&texHeight, 4, 1, file);
 						int texLen = texWidth * texHeight;
 						XMFLOAT4* textureData = new XMFLOAT4[texLen];
-
-						fread(textureData, sizeof(XMFLOAT4), texLen, file);
-						Texture2D* textureL = new Texture2D(Device, texWidth, texHeight, DXGI_FORMAT_R32G32B32A32_FLOAT, textureData, texWidth * sizeof(XMFLOAT4));
-						fread(textureData, sizeof(XMFLOAT4), texLen, file);
-						Texture2D* textureR = new Texture2D(Device, texWidth, texHeight, DXGI_FORMAT_R32G32B32A32_FLOAT, textureData, texWidth * sizeof(XMFLOAT4));
+						for(int i = 0; i < TargetCount; i++)
+						{
+							fread(textureData, sizeof(XMFLOAT4), texLen, file);
+							Texture2D* texture = new Texture2D(Device, texWidth, texHeight, DXGI_FORMAT_R32G32B32A32_FLOAT, textureData, texWidth * sizeof(XMFLOAT4));
+							TextureTargets[i]->SetAsRenderTarget();
+							texture->SetForPS();
+							QMain->Draw();
+							SafeDelete(texture);
+						}
 						delete [texLen] textureData;
-
-						RDefault->Set();
-						BOpaque->Apply();
-						SLinearClamp->SetForPS();
-						Device->SetShaders(VSSimple, PSSimple);
 						
-						ModelTargetL->SetAsRenderTarget();
-						modelL->SetForPS();
-						QMain->Draw();
-
-						ModelTargetR->SetAsRenderTarget();
-						modelR->SetForPS();
-						QMain->Draw();
-
-						TextureTargetL->SetAsRenderTarget();
-						textureL->SetForPS();
-						QMain->Draw();
-
-						TextureTargetR->SetAsRenderTarget();
-						textureR->SetForPS();
-						QMain->Draw();
-
-						SafeDelete(modelL);
-						SafeDelete(modelR);
-						SafeDelete(textureL);
-						SafeDelete(textureR);
-
-						fclose(file);
 						ok = true;
 						DrawIfNeeded();
 					}
+					fclose(file);
 				}
 				return ok;
 			}
@@ -359,10 +390,14 @@ namespace Green
 				if (!Processing) return false;
 				RawSave = true;
 				SaveEvent = CreateEvent(0, 0, 0, 0);
-				SaveModelTargetL = new ReadableRenderTarget(ModelTargetL);
-				SaveModelTargetR = new ReadableRenderTarget(ModelTargetR);
-				SaveTextureTargetL = new ReadableRenderTarget(TextureTargetL);
-				SaveTextureTargetR = new ReadableRenderTarget(TextureTargetR);
+
+				SaveModelTargets = new ReadableRenderTarget*[TargetCount];
+				SaveTextureTargets = new ReadableRenderTarget*[TargetCount];
+				for(int i = 0; i < TargetCount; i++)
+				{
+					SaveModelTargets[i] = new ReadableRenderTarget(ModelTargets[i]);
+					SaveTextureTargets[i] = new ReadableRenderTarget(TextureTargets[i]);
+				}
 				SaveTextureReady = false;
 
 				bool ok = false;
@@ -380,16 +415,18 @@ namespace Green
 					if(_wfopen_s(&file, path, L"wb") == 0)
 					{
 						fwrite(&SaveVersion, 4, 1, file);
+						fwrite(&Mode, 4, 1, file);
 					
 						fwrite(&Params.SaveWidth, 4, 1, file);
 						fwrite(&Params.SaveHeight, 4, 1, file);
 						int modelLen = Params.SaveWidth * Params.SaveHeight;
 						XMFLOAT2* modelData = new XMFLOAT2[modelLen];
 
-						SaveModelTargetL->GetData<XMFLOAT2>(modelData);
-						fwrite(modelData, sizeof(XMFLOAT2), modelLen, file);
-						SaveModelTargetR->GetData<XMFLOAT2>(modelData);
-						fwrite(modelData, sizeof(XMFLOAT2), modelLen, file);
+						for(int i = 0; i < TargetCount; i++)
+						{
+							SaveModelTargets[i]->GetData<XMFLOAT2>(modelData);
+							fwrite(modelData, sizeof(XMFLOAT2), modelLen, file);
+						}
 						delete [modelLen] modelData;
 
 						fwrite(&Params.SaveTextureWidth, 4, 1, file);
@@ -397,20 +434,25 @@ namespace Green
 						int texLen = Params.SaveTextureWidth * Params.SaveTextureHeight;
 						XMFLOAT4* textureData = new XMFLOAT4[texLen];
 
-						SaveTextureTargetL->GetData<XMFLOAT4>(textureData);
-						fwrite(textureData, sizeof(XMFLOAT4), texLen, file);
-						SaveTextureTargetR->GetData<XMFLOAT4>(textureData);
-						fwrite(textureData, sizeof(XMFLOAT4), texLen, file);
+						for(int i = 0; i < TargetCount; i++)
+						{
+							SaveTextureTargets[i]->GetData<XMFLOAT4>(textureData);
+							fwrite(textureData, sizeof(XMFLOAT4), texLen, file);
+						}
 
 						delete [texLen] textureData;
 						fclose(file);
 					}
 				}
 
-				SafeDelete(SaveModelTargetL);
-				SafeDelete(SaveModelTargetR);
-				SafeDelete(SaveTextureTargetL);
-				SafeDelete(SaveTextureTargetR);
+				for(int i = 0; i < TargetCount; i++)
+				{
+					SafeDelete(SaveModelTargets[i]);
+					SafeDelete(SaveTextureTargets[i]);
+				}
+				delete [TargetCount] SaveModelTargets;
+				delete [TargetCount] SaveTextureTargets;
+
 				CloseHandle(SaveEvent);
 				return ok;
 			}
@@ -421,11 +463,13 @@ namespace Green
 				RawSave = false;
 				SaveEvent = CreateEvent(0, 0, 0, 0);
 
-				SaveModelTargetL = new ReadableRenderTarget(Device, Params.SaveWidth, Params.SaveHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);
-				SaveModelTargetR = new ReadableRenderTarget(Device, Params.SaveWidth, Params.SaveHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);
-
-				SaveTextureTargetL = new ReadableRenderTarget(Device, Params.SaveTextureWidth, Params.SaveTextureHeight, DXGI_FORMAT_R8G8B8A8_UNORM);
-				SaveTextureTargetR = new ReadableRenderTarget(Device, Params.SaveTextureWidth, Params.SaveTextureHeight, DXGI_FORMAT_R8G8B8A8_UNORM);
+				SaveModelTargets = new ReadableRenderTarget*[TargetCount];
+				SaveTextureTargets = new ReadableRenderTarget*[TargetCount];
+				for(int i = 0; i < TargetCount; i++)
+				{
+					SaveModelTargets[i] = new ReadableRenderTarget(Device, Params.SaveWidth, Params.SaveHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);
+					SaveTextureTargets[i] = new ReadableRenderTarget(Device, Params.SaveTextureWidth, Params.SaveTextureHeight, DXGI_FORMAT_R8G8B8A8_UNORM);
+				}
 				SaveTextureReady = false;
 
 				bool ok = false;
@@ -439,65 +483,81 @@ namespace Green
 
 				if(ok)
 				{
-					WCHAR textureFilenameL[MAX_PATH], textureFilenameR[MAX_PATH];
-					WCHAR filenameL[MAX_PATH], filenameR[MAX_PATH];
-
-					wcscpy_s(filenameL, path);
-					wcscat_s(filenameL, L"_l");
-					wcscpy_s(filenameR, path);
-					wcscat_s(filenameR, L"_r");
-					
-					wcscpy_s(textureFilenameL, path);
-					wcscat_s(textureFilenameL, L"_l.png");
-					wcscpy_s(textureFilenameR, path);
-					wcscat_s(textureFilenameR, L"_r.png");
-
-					int dataLen = (Params.SaveWidth + 1) * Params.SaveHeight;
-					XMFLOAT4* dataL = new XMFLOAT4[dataLen];
-					XMFLOAT4* dataR = new XMFLOAT4[dataLen];
-					GetPolarData(SaveModelTargetL, dataL);
-					GetPolarData(SaveModelTargetR, dataR);
-
-					switch (format)
+					WCHAR** textureFilenames = new WCHAR*[TargetCount];
+					WCHAR** filenames = new WCHAR*[TargetCount];
+					for(int i = 0; i < TargetCount; i++)
 					{
-					case ModelFormats::STL:
-						ok &= STLSave(filenameL, dataL, Params.SaveWidth + 1, Params.SaveHeight);
-						ok &= STLSave(filenameR, dataR, Params.SaveWidth + 1, Params.SaveHeight);
+						textureFilenames[i] = new WCHAR[MAX_PATH];
+						filenames[i] = new WCHAR[MAX_PATH];
+						wcscpy(textureFilenames[i], path);
+						wcscpy(filenames[i], path);
+					}
+
+					switch (Mode)
+					{
+					case Modes::OneAxis:
+						wcscat(textureFilenames[0], L".png");
 						break;
-					case ModelFormats::FBX:
-						ok &= FBXSave(filenameL, dataL, Params.SaveWidth + 1, Params.SaveHeight, wcsrchr(textureFilenameL, L'\\') + 1, L"fbx");
-						ok &= FBXSave(filenameR, dataR, Params.SaveWidth + 1, Params.SaveHeight, wcsrchr(textureFilenameR, L'\\') + 1, L"fbx");
-						break;
-					case ModelFormats::DXF:
-						ok &= FBXSave(filenameL, dataL, Params.SaveWidth + 1, Params.SaveHeight, wcsrchr(textureFilenameL, L'\\') + 1, L"dxf");
-						ok &= FBXSave(filenameR, dataR, Params.SaveWidth + 1, Params.SaveHeight, wcsrchr(textureFilenameR, L'\\') + 1, L"dxf");
-						break;
-					case ModelFormats::DAE:
-						ok &= FBXSave(filenameL, dataL, Params.SaveWidth + 1, Params.SaveHeight, wcsrchr(textureFilenameL, L'\\') + 1, L"dae");
-						ok &= FBXSave(filenameR, dataR, Params.SaveWidth + 1, Params.SaveHeight, wcsrchr(textureFilenameR, L'\\') + 1, L"dae");
-						break;
-					case ModelFormats::OBJ:
-						ok &= FBXSave(filenameL, dataL, Params.SaveWidth + 1, Params.SaveHeight, wcsrchr(textureFilenameL, L'\\') + 1, L"obj");
-						ok &= FBXSave(filenameR, dataR, Params.SaveWidth + 1, Params.SaveHeight, wcsrchr(textureFilenameR, L'\\') + 1, L"obj");
-						break;
-					case ModelFormats::FL4:
-						ok &= FL4Save(filenameL, dataL, Params.SaveWidth + 1, Params.SaveHeight);
-						ok &= FL4Save(filenameR, dataR, Params.SaveWidth + 1, Params.SaveHeight);
-						break;
-					default:
-						ok = false;
+					case Modes::TwoAxis:
+						wcscat(textureFilenames[0], L"_l.png");
+						wcscat(textureFilenames[1], L"_r.png");
+						wcscat(filenames[0], L"_l");
+						wcscat(filenames[1], L"_r");
 						break;
 					}
-					delete [dataLen] dataL;
-					delete [dataLen] dataR;
 
-					ok &= PNGSave(textureFilenameL, SaveTextureTargetL->GetStagingTexture());
-					ok &= PNGSave(textureFilenameR, SaveTextureTargetR->GetStagingTexture());
+					int dataLen = (Params.SaveWidth + 1) * Params.SaveHeight;
+					for(int i = 0; i < TargetCount; i++)
+					{					
+						XMFLOAT4* data = new XMFLOAT4[dataLen];
+						GetPolarData(SaveModelTargets[i], data);
+						switch (format)
+						{
+						case ModelFormats::STL:
+							ok &= STLSave(filenames[i], data, Params.SaveWidth + 1, Params.SaveHeight);
+							break;
+						case ModelFormats::FBX:
+							ok &= FBXSave(filenames[i], data, Params.SaveWidth + 1, Params.SaveHeight, wcsrchr(textureFilenames[i], L'\\') + 1, L"fbx");
+							break;
+						case ModelFormats::DXF:
+							ok &= FBXSave(filenames[i], data, Params.SaveWidth + 1, Params.SaveHeight, wcsrchr(textureFilenames[i], L'\\') + 1, L"dxf");
+							break;
+						case ModelFormats::DAE:
+							ok &= FBXSave(filenames[i], data, Params.SaveWidth + 1, Params.SaveHeight, wcsrchr(textureFilenames[i], L'\\') + 1, L"dae");
+							break;
+						case ModelFormats::OBJ:
+							ok &= FBXSave(filenames[i], data, Params.SaveWidth + 1, Params.SaveHeight, wcsrchr(textureFilenames[i], L'\\') + 1, L"obj");
+							break;
+						case ModelFormats::FL4:
+							ok &= FL4Save(filenames[i], data, Params.SaveWidth + 1, Params.SaveHeight);
+							break;
+						default:
+							ok = false;
+							break;
+						}
+						delete [dataLen] data;
+
+						ok &= PNGSave(textureFilenames[i], SaveTextureTargets[i]->GetStagingTexture());
+						
+					}
+					
+
+					for(int i = 0; i < TargetCount; i++)
+					{
+						delete [MAX_PATH] filenames[i];
+						delete [MAX_PATH] textureFilenames[i];
+					}
+					delete [TargetCount] filenames;
+					delete [TargetCount] textureFilenames;
 				}
-				SafeDelete(SaveModelTargetL);
-				SafeDelete(SaveModelTargetR);
-				SafeDelete(SaveTextureTargetL);
-				SafeDelete(SaveTextureTargetR);
+
+				for(int i = 0; i < TargetCount; i++)
+				{
+					SafeDelete(SaveModelTargets[i]);
+					SafeDelete(SaveTextureTargets[i]);
+				}
+				delete [TargetCount] SaveModelTargets;
+				delete [TargetCount] SaveTextureTargets;
 				CloseHandle(SaveEvent);
 				return ok;
 			}
@@ -516,10 +576,11 @@ namespace Green
 					SaveTextureReady = true;
 					if (RawSave)
 					{
-						SaveModelTargetL->CopyToStage();
-						SaveModelTargetR->CopyToStage();
-						SaveTextureTargetL->CopyToStage();
-						SaveTextureTargetR->CopyToStage();
+						for(int i = 0; i < TargetCount; i++)
+						{
+							SaveModelTargets[i]->CopyToStage();
+							SaveTextureTargets[i]->CopyToStage();
+						}
 					}
 					else
 					{
@@ -529,27 +590,25 @@ namespace Green
 					
 						Device->SetShaders(VSSimple, PSModelOutput);
 
-						SaveModelTargetL->SetAsRenderTarget();
-						ModelTargetL->SetForPS();
-						QMain->Draw();
-						SaveModelTargetL->CopyToStage();
-
-						SaveModelTargetR->SetAsRenderTarget();
-						ModelTargetR->SetForPS();
-						QMain->Draw();
-						SaveModelTargetR->CopyToStage();
+						for(int i = 0; i < TargetCount; i++)
+						{
+							TurntableOptions.Side = i * 2 - 1;
+							Constants->Update(&TurntableOptions);
+							SaveModelTargets[i]->SetAsRenderTarget();
+							ModelTargets[i]->SetForPS();
+							QMain->Draw();
+							SaveModelTargets[i]->CopyToStage();
+						}
 
 						Device->SetShaders(VSSimple, PSTextureOutput);
 
-						SaveTextureTargetL->SetAsRenderTarget();
-						TextureTargetL->SetForPS();
-						QMain->Draw();
-						SaveTextureTargetL->CopyToStage();
-
-						SaveTextureTargetR->SetAsRenderTarget();
-						TextureTargetR->SetForPS();
-						QMain->Draw();
-						SaveTextureTargetR->CopyToStage();
+						for(int i = 0; i < TargetCount; i++)
+						{
+							SaveTextureTargets[i]->SetAsRenderTarget();
+							TextureTargets[i]->SetForPS();
+							QMain->Draw();
+							SaveTextureTargets[i]->CopyToStage();
+						}
 					}
 					SetEvent(SaveEvent);
 				}
@@ -562,10 +621,18 @@ namespace Green
 					RDefault->Set();
 					BAlpha->Apply();
 					Device->SetShaders(VSCommon, PSPolarDepth);
-					if(Params.View == Views::DepthL)
-						ModelTargetL->SetForPS();
-					else
-						ModelTargetR->SetForPS();
+					switch (Mode)
+					{
+					case Modes::OneAxis:
+						ModelTargets[0]->SetForPS();
+						break;
+					case Modes::TwoAxis:
+						if(Params.View == Views::DepthL)
+							ModelTargets[0]->SetForPS();
+						else
+							ModelTargets[1]->SetForPS();
+						break;
+					}					
 					SLinearClamp->SetForPS();
 					QMain->Draw();
 					break;
@@ -574,10 +641,18 @@ namespace Green
 					RDefault->Set();
 					BAlpha->Apply();
 					Device->SetShaders(VSCommon, PSPolarTexture);
-					if(Params.View == Views::TextureL)
-						TextureTargetL->SetForPS();
-					else
-						TextureTargetR->SetForPS();
+					switch (Mode)
+					{
+					case Modes::OneAxis:
+						TextureTargets[0]->SetForPS();
+						break;
+					case Modes::TwoAxis:
+						if(Params.View == Views::TextureL)
+							TextureTargets[0]->SetForPS();
+						else
+							TextureTargets[1]->SetForPS();
+						break;
+					}
 					SLinearClamp->SetForPS();
 					QMain->Draw();
 					break;
@@ -587,17 +662,14 @@ namespace Green
 					Device->SetShaders(VSModel, PSModel, GSModel);
 					SLinearClamp->SetForPS();
 
-					TurntableOptions.Side = -1.f;
-					Constants->Update(&TurntableOptions);
-					ModelTargetL->SetForVS();
-					TextureTargetL->SetForPS();
-					PMain->Draw();
-
-					TurntableOptions.Side = 1.f;
-					Constants->Update(&TurntableOptions);
-					ModelTargetR->SetForVS();
-					TextureTargetR->SetForPS();
-					PMain->Draw();
+					for(int i = 0; i < TargetCount; i++)
+					{
+						TurntableOptions.Side = i * 2 - 1;
+						Constants->Update(&TurntableOptions);
+						ModelTargets[i]->SetForVS();
+						TextureTargets[i]->SetForPS();
+						PMain->Draw();
+					}
 					break;
 				default:
 					RDefault->Set();
@@ -672,6 +744,15 @@ namespace Green
 			{
 				Params.Rotation = angle;
 				SetTurntableOptions();
+			}
+
+			void SetMode(Modes mode)
+			{
+				NextMode = mode;
+				if(!Scanning && NextMode != Mode)
+				{
+					StartProcessing();
+				}
 			}
 
 			void SetTurntableOptions()

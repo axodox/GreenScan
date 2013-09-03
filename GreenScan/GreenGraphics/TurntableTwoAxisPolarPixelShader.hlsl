@@ -5,8 +5,8 @@ SamplerState Sampler : register(s0);
 struct PSOutput
 {
 	float4 ModelL : SV_TARGET0;
-	float4 ModelR : SV_TARGET1;
-	float4 TexL : SV_TARGET2;
+	float4 TexL : SV_TARGET1;
+	float4 ModelR : SV_TARGET2;
 	float4 TexR : SV_TARGET3;
 };
 

@@ -161,15 +161,6 @@
     <FxCompile Include="TurntableOverlayPixelShader.hlsl">
       <Filter>Source Files\TurntableShaders</Filter>
     </FxCompile>
-    <FxCompile Include="TurntablePolarVertexShader.hlsl">
-      <Filter>Source Files\TurntableShaders</Filter>
-    </FxCompile>
-    <FxCompile Include="TurntablePolarGeometryShader.hlsl">
-      <Filter>Source Files\TurntableShaders</Filter>
-    </FxCompile>
-    <FxCompile Include="TurntablePolarPixelShader.hlsl">
-      <Filter>Source Files\TurntableShaders</Filter>
-    </FxCompile>
     <FxCompile Include="TurntablePolarDepthPixelShader.hlsl">
       <Filter>Source Files\TurntableShaders</Filter>
     </FxCompile>
@@ -192,6 +183,24 @@
       <Filter>Source Files\TurntableShaders</Filter>
     </FxCompile>
     <FxCompile Include="TurntableOutputTexturePixelShader.hlsl">
+      <Filter>Source Files\TurntableShaders</Filter>
+    </FxCompile>
+    <FxCompile Include="TurntableTwoAxisPolarVertexShader.hlsl">
+      <Filter>Source Files\TurntableShaders</Filter>
+    </FxCompile>
+    <FxCompile Include="TurntableTwoAxisPolarPixelShader.hlsl">
+      <Filter>Source Files\TurntableShaders</Filter>
+    </FxCompile>
+    <FxCompile Include="TurntableTwoAxisPolarGeometryShader.hlsl">
+      <Filter>Source Files\TurntableShaders</Filter>
+    </FxCompile>
+    <FxCompile Include="TurntableOneAxisPolarVertexShader.hlsl">
+      <Filter>Source Files\TurntableShaders</Filter>
+    </FxCompile>
+    <FxCompile Include="TurntableOneAxisPolarGeometryShader.hlsl">
+      <Filter>Source Files\TurntableShaders</Filter>
+    </FxCompile>
+    <FxCompile Include="TurntableOneAxisPolarPixelShader.hlsl">
       <Filter>Source Files\TurntableShaders</Filter>
     </FxCompile>
   </ItemGroup>

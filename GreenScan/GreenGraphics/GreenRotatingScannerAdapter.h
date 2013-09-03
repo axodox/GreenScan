@@ -16,6 +16,12 @@ namespace Green
 	{
 		public ref class RotatingScanner : public INotifyPropertyChanged, IModelSaver
 		{
+		public:
+			enum class Modes
+			{
+				OneAxis,
+				TwoAxes
+			};
 		private:
 			Turntable^ table;
 			KinectManager^ Kinect;
@@ -23,6 +29,7 @@ namespace Green
 			DispatcherTimer^ ProgressTimer;
 			RotatingScannerModule* ScannerModule;
 			bool isConnected, isScanning;
+			Modes Mode;
 
 			void OnPropertyChanged(String^ name)
 			{
@@ -38,6 +45,7 @@ namespace Green
 			void OnTableConnected(Object^ sender, EventArgs^ e)
 			{
 				ScannerModule = new RotatingScannerModule();
+				ScannerModule->SetMode((RotatingScannerModule::Modes)Mode);
 				Canvas->GetDirectXWindow()->LoadModule(ScannerModule);
 
 				table = Turntable::DefaultDevice;
@@ -105,6 +113,13 @@ namespace Green
 			{
 				if (ScannerModule)
 					ScannerModule->SetShading((RotatingScannerModule::Views)view);
+			}			
+
+			void SetMode(Modes mode)
+			{
+				Mode = mode;
+				if (ScannerModule)
+					ScannerModule->SetMode((RotatingScannerModule::Modes)mode);
 			}
 
 			virtual event StatusEventHandler^ StatusChanged;
@@ -176,7 +191,6 @@ namespace Green
 			{
 				if (!ScannerModule) return false;
 				LPWSTR npath = StringToLPWSTR(path);
-				ScannerModule->PrepareForStaticInput();
 				bool ok = ScannerModule->OpenRaw(npath);
 				if (!ok) ScannerModule->EndProcessing();
 				LPWSTRDelete(npath);

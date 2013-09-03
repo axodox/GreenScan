@@ -11,7 +11,7 @@ float4 main(VertexPositionTextureOut v) : SV_TARGET
 		float angle = (v.Texture.x * 2.f - 1.f) * -Pi;
 		float4 posModel = float4(
 			depth * cos(angle) + CorePosition.x * Side,
-			(v.Texture.y - 0.5f) * ClipLimit.y,
+			(1 - v.Texture.y) * ClipLimit.y,
 			depth * sin(angle) + CorePosition.y,
 			1.f);
 		return posModel;

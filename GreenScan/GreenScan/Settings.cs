@@ -70,6 +70,7 @@ namespace Green.Scan
         public SettingGroup TurntableProperties { get; private set; }
         public RectangleSetting TurntableEllipse { get; private set; }
         public RectangleSetting TurntableRectangle { get; private set; }
+        public EnumSetting<RotatingScanner.Modes> TurntableMode { get; private set; }
         public MatrixSetting TurntableTransform { get; private set; }
         public NumericSetting<float> TurntableClippingHeight { get; private set; }
         public NumericSetting<float> TurntableClippingRadius { get; private set; }
@@ -212,6 +213,9 @@ namespace Green.Scan
             //Turntable
             TurntableProperties = new SettingGroup("Turntable") { FriendlyName = "Turntable", IsHidden = true };
             SettingGroups.Add(TurntableProperties);
+
+            TurntableMode = new EnumSetting<RotatingScanner.Modes>("Mode", RotatingScanner.Modes.TwoAxes) { FriendlyName = "Mode" };
+            TurntableProperties.Settings.Add(TurntableMode);
 
             TurntableView = new EnumSetting<RotatingScanner.Views>("View", RotatingScanner.Views.Overlay) { FriendlyValue = "View" };
             TurntableProperties.Settings.Add(TurntableView);

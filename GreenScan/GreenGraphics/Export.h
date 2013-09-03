@@ -254,7 +254,7 @@ bool FBXSave(LPWSTR path, XMFLOAT4* const sVertices, int width, int height, LPWS
 	FbxNode* fbxNode = FbxNode::Create(fbxManager, "");
 	FbxMesh* fbxMesh = FbxMesh::Create(fbxManager, "");
 
-	XMFLOAT4 *pVertices, *lVertices, *eVertices = sVertices + (height - 1) * width;
+	XMFLOAT4 *pVertices, *lVertices, *eVertices = sVertices + (height - 1) * width, *qVertices = sVertices + width * height;
 	XMFLOAT4 *A, *B, *C;
 
 	//Count triangles, calculate normals and UVs
@@ -278,7 +278,7 @@ bool FBXSave(LPWSTR path, XMFLOAT4* const sVertices, int width, int height, LPWS
 	pVertices = sVertices;
 	pNormals = sNormals;
 	pCounts = sCounts;
-	lVertices = sVertices + width - 1;
+	lVertices = pVertices + width - 1;
 	while (pVertices < eVertices)
     {
 		vertexCount += FBXCheckAndCalculateTriangle(pVertices, pNormals, pCounts, 0, 1, width, triangleCount);
@@ -296,7 +296,7 @@ bool FBXSave(LPWSTR path, XMFLOAT4* const sVertices, int width, int height, LPWS
 	}
 
 	XMVECTOR N;
-	for (pVertices = sVertices, pNormals = sNormals; pVertices < eVertices; pVertices++, pNormals++)
+	for (pVertices = sVertices, pNormals = sNormals; pVertices < qVertices; pVertices++, pNormals++)
 	{
 		N = XMLoadFloat3(pNormals);
 		XMVector3Normalize(N);
@@ -326,7 +326,7 @@ bool FBXSave(LPWSTR path, XMFLOAT4* const sVertices, int width, int height, LPWS
 	fbxTexture->SetCount(vertexCount);
 
 	int *pIndicies, *sIndicies = new int[gridSize];
-	for (pVertices = sVertices, pIndicies = sIndicies; pVertices < eVertices; pVertices++, pIndicies++)
+	for (pVertices = sVertices, pIndicies = sIndicies; pVertices < qVertices; pVertices++, pIndicies++)
 	{
 		*pIndicies = -1;
 	}

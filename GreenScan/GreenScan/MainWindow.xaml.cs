@@ -296,6 +296,8 @@ namespace Green.Scan
                 Settings.TurntablePiSteps.Value);
             TurntableScanner.SetShading(
                 Settings.TurntableView.Value);
+            TurntableScanner.SetMode(
+                Settings.TurntableMode.Value);
         }
 
         #endregion
