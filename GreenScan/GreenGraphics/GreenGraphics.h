@@ -291,6 +291,8 @@ namespace Green
 					RTDepthSum->Clear();
 					Device->SetShaders(VSSimple, PSDepthSum);
 					CBDepthAndColor->SetForPS(1);
+					CBDepthAndColor->SetForVS(1);
+					CBDepthAndColor->SetForGS(1);
 					BAdditive->Apply();
 					Texture2D *depthTex;
 					for(int i = 0; i < DepthBufferSize; i++)
@@ -372,9 +374,7 @@ namespace Green
 
 					if(!Params.UseModuleShading || (Params.UseModuleShading && ModuleCount == 0) || (overlayMode && !backgroundDone))
 					{
-						BOpaque->Apply();
-						CBDepthAndColor->SetForVS(1);
-						CBDepthAndColor->SetForGS(1);
+						BOpaque->Apply();						
 						RTPDepth->SetForVS();
 
 						if(Params.WireframeShading)
@@ -418,7 +418,6 @@ namespace Green
 							Device->SetShaders(VSReprojection, PSSine, GSReprojection);
 							break;
 						}
-						CBDepthAndColor->SetForPS(1);
 						PMain->Draw();
 
 						RCullNone->Set();
@@ -562,7 +561,7 @@ namespace Green
 						DXGI_FORMAT_R8G8B8A8_UNORM);
 					TDBDepth = new Texture2DDoubleBuffer(Device, KinectDevice::DepthWidth, KinectDevice::DepthHeight, DXGI_FORMAT_R16_SINT, NextDepthBufferSize);
 					RTDepthSum = new RenderTarget(Device, KinectDevice::DepthWidth, KinectDevice::DepthHeight, DXGI_FORMAT_R32G32_FLOAT);
-					RTPDepth = new RenderTargetPair(Device, KinectDevice::DepthWidth, KinectDevice::DepthHeight, DXGI_FORMAT_R16_FLOAT);
+					RTPDepth = new RenderTargetPair(Device, KinectDevice::DepthWidth, KinectDevice::DepthHeight, DXGI_FORMAT_R32_FLOAT);
 					PMain = new Plane(Device, NextTriangleGridWidth, NextTriangleGridHeight);
 					DepthAndColorOptions.DepthStep = XMFLOAT2(1.f / NextTriangleGridWidth, 1.f / NextTriangleGridHeight);
 					if(DepthDistortionMap) 
