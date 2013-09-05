@@ -2,19 +2,104 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Controls;
-using System.Reflection;
-using System.IO;
 using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Reflection;
 using System.Windows;
 
 namespace Green.Settings
 {
+    public abstract class SettingAvailabilityProvider
+    {
+        public event EventHandler AvailabilityChanged;
+        private bool isAvailable = false;
+        public bool IsAvailable 
+        {
+            get
+            {
+                return isAvailable;
+            }
+            protected set
+            {
+                if (isAvailable != value)
+                {
+                    isAvailable = value;
+                    if (AvailabilityChanged != null)
+                        AvailabilityChanged(this, new EventArgs());
+                }
+            }
+        }        
+    }
+    
+    public class DependentAvailability : SettingAvailabilityProvider
+    {
+        private Setting[] Settings;
+        private string[][] Values;
+        public DependentAvailability(Setting setting, string value)
+            : this(new Setting[] { setting }, new string[] { value }) { }
+
+        public DependentAvailability(Setting[] settings, string[] values)
+        {
+            if (settings.Length != values.Length) throw new ArgumentException("The count of settings and values must be equal.");
+            Settings = settings;            
+            foreach (Setting setting in settings)
+            {
+                setting.ValueChanged += setting_ValueChanged;
+            }
+            Values = new string[values.Length][];
+            for(int i = 0; i<Values.Length;i++)
+            {
+                Values[i] = values[i].Split('|');
+            }
+            EvaluateAvailability();
+        }
+
+        void setting_ValueChanged(object sender, EventArgs e)
+        {
+            EvaluateAvailability();
+        }
+
+        void EvaluateAvailability()
+        {
+            bool available = true;
+            for (int i = 0; i < Settings.Length; i++)
+            {
+                if (!Values[i].Contains(Settings[i].StringValue))
+                {
+                    available = false;
+                    break;
+                }
+            }
+            IsAvailable = available;
+        }
+    }
+
     public abstract class Setting : INotifyPropertyChanged
     {
+        public bool IsAvailable { get; private set; }
+
+        private SettingAvailabilityProvider availabilityProvider = null;
+        public SettingAvailabilityProvider AvailabilityProvider
+        {
+            get
+            {
+                return availabilityProvider;
+            }
+            set
+            {
+                availabilityProvider = value;
+                availabilityProvider.AvailabilityChanged += AvailabilityProvider_AvailabilityChanged;
+                IsAvailable = availabilityProvider.IsAvailable;
+            }
+        }
+
+        void AvailabilityProvider_AvailabilityChanged(object sender, EventArgs e)
+        {
+            IsAvailable = availabilityProvider.IsAvailable;
+            OnPropertyChanged("IsAvailable");
+        }
+
         public static CultureInfo Culture;
         static Setting()
         {
@@ -24,6 +109,7 @@ namespace Green.Settings
         public Setting(string name)
         {
             Name = name;
+            IsAvailable = true;
         }
 
         public string Name { get; protected set; }
@@ -689,7 +775,7 @@ namespace Green.Settings
         private bool isHidden;
         public bool IsHidden
         {
-            get { return isHidden; }
+            get { return isHidden || !AnyItemsVisible; }
             set
             {
                 isHidden = value;
@@ -723,9 +809,23 @@ namespace Green.Settings
             foreach (Setting s in e.NewItems)
             {
                 s.PropertyChanged += Setting_PropertyChanged;
-                s.ValueChanged += Setting_ValueChanged;
+                s.ValueChanged += Setting_ValueChanged;                
                 s.Group = this;
                 if (!s.HasDefaultValue) HasDefaultValues = false;
+            }
+            if(!isHidden) OnPropertyChanged("IsHidden");
+        }
+
+        public bool AnyItemsVisible
+        {
+            get
+            {
+                foreach (Setting s in Settings)
+                {
+                    if (!s.IsHidden && s.IsAvailable)
+                        return true;
+                }
+                return false;
             }
         }
 
@@ -738,6 +838,12 @@ namespace Green.Settings
         void Setting_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             bool hdv = true;
+            switch (e.PropertyName)
+            {
+                case "IsAvailable":
+                    if (!isHidden) OnPropertyChanged("IsHidden");
+                    break;
+            }
             foreach (Setting s in Settings)
             {
                 if (!s.HasDefaultValue)

@@ -1,7 +1,7 @@
 #include "Header.hlsli"
 Texture2D<float> DepthTexture : register(t0);
 
-VertexPolar main(VertexPositionTextureIn vi)
+VertexPositionWorldTexture main(VertexPositionTextureIn vi)
 {
 	int3 id = int3((int)(vi.Texture.x * DepthResolution.x), (int)(vi.Texture.y * DepthResolution.y), 0);
 	float depth = DepthTexture.Load(id);
@@ -30,7 +30,7 @@ VertexPolar main(VertexPositionTextureIn vi)
 	posTex.xyz /= posTex.z;
 	posTex.xy /= ColorResolution;
 
-	VertexPolar vo;
+	VertexPositionWorldTexture vo;
 	vo.Position = posOutput;
 	vo.World = posWorld;
 	vo.Texture = posTex.xy;

@@ -10,14 +10,14 @@
         <ResourceDictionary Source="Style.xaml"/>
     </UserControl.Resources>
     <UserControl.Visibility>
-        <Binding Converter="{StaticResource BooleanToVisibilityConverter}" Mode="OneWay" Path="IsHidden"/>
+        <Binding Converter="{StaticResource InverseBooleanToVisibilityConverter}" Mode="OneWay" Path="IsHidden"/>
     </UserControl.Visibility>
     <Expander x:Name="Expander" Header="{Binding FriendlyName}" Margin="3">
         <StackPanel x:Name="SP" Grid.Row="1" IsEnabled="{Binding IsReadOnly, Converter={StaticResource BooleanInverter}}">
             <ItemsControl ItemsSource="{Binding Settings}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <ContentPresenter Content="{Binding Converter={StaticResource SettingUIConverter}}"/>
+                        <ContentPresenter Content="{Binding Converter={StaticResource SettingUIConverter}}" Visibility="{Binding IsAvailable, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>

@@ -36,11 +36,35 @@ struct VertexPositionTextureDepth
 	float2 Texture : TEXCOORD0;
 };
 
-struct VertexPolar
+struct VertexPositionWorldTexture
 {
     float4 Position : SV_POSITION;
 	float3 World : POSITION1;
 	float2 Texture : TEXCOORD0;
+};
+
+struct VertexPositionOut
+{
+    float4 Position : SV_POSITION;
+};
+
+struct VertexPositionTextureInstance
+{
+	float3 Position : POSITION0;
+	float2 Texture : TEXCOORD0;
+	uint Instance : SV_InstanceID;
+};
+
+struct VertexPositionInstance
+{
+	float4 Position : SV_POSITION;
+	uint Instance : POSITION0;
+};
+
+struct VertexPositionTarget
+{
+	float4 Position : SV_POSITION;
+	uint Target: SV_RenderTargetArrayIndex;
 };
 
 cbuffer CommonConstants : register(b0)
@@ -75,20 +99,25 @@ cbuffer DepthAndColorConstants : register(b1)
 	float TriangleLimit;
 };
 
-cbuffer TurntableConstants : register(b1)
+cbuffer TurntableConstants : register(b2)
 {
 	float4x4 TurntableToScreenTransform;
 	float4x4 DepthToTurntableTransform;
 	float4x4 DepthToTextureTransform;
 	float4x4 ModelToScreenTransform;
+	float4x4 DepthToWorldTransform;
+	float4x4 WorldToTurntableTransform;
 	float2 CorePosition;
 	float2 ClipLimit;
 	float2 TextureMove;
 	float2 TextureScale;
+	float2 CubeSize;
 	int2 DepthResolution;
 	int2 ColorResolution;
 	int2 ModelResolution;
-	float Side;
+	float Side;	
+	int CubeRes;
+	int Slice;
 };
 
 float ToDepth(float raw)

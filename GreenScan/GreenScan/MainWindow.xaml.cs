@@ -295,9 +295,14 @@ namespace Green.Scan
                 Settings.TurntableCoreY.Value,
                 Settings.TurntablePiSteps.Value);
             TurntableScanner.SetShading(
-                Settings.TurntableView.Value);
+                Settings.TurntableAxialView.Value);
             TurntableScanner.SetMode(
                 Settings.TurntableMode.Value);
+            TurntableScanner.SetVolumetric(
+                Settings.TurntableCubeSize.Value / 100,
+                Settings.TurntableCubeResolution.Value,
+                Settings.TurntableVolumetricView.Value,
+                Settings.TurntableSlice.Value);
         }
 
         #endregion

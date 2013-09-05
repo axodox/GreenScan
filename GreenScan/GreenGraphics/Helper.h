@@ -45,6 +45,7 @@ void Error(HRESULT hr)
 		_wfopen_s(&hF, L"error.txt", L"a");
 		
 		fputws(ce.ErrorMessage(), hF);
+		fputws(L"\r\n", hF);
 		fclose(hF);
 	}
 }

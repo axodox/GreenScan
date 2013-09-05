@@ -28,6 +28,7 @@
     <local:SettingGroupToUIConverter x:Key="SettingGroupToUIConverter"/>
     <local:HasDefaultValueToFontWeightConverter x:Key="HasDefaultValueToFontWeightConverter"/>
     <local:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    <local:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter"/>
     <local:ReferenceValueToVisibilityConverter x:Key="ReferenceValueToVisibilityConverter"/>
     <local:BooleanInverter x:Key="BooleanInverter"/>
 </ResourceDictionary>

@@ -203,6 +203,30 @@
     <FxCompile Include="TurntableOneAxisPolarPixelShader.hlsl">
       <Filter>Source Files\TurntableShaders</Filter>
     </FxCompile>
+    <FxCompile Include="TurntableVolumetricOrthoVertexShader.hlsl">
+      <Filter>Source Files\TurntableShaders</Filter>
+    </FxCompile>
+    <FxCompile Include="TurntableVolumetricOrthoGeometryShader.hlsl">
+      <Filter>Source Files\TurntableShaders</Filter>
+    </FxCompile>
+    <FxCompile Include="TurntableVolumetricOrthoPixelShader.hlsl">
+      <Filter>Source Files\TurntableShaders</Filter>
+    </FxCompile>
+    <FxCompile Include="TurntableVolumetricDepthPixelShader.hlsl">
+      <Filter>Source Files\TurntableShaders</Filter>
+    </FxCompile>
+    <FxCompile Include="TurntableVolumetricCubeVertexShader.hlsl">
+      <Filter>Source Files\TurntableShaders</Filter>
+    </FxCompile>
+    <FxCompile Include="TurntableVolumetricCubeGeometryShader.hlsl">
+      <Filter>Source Files\TurntableShaders</Filter>
+    </FxCompile>
+    <FxCompile Include="TurntableVolumetricCubePixelShader.hlsl">
+      <Filter>Source Files\TurntableShaders</Filter>
+    </FxCompile>
+    <FxCompile Include="TurntableVolumetricSlicePixelShader.hlsl">
+      <Filter>Source Files\TurntableShaders</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Header.hlsli">

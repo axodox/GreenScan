@@ -95,11 +95,24 @@ namespace Green.Settings.UI
     }
 
     [ValueConversion(typeof(bool), typeof(Visibility))]
-    class BooleanToVisibilityConverter : IValueConverter
+    class InverseBooleanToVisibilityConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         {
             return ((bool)value ? Visibility.Collapsed : Visibility.Visible);
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    class BooleanToVisibilityConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            return ((bool)value ? Visibility.Visible : Visibility.Collapsed);
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)

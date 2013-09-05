@@ -4,12 +4,12 @@
 
 [maxvertexcount(6)]
 void main(
-	triangle VertexPolar input[3], 
-	inout TriangleStream<VertexPolar> output
+	triangle VertexPositionWorldTexture input[3], 
+	inout TriangleStream<VertexPositionWorldTexture> output
 )
 {
 	bool ok = true;	
-	VertexPolar v;
+	VertexPositionWorldTexture v;
 	for (uint i = 0; i < 3; i++)
 	{
 		v = input[i];

@@ -20,7 +20,14 @@ namespace Green
 			enum class Modes
 			{
 				OneAxis,
-				TwoAxes
+				TwoAxis,
+				Volumetric
+			};
+
+			enum class VolumetricViews {
+				Overlay,
+				Projection,
+				Slice
 			};
 		private:
 			Turntable^ table;
@@ -120,6 +127,12 @@ namespace Green
 				Mode = mode;
 				if (ScannerModule)
 					ScannerModule->SetMode((RotatingScannerModule::Modes)mode);
+			}
+
+			void SetVolumetric(float cubeSize, int cubeRes, VolumetricViews view, float depth)
+			{
+				if (ScannerModule)
+					ScannerModule->SetVolumetric(cubeSize, cubeRes, (RotatingScannerModule::VolumetricViews)view, depth);
 			}
 
 			virtual event StatusEventHandler^ StatusChanged;

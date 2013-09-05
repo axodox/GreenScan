@@ -56,9 +56,9 @@ namespace Green
 			Texture2D *TColor, *TDepthCorrection;
 			Texture1D *THueMap, *TScaleMap, *TGauss;
 			Texture2DDoubleBuffer *TDBDepth;
-			RenderTarget *RTDepthSum;
+			RenderTarget2D *RTDepthSum;
 			RenderTargetPair *RTPDepth;
-			ReadableRenderTarget *RRTSaveVertices, *RRTSaveTexture;
+			ReadableRenderTarget2D *RRTSaveVertices, *RRTSaveTexture;
 			BlendState *BAdditive, *BOpaque;
 			RasterizerState *RDefault, *RCullNone, *RWireframe;
 			int NextDepthBufferSize, DepthBufferSize;
@@ -265,7 +265,6 @@ namespace Green
 					SLinearWrap->SetForPS();	
 					CBDepthAndColor->SetForPS(1);
 					QMain->Draw();
-
 					DrawToSaveRawImage(PSDepth);
 					break;
 				case KinectDevice::Color:
@@ -285,14 +284,15 @@ namespace Green
 					DrawToSaveRawImage(PSInfrared);
 					break;
 				case KinectDevice::DepthAndColor:
+					CBDepthAndColor->SetForPS(1);
+					CBDepthAndColor->SetForVS(1);
+					CBDepthAndColor->SetForGS(1);
+
 					//Depth averaging
 					RDefault->Set();
 					RTDepthSum->SetAsRenderTarget();
 					RTDepthSum->Clear();
 					Device->SetShaders(VSSimple, PSDepthSum);
-					CBDepthAndColor->SetForPS(1);
-					CBDepthAndColor->SetForVS(1);
-					CBDepthAndColor->SetForGS(1);
 					BAdditive->Apply();
 					Texture2D *depthTex;
 					for(int i = 0; i < DepthBufferSize; i++)
@@ -374,7 +374,7 @@ namespace Green
 
 					if(!Params.UseModuleShading || (Params.UseModuleShading && ModuleCount == 0) || (overlayMode && !backgroundDone))
 					{
-						BOpaque->Apply();						
+						BOpaque->Apply();		
 						RTPDepth->SetForVS();
 
 						if(Params.WireframeShading)
@@ -419,7 +419,6 @@ namespace Green
 							break;
 						}
 						PMain->Draw();
-
 						RCullNone->Set();
 					}
 
@@ -560,7 +559,7 @@ namespace Green
 						KinectDevice::ColorWidth, KinectDevice::ColorHeight,
 						DXGI_FORMAT_R8G8B8A8_UNORM);
 					TDBDepth = new Texture2DDoubleBuffer(Device, KinectDevice::DepthWidth, KinectDevice::DepthHeight, DXGI_FORMAT_R16_SINT, NextDepthBufferSize);
-					RTDepthSum = new RenderTarget(Device, KinectDevice::DepthWidth, KinectDevice::DepthHeight, DXGI_FORMAT_R32G32_FLOAT);
+					RTDepthSum = new RenderTarget2D(Device, KinectDevice::DepthWidth, KinectDevice::DepthHeight, DXGI_FORMAT_R32G32_FLOAT);
 					RTPDepth = new RenderTargetPair(Device, KinectDevice::DepthWidth, KinectDevice::DepthHeight, DXGI_FORMAT_R32_FLOAT);
 					PMain = new Plane(Device, NextTriangleGridWidth, NextTriangleGridHeight);
 					DepthAndColorOptions.DepthStep = XMFLOAT2(1.f / NextTriangleGridWidth, 1.f / NextTriangleGridHeight);
@@ -899,7 +898,7 @@ namespace Green
 			}
 		private:
 			GraphicsDevice* Device;
-			ReadableRenderTarget* ReadableBackBuffer;
+			ReadableRenderTarget2D* ReadableBackBuffer;
 			HANDLE SaveEvent;
 			bool SaveTextureReady;
 
@@ -928,7 +927,7 @@ namespace Green
 			{
 				bool ok = false;
 				SaveTextureReady = true;
-				ReadableBackBuffer = new ReadableRenderTarget(Device);							
+				ReadableBackBuffer = new ReadableRenderTarget2D(Device);							
 				SaveTextureReady = false;
 				ResetEvent(SaveEvent);
 
@@ -960,7 +959,7 @@ namespace Green
 				case Green::Kinect::KinectDevice::Depth:
 				case Green::Kinect::KinectDevice::Color:
 				case Green::Kinect::KinectDevice::Infrared:
-					RRTSaveTexture = new ReadableRenderTarget(Device, TColor->GetWidth(), TColor->GetHeight(), DXGI_FORMAT_R8G8B8A8_UNORM);	
+					RRTSaveTexture = new ReadableRenderTarget2D(Device, TColor->GetWidth(), TColor->GetHeight(), DXGI_FORMAT_R8G8B8A8_UNORM);	
 					break;
 				default:
 					return false;
@@ -992,7 +991,7 @@ namespace Green
 				XMStoreFloat4x4(&DepthAndColorOptions.SaveTransform, XMMatrixIdentity());
 				width = KinectDevice::DepthWidth;
 				height = KinectDevice::DepthHeight;
-				RRTSaveVertices = new ReadableRenderTarget(Device, width, height, DXGI_FORMAT_R32G32B32A32_FLOAT);
+				RRTSaveVertices = new ReadableRenderTarget2D(Device, width, height, DXGI_FORMAT_R32G32B32A32_FLOAT);
 				SaveTextureReady = false;
 
 				bool ok = false;
@@ -1020,8 +1019,8 @@ namespace Green
 				if(KinectMode != KinectDevice::DepthAndColor) return false;
 				XMStoreFloat4x4(&DepthAndColorOptions.SaveTransform, XMMatrixScaling(Params.SaveScaling, -Params.SaveScaling, Params.SaveScaling));
 				bool ok = false;
-				RRTSaveVertices = new ReadableRenderTarget(Device, Params.SaveWidth, Params.SaveHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);
-				RRTSaveTexture = new ReadableRenderTarget(Device, Params.SaveTextureWidth, Params.SaveTextureHeight, DXGI_FORMAT_R8G8B8A8_UNORM);				
+				RRTSaveVertices = new ReadableRenderTarget2D(Device, Params.SaveWidth, Params.SaveHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);
+				RRTSaveTexture = new ReadableRenderTarget2D(Device, Params.SaveTextureWidth, Params.SaveTextureHeight, DXGI_FORMAT_R8G8B8A8_UNORM);				
 				SaveTextureReady = false;
 				
 				if(StaticInput)

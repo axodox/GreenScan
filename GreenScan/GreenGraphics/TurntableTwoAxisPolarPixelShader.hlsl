@@ -10,7 +10,7 @@ struct PSOutput
 	float4 TexR : SV_TARGET3;
 };
 
-PSOutput main(VertexPolar v)
+PSOutput main(VertexPositionWorldTexture v)
 {
 	PSOutput output;
 	float4 color = Texture.Sample(Sampler, (v.Texture + TextureMove) * TextureScale).bgra;

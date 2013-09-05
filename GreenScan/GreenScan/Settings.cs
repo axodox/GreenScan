@@ -78,8 +78,12 @@ namespace Green.Scan
         public NumericSetting<float> TurntableCoreY { get; private set; }
         public SizeSetting TurntableModelResolution { get; private set; }
         public SizeSetting TurntableTextureResolution { get; private set; }
-        public EnumSetting<RotatingScanner.Views> TurntableView { get; private set; }
+        public EnumSetting<RotatingScanner.Views> TurntableAxialView { get; private set; }
         public NumericSetting<int> TurntablePiSteps { get; private set; }
+        public NumericSetting<float> TurntableCubeSize { get; private set; }
+        public NumericSetting<int> TurntableCubeResolution { get; private set; }
+        public EnumSetting<RotatingScanner.VolumetricViews> TurntableVolumetricView { get; private set; }
+        public NumericSetting<float> TurntableSlice { get; private set; }
 
         public ScanSettings()
             : base()
@@ -89,9 +93,12 @@ namespace Green.Scan
             SettingGroups.Add(KinectProperties);
 
             KinectMode = new EnumSetting<KinectManager.Modes>("Mode", KinectManager.Modes.DepthAndColor) { FriendlyName = "Mode" };
-            NearModeEnabled = new BooleanSetting("NearModeEnabled", true) { FriendlyName = "Near mode*" };
-            EmitterEnabled = new BooleanSetting("EmitterEnabled", true) { FriendlyName = "Emitter enabled*" };
+            DependentAvailability kinectModeIsDepthAndColor = new DependentAvailability(KinectMode, "DepthAndColor");
+            DependentAvailability kinectModeWithDepth = new DependentAvailability(KinectMode, "Depth|DepthAndColor");
             KinectProperties.Settings.Add(KinectMode);
+
+            NearModeEnabled = new BooleanSetting("NearModeEnabled", true) { FriendlyName = "Near mode*", AvailabilityProvider = kinectModeWithDepth };
+            EmitterEnabled = new BooleanSetting("EmitterEnabled", true) { FriendlyName = "Emitter enabled*", AvailabilityProvider = kinectModeWithDepth };
             KinectProperties.Settings.Add(NearModeEnabled);
             KinectProperties.Settings.Add(EmitterEnabled);
 
@@ -99,9 +106,9 @@ namespace Green.Scan
             PreprocessingProperties = new SettingGroup("Preprocessing") { FriendlyName = "Preprocessing" };
             SettingGroups.Add(PreprocessingProperties);
 
-            DepthAveraging = new NumericSetting<int>("DepthAveraging", 1, 1, 32) { FriendlyName = "Depth averaging buffer size (slots)" };
-            DepthGaussIterations = new NumericSetting<int>("DepthGaussIterations", 0, 0, 4) { FriendlyName = "Depth Gauss filtering (iterations)" };
-            DepthGaussSigma = new NumericSetting<float>("DepthGaussSigma", 1, 0.1f, 4f, 2) { FriendlyName = "Depth Gauss filtering sigma (units)" };
+            DepthAveraging = new NumericSetting<int>("DepthAveraging", 1, 1, 32) { FriendlyName = "Depth averaging buffer size (slots)", AvailabilityProvider = kinectModeIsDepthAndColor };
+            DepthGaussIterations = new NumericSetting<int>("DepthGaussIterations", 0, 0, 4) { FriendlyName = "Depth Gauss filtering (iterations)", AvailabilityProvider = kinectModeIsDepthAndColor };
+            DepthGaussSigma = new NumericSetting<float>("DepthGaussSigma", 1, 0.1f, 4f, 2) { FriendlyName = "Depth Gauss filtering sigma (units)", AvailabilityProvider = kinectModeIsDepthAndColor };
             PreprocessingProperties.Settings.Add(DepthAveraging);
             PreprocessingProperties.Settings.Add(DepthGaussIterations);
             PreprocessingProperties.Settings.Add(DepthGaussSigma);
@@ -110,14 +117,14 @@ namespace Green.Scan
             CameraProperties = new SettingGroup("Camera") { FriendlyName = "Camera" };
             SettingGroups.Add(CameraProperties);
 
-            InfraredIntrinsics = new MatrixSetting("InfraredIntrinsics", new float[,] { { 1161.96f, 0f, 639.8654f }, { 0f, 1169.649f, 521.4605f }, { 0f, 0f, 1f } }) { FriendlyName = "Infrared intrinsic matrix" };
-            InfraredDistortion = new MatrixSetting("InfraredDistortion", new float[,] { { 0.143542f, -0.244779f }, { 0.003839f, -0.000318f } }) { FriendlyName = "Infrared distortion coefficients {K1, K2; P1, P2}" };
-            InfraredDistortionCorrectionEnabled = new BooleanSetting("InfraredDistortionCorrectionEnabled", false) { FriendlyName = "Infrared distortion correction enabled" };
-            DepthToIRMapping = new MatrixSetting("DepthToIRMapping", new float[,] { { 2f, 0f, 16f }, { 0f, 2f, 17f }, { 0f, 0f, 1f } }) { FriendlyName = "Depth to IR mapping" };
-            DepthCoeffs = new MatrixSetting("DepthCoeffs", new float[,] { { 0.125e-3f, 0f } }) { FriendlyName = "Depth coefficients (units)" };
-            ColorIntrinsics = new MatrixSetting("ColorIntrinsics", new float[,] { { 1051.45f, 0f, 641.1544f }, { 0f, 1053.781f, 521.7905f }, { 0f, 0f, 1f } }) { FriendlyName = "Color intrinsic matrix" };
-            ColorRemapping = new MatrixSetting("ColorRemapping", new float[,] { { 2f, 0f, 2f }, { 0f, 2f, 0f }, { 0f, 0f, 1f } }) { FriendlyName = "Color remapping" };
-            ColorExtrinsics = new MatrixSetting("ColorExtrinsics", new float[,] { { 0.999946f, -0.006657f, 0.00794f, -0.025955f }, { 0.006679f, 0.999974f, -0.002686f, -0.000035f }, { -0.007922f, 0.002739f, 0.999965f, 0.005283f }, { 0f, 0f, 0f, 1f } }) { FriendlyName = "Color extrinsics" };
+            InfraredIntrinsics = new MatrixSetting("InfraredIntrinsics", new float[,] { { 1161.96f, 0f, 639.8654f }, { 0f, 1169.649f, 521.4605f }, { 0f, 0f, 1f } }) { FriendlyName = "Infrared intrinsic matrix", AvailabilityProvider = kinectModeIsDepthAndColor };
+            InfraredDistortion = new MatrixSetting("InfraredDistortion", new float[,] { { 0.143542f, -0.244779f }, { 0.003839f, -0.000318f } }) { FriendlyName = "Infrared distortion coefficients {K1, K2; P1, P2}", AvailabilityProvider = kinectModeIsDepthAndColor };
+            InfraredDistortionCorrectionEnabled = new BooleanSetting("InfraredDistortionCorrectionEnabled", false) { FriendlyName = "Infrared distortion correction enabled", AvailabilityProvider = kinectModeIsDepthAndColor };
+            DepthToIRMapping = new MatrixSetting("DepthToIRMapping", new float[,] { { 2f, 0f, 16f }, { 0f, 2f, 17f }, { 0f, 0f, 1f } }) { FriendlyName = "Depth to IR mapping", AvailabilityProvider = kinectModeIsDepthAndColor };
+            DepthCoeffs = new MatrixSetting("DepthCoeffs", new float[,] { { 0.125e-3f, 0f } }) { FriendlyName = "Depth coefficients (units)", AvailabilityProvider = kinectModeIsDepthAndColor };
+            ColorIntrinsics = new MatrixSetting("ColorIntrinsics", new float[,] { { 1051.45f, 0f, 641.1544f }, { 0f, 1053.781f, 521.7905f }, { 0f, 0f, 1f } }) { FriendlyName = "Color intrinsic matrix", AvailabilityProvider = kinectModeIsDepthAndColor };
+            ColorRemapping = new MatrixSetting("ColorRemapping", new float[,] { { 2f, 0f, 2f }, { 0f, 2f, 0f }, { 0f, 0f, 1f } }) { FriendlyName = "Color remapping", AvailabilityProvider = kinectModeIsDepthAndColor };
+            ColorExtrinsics = new MatrixSetting("ColorExtrinsics", new float[,] { { 0.999946f, -0.006657f, 0.00794f, -0.025955f }, { 0.006679f, 0.999974f, -0.002686f, -0.000035f }, { -0.007922f, 0.002739f, 0.999965f, 0.005283f }, { 0f, 0f, 0f, 1f } }) { FriendlyName = "Color extrinsics", AvailabilityProvider = kinectModeIsDepthAndColor };
             CameraProperties.Settings.Add(InfraredIntrinsics);
             CameraProperties.Settings.Add(InfraredDistortion);
             CameraProperties.Settings.Add(InfraredDistortionCorrectionEnabled);
@@ -127,10 +134,10 @@ namespace Green.Scan
             CameraProperties.Settings.Add(ColorRemapping);
             CameraProperties.Settings.Add(ColorExtrinsics);
 
-            ColorDispositionX = new NumericSetting<int>("ColorDispositionX", -8, -32, 32) { FriendlyName = "Color X disposition (pixels)" };
-            ColorDispositionY = new NumericSetting<int>("ColorDispositionY", 8, -32, 32) { FriendlyName = "Color Y disposition (pixels)" };
-            ColorScaleX = new NumericSetting<float>("ColorScaleX", 1.01f, 0.8f, 1.2f, 2) { FriendlyName = "Color X scale (units)" };
-            ColorScaleY = new NumericSetting<float>("ColorScaleY", 1f, 0.8f, 1.2f, 2) { FriendlyName = "Color Y scale (units)" };
+            ColorDispositionX = new NumericSetting<int>("ColorDispositionX", -8, -32, 32) { FriendlyName = "Color X disposition (pixels)", AvailabilityProvider = kinectModeIsDepthAndColor };
+            ColorDispositionY = new NumericSetting<int>("ColorDispositionY", 8, -32, 32) { FriendlyName = "Color Y disposition (pixels)", AvailabilityProvider = kinectModeIsDepthAndColor };
+            ColorScaleX = new NumericSetting<float>("ColorScaleX", 1.01f, 0.8f, 1.2f, 2) { FriendlyName = "Color X scale (units)", AvailabilityProvider = kinectModeIsDepthAndColor };
+            ColorScaleY = new NumericSetting<float>("ColorScaleY", 1f, 0.8f, 1.2f, 2) { FriendlyName = "Color Y scale (units)", AvailabilityProvider = kinectModeIsDepthAndColor };
             CameraProperties.Settings.Add(ColorDispositionX);
             CameraProperties.Settings.Add(ColorDispositionY);
             CameraProperties.Settings.Add(ColorScaleX);
@@ -140,16 +147,16 @@ namespace Green.Scan
             ViewProperties = new SettingGroup("View") { FriendlyName = "View" };
             SettingGroups.Add(ViewProperties);
 
-            TranslationX = new NumericSetting<float>("TranslationX", 0f, -1f, 1f, 2) { FriendlyName = "Translation X (meters)" };
-            TranslationY = new NumericSetting<float>("TranslationY", 0f, -1f, 1f, 2) { FriendlyName = "Translation Y (meters)" };
-            TranslationZ = new NumericSetting<float>("TranslationZ", 1.5f, 0f, 3f, 2) { FriendlyName = "Translation Z (meters)" };
+            TranslationX = new NumericSetting<float>("TranslationX", 0f, -1f, 1f, 2) { FriendlyName = "Translation X (meters)", AvailabilityProvider = kinectModeIsDepthAndColor };
+            TranslationY = new NumericSetting<float>("TranslationY", 0f, -1f, 1f, 2) { FriendlyName = "Translation Y (meters)", AvailabilityProvider = kinectModeIsDepthAndColor };
+            TranslationZ = new NumericSetting<float>("TranslationZ", 1.5f, 0f, 3f, 2) { FriendlyName = "Translation Z (meters)", AvailabilityProvider = kinectModeIsDepthAndColor };
             ViewProperties.Settings.Add(TranslationX);
             ViewProperties.Settings.Add(TranslationY);
-            ViewProperties.Settings.Add(TranslationZ); 
+            ViewProperties.Settings.Add(TranslationZ);
 
-            RotationX = new NumericSetting<float>("RotationX", 0f, -180f, 180f, 2) { FriendlyName = "Rotation X (degrees)" };
-            RotationY = new NumericSetting<float>("RotationY", 0f, -180f, 180f, 2) { FriendlyName = "Rotation Y (degrees)" };
-            RotationZ = new NumericSetting<float>("RotationZ", 0f, -180f, 180f, 2) { FriendlyName = "Rotation Z (degrees)" };
+            RotationX = new NumericSetting<float>("RotationX", 0f, -180f, 180f, 2) { FriendlyName = "Rotation X (degrees)", AvailabilityProvider = kinectModeIsDepthAndColor };
+            RotationY = new NumericSetting<float>("RotationY", 0f, -180f, 180f, 2) { FriendlyName = "Rotation Y (degrees)", AvailabilityProvider = kinectModeIsDepthAndColor };
+            RotationZ = new NumericSetting<float>("RotationZ", 0f, -180f, 180f, 2) { FriendlyName = "Rotation Z (degrees)", AvailabilityProvider = kinectModeIsDepthAndColor };
             ViewProperties.Settings.Add(RotationX);
             ViewProperties.Settings.Add(RotationY);
             ViewProperties.Settings.Add(RotationZ);
@@ -167,14 +174,14 @@ namespace Green.Scan
             ShadingProperties = new SettingGroup("Shading") { FriendlyName = "Shading" };
             SettingGroups.Add(ShadingProperties);
 
-            UseModuleShading = new BooleanSetting("ModuleShading", false) { FriendlyName = "Use module shading (if available)" };
-            ShadingMode = new EnumSetting<GraphicsCanvas.ShadingModes>("ShadingMode", GraphicsCanvas.ShadingModes.Rainbow) { FriendlyName = "Mode" };
-            DepthMaximum = new NumericSetting<float>("DepthMaximum", 8f, 0f, 8f, 2) { FriendlyName = "Depth maximum (meters)" };
-            DepthMinimum = new NumericSetting<float>("DepthMinimum", 0.4f, 0.4f, 8f, 2) { FriendlyName = "Depth minimum (meters)" };
+            UseModuleShading = new BooleanSetting("ModuleShading", false) { FriendlyName = "Use module shading (if available)", AvailabilityProvider = kinectModeIsDepthAndColor };
+            ShadingMode = new EnumSetting<GraphicsCanvas.ShadingModes>("ShadingMode", GraphicsCanvas.ShadingModes.Rainbow) { FriendlyName = "Mode", AvailabilityProvider = kinectModeIsDepthAndColor };
+            DepthMaximum = new NumericSetting<float>("DepthMaximum", 8f, 0f, 8f, 2) { FriendlyName = "Depth maximum (meters)", AvailabilityProvider = kinectModeIsDepthAndColor };
+            DepthMinimum = new NumericSetting<float>("DepthMinimum", 0.4f, 0.4f, 8f, 2) { FriendlyName = "Depth minimum (meters)", AvailabilityProvider = kinectModeIsDepthAndColor };
             ShadingPeriode = new NumericSetting<float>("ShadingPeriode", 1f, 0.01f, 2f, 2) { FriendlyName = "Shading periode (meters)" };
             ShadingPhase = new NumericSetting<float>("ShadingPhase", 0f, 0f, 1f, 2) { FriendlyName = "Shading phase (units)" };
-            TriangleRemoveLimit = new NumericSetting<float>("TriangleRemoveLimit", 0.0024f, 0.0001f, 0.004f, 4) { FriendlyName = "Triangle remove limit (units)" };
-            WireframeShading = new BooleanSetting("WireframeShading", false) { FriendlyName = "Wireframe shading" };
+            TriangleRemoveLimit = new NumericSetting<float>("TriangleRemoveLimit", 0.0024f, 0.0001f, 0.004f, 4) { FriendlyName = "Triangle remove limit (units)", AvailabilityProvider = kinectModeIsDepthAndColor };
+            WireframeShading = new BooleanSetting("WireframeShading", false) { FriendlyName = "Wireframe shading", AvailabilityProvider = kinectModeIsDepthAndColor };
             ShadingProperties.Settings.Add(UseModuleShading);
             ShadingProperties.Settings.Add(ShadingMode);
             ShadingProperties.Settings.Add(DepthMaximum);
@@ -188,7 +195,7 @@ namespace Green.Scan
             PerformanceProperties = new SettingGroup("Performance") { FriendlyName = "Performance" };
             SettingGroups.Add(PerformanceProperties);
 
-            TriangleGridResolution = new SizeSetting("TriangleGridResolution", 640, 480, 16, 12, 640, 480) { FriendlyName = "Triangle grid resolution" };
+            TriangleGridResolution = new SizeSetting("TriangleGridResolution", 640, 480, 16, 12, 640, 480) { FriendlyName = "Triangle grid resolution", AvailabilityProvider = kinectModeIsDepthAndColor };
             PerformanceProperties.Settings.Add(TriangleGridResolution);
 
             //Save
@@ -214,24 +221,36 @@ namespace Green.Scan
             TurntableProperties = new SettingGroup("Turntable") { FriendlyName = "Turntable", IsHidden = true };
             SettingGroups.Add(TurntableProperties);
 
-            TurntableMode = new EnumSetting<RotatingScanner.Modes>("Mode", RotatingScanner.Modes.TwoAxes) { FriendlyName = "Mode" };
+            TurntableMode = new EnumSetting<RotatingScanner.Modes>("Mode", RotatingScanner.Modes.TwoAxis) { FriendlyName = "Mode" };
+            DependentAvailability turntableModeIsVolumetric = new DependentAvailability(TurntableMode, "Volumetric");
+            DependentAvailability turntableModeIsAxial = new DependentAvailability(TurntableMode, "OneAxis|TwoAxis");
             TurntableProperties.Settings.Add(TurntableMode);
 
-            TurntableView = new EnumSetting<RotatingScanner.Views>("View", RotatingScanner.Views.Overlay) { FriendlyValue = "View" };
-            TurntableProperties.Settings.Add(TurntableView);
+            TurntableVolumetricView = new EnumSetting<RotatingScanner.VolumetricViews>("VolumetricView", RotatingScanner.VolumetricViews.Overlay) { FriendlyName = "View", AvailabilityProvider = turntableModeIsVolumetric };
+            DependentAvailability turntableVolumetricSliceView = new DependentAvailability(new Setting[] { TurntableMode, TurntableVolumetricView }, new string[] { "Volumetric", "Slice" });
+            TurntableSlice = new NumericSetting<float>("Slice", 0, 0, 1, 2) { FriendlyName = "Current depth (units)", AvailabilityProvider = turntableVolumetricSliceView };
+            TurntableCubeSize = new NumericSetting<float>("CubeSize", 30, 10, 50) { FriendlyName = "Cube size (centimeters)", AvailabilityProvider = turntableModeIsVolumetric };
+            TurntableCubeResolution = new NumericSetting<int>("CubeResolution", 128, 16, 512) { FriendlyName = "Cube resolution (voxels)", AvailabilityProvider = turntableModeIsVolumetric };
+            TurntableProperties.Settings.Add(TurntableVolumetricView);
+            TurntableProperties.Settings.Add(TurntableSlice);
+            TurntableProperties.Settings.Add(TurntableCubeSize);
+            TurntableProperties.Settings.Add(TurntableCubeResolution);            
 
-            TurntableCoreX = new NumericSetting<float>("CoreX", 0.11f, 0f, 0.5f, 3) { FriendlyName = "Leg distance (meters)" };
-            TurntableCoreY = new NumericSetting<float>("CoreY", -0.11f, -0.5f, 0.5f, 3) { FriendlyName = "Leg position (meters)" };
+            TurntableAxialView = new EnumSetting<RotatingScanner.Views>("AxialView", RotatingScanner.Views.Overlay) { FriendlyName = "View", AvailabilityProvider = turntableModeIsAxial };
+            TurntableProperties.Settings.Add(TurntableAxialView);
+
+            TurntableCoreX = new NumericSetting<float>("CoreX", 0.11f, 0f, 0.5f, 3) { FriendlyName = "Leg distance (meters)", AvailabilityProvider = turntableModeIsAxial };
+            TurntableCoreY = new NumericSetting<float>("CoreY", -0.11f, -0.5f, 0.5f, 3) { FriendlyName = "Leg position (meters)", AvailabilityProvider = turntableModeIsAxial };
             TurntableProperties.Settings.Add(TurntableCoreX);
             TurntableProperties.Settings.Add(TurntableCoreY);
 
-            TurntableClippingHeight = new NumericSetting<float>("ClippingHeight", 0.5f, 0f, 2f, 3) { FriendlyName = "Clipping height (meters)" };
-            TurntableClippingRadius = new NumericSetting<float>("ClippingRadius", 0.3f, 0f, 2f, 3) { FriendlyName = "Clipping radius (meters)" };
+            TurntableClippingHeight = new NumericSetting<float>("ClippingHeight", 0.5f, 0f, 2f, 3) { FriendlyName = "Clipping height (meters)", AvailabilityProvider = turntableModeIsAxial };
+            TurntableClippingRadius = new NumericSetting<float>("ClippingRadius", 0.3f, 0f, 2f, 3) { FriendlyName = "Clipping radius (meters)", AvailabilityProvider = turntableModeIsAxial };
             TurntableProperties.Settings.Add(TurntableClippingHeight);
             TurntableProperties.Settings.Add(TurntableClippingRadius);
 
-            TurntableModelResolution = new SizeSetting("ModelResolution", 640, 480, 64, 64, 1024, 1024) { FriendlyName = "Model resolution (vertices/leg)" };
-            TurntableTextureResolution = new SizeSetting("TextureResolution", 640, 480, 64, 64, 1024, 1024) { FriendlyName = "Texture resolution (pixels/leg)" };
+            TurntableModelResolution = new SizeSetting("ModelResolution", 640, 480, 64, 64, 1024, 1024) { FriendlyName = "Model resolution (vertices/leg)", AvailabilityProvider = turntableModeIsAxial };
+            TurntableTextureResolution = new SizeSetting("TextureResolution", 640, 480, 64, 64, 1024, 1024) { FriendlyName = "Texture resolution (pixels/leg)", AvailabilityProvider = turntableModeIsAxial };
             TurntableProperties.Settings.Add(TurntableModelResolution);
             TurntableProperties.Settings.Add(TurntableTextureResolution);
 

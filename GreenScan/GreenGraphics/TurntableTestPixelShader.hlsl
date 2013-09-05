@@ -32,7 +32,7 @@
 //		return float4(0, 0, -i, 1.f);
 //}
 
-//float4 main(VertexPolar v) : SV_TARGET
+//float4 main(VertexPositionWorldTexture v) : SV_TARGET
 //{
 //	if(sign(v.World.x) == 1)
 //		return float4(v.Position.z * 5, 0.f, 0.f, 1.f);
