@@ -62,6 +62,9 @@
     <ClInclude Include="GreenRotatingScannerAdapter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="GreenResources.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GreenGraphics.cpp">
@@ -250,5 +253,13 @@
     <None Include="Header.hlsli">
       <Filter>Source Files\Shaders</Filter>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resources.resx">
+      <Filter>Resource Files</Filter>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources.hu-HU.resx">
+      <Filter>Resource Files</Filter>
+    </EmbeddedResource>
   </ItemGroup>
 </Project>

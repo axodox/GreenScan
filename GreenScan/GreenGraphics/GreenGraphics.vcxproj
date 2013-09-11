@@ -352,6 +352,7 @@
     <ClInclude Include="GreenGraphicsVertexDefinitions.h" />
     <ClInclude Include="GreenKinect.h" />
     <ClInclude Include="GreenKinectAdapter.h" />
+    <ClInclude Include="GreenResources.h" />
     <ClInclude Include="GreenRotatingScanner.h" />
     <ClInclude Include="GreenRotatingScannerAdapter.h" />
     <ClInclude Include="Helper.h" />
@@ -982,6 +983,12 @@
     <ProjectReference Include="..\Turntables\Turntables.csproj">
       <Project>{126148cb-fabd-4b3b-a813-caabbe42acb7}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resources.hu-HU.resx" />
+    <EmbeddedResource Include="Resources.resx">
+      <DeploymentContent>true</DeploymentContent>
+    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

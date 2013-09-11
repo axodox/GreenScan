@@ -3,6 +3,7 @@
 #include "GreenRotatingScanner.h"
 #include "GreenGraphicsAdapter.h"
 #include "GreenKinectAdapter.h"
+#include "GreenResources.h"
 #pragma managed
 using namespace System;
 using namespace System::Windows::Threading;
@@ -47,7 +48,7 @@ namespace Green
 			void ToOrigin()
 			{
 				table->ToOrigin();
-				StatusChanged(this, gcnew StatusEventArgs("Finding origin...", true));
+				StatusChanged(this, gcnew StatusEventArgs(GreenResources::GetString("TurntableFindingOrigin"), true));
 			}
 
 			void OnTableConnected(Object^ sender, EventArgs^ e)
@@ -73,13 +74,13 @@ namespace Green
 			void OnProgressChanged(Object^ sender, EventArgs^ e)
 			{
 				double progress = table->PositionInUnits;
-				StatusChanged(this, gcnew StatusEventArgs("Scanning in progress: " + (progress*100.0).ToString("F2") + "%", true, progress));
+				StatusChanged(this, gcnew StatusEventArgs(GreenResources::GetString("TurntableScanningInProgress") + " " + (progress*100.0).ToString("F2") + "%", true, progress));
 			}
 
 			void OnMotorStopped(Object^ sender, EventArgs^ e)
 			{
 				ProgressTimer->Stop();
-				StatusChanged(this, gcnew StatusEventArgs("Turntable ready."));
+				StatusChanged(this, gcnew StatusEventArgs(GreenResources::GetString("TurntableReady")));
 				EndScan();
 				OnPropertyChanged("IsAtOrigin");
 			}
@@ -88,7 +89,7 @@ namespace Green
 			{
 				if(Turntable::DeviceCount != 0)
 				{
-					StatusChanged(this, gcnew StatusEventArgs("Turntable disconnected.", true));
+					StatusChanged(this, gcnew StatusEventArgs(GreenResources::GetString("TurntableDisconnected"), true));
 					return;
 				}
 

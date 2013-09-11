@@ -1,47 +1,48 @@
 ﻿<Window x:Class="GreenScan.KinectCalibrationWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Kinect calibration" SizeToContent="WidthAndHeight" WindowStyle="ToolWindow" ResizeMode="NoResize" Closing="Window_Closing">
+        xmlns:p="clr-namespace:GreenScan.Properties"
+        Title="{x:Static p:Resources.KinectCalibrationTitle}" SizeToContent="WidthAndHeight" WindowStyle="ToolWindow" ResizeMode="NoResize" Closing="Window_Closing">
     <Grid Margin="3">
         <Grid.RowDefinitions>
             <RowDefinition/>
             <RowDefinition/>
             <RowDefinition/>
         </Grid.RowDefinitions>
-        <GroupBox Header="Path" Grid.Row="0">
+        <GroupBox Header="{x:Static p:Resources.KinectCalibrationPath}" Grid.Row="0">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <TextBlock x:Name="TBPath" Padding="3" Grid.Column="0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                <Button x:Name="BPath" Padding="3" Grid.Column="1" Content="Browse" Click="BPath_Click"/>
+                <Button x:Name="BPath" Padding="3" Grid.Column="1" Content="{x:Static p:Resources.CommonBrowse}" Click="BPath_Click"/>
             </Grid>
         </GroupBox>
-        <GroupBox Header="Progress" Grid.Row="1">
+        <GroupBox Header="{x:Static p:Resources.CommonProgress}" Grid.Row="1">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition/>
                     <RowDefinition/>
                 </Grid.RowDefinitions>
-                <TextBlock x:Name="TBProgress" Text="0 positions captured." Margin="3" HorizontalAlignment="Center"/>
-                <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center">                   
-                    <CheckBox x:Name="CBInfrared" Content="Infrared" IsEnabled="False" Margin="3" IsThreeState="True"/>
-                    <CheckBox x:Name="CBColor" Content="Color" IsEnabled="False" Margin="3" IsThreeState="True"/>
-                    <CheckBox x:Name="CBDepth" Content="Depth" IsEnabled="False" Margin="3" IsThreeState="True"/>
+                <TextBlock x:Name="TBProgress" Margin="3" HorizontalAlignment="Center"/>
+                <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center">
+                    <CheckBox x:Name="CBInfrared" Content="{x:Static p:Resources.KinectCalibrationInfrared}" IsEnabled="False" Margin="3" IsThreeState="True"/>
+                    <CheckBox x:Name="CBColor" Content="{x:Static p:Resources.KinectCalibrationColor}" IsEnabled="False" Margin="3" IsThreeState="True"/>
+                    <CheckBox x:Name="CBDepth" Content="{x:Static p:Resources.KinectCalibrationDepth}" IsEnabled="False" Margin="3" IsThreeState="True"/>
                 </StackPanel>
             </Grid>            
         </GroupBox>
-        <GroupBox Header="Controls" Grid.Row="2">
+        <GroupBox Header="{x:Static p:Resources.KinectCalibrationControls}" Grid.Row="2">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition/>
                     <ColumnDefinition/>
                     <ColumnDefinition/>
-                </Grid.ColumnDefinitions>                
-                <Button x:Name="BStart" Grid.Column="0" Content="Start" Padding="3" Margin="3" Click="BStart_Click"/>
-                <Button x:Name="BClear" Grid.Column="1" Content="Clear" Padding="3" Margin="3" IsEnabled="False" Click="BClear_Click"/>
-                <Button x:Name="BNext" Grid.Column="2" Content="Next" Padding="3" Margin="3" IsEnabled="False" Click="BNext_Click"/>
+                </Grid.ColumnDefinitions>
+                <Button x:Name="BStart" Grid.Column="0" Content="{x:Static p:Resources.CommonStart}" Padding="3" Margin="3" Click="BStart_Click"/>
+                <Button x:Name="BClear" Grid.Column="1" Content="{x:Static p:Resources.KinectCalibrationClear}" Padding="3" Margin="3" IsEnabled="False" Click="BClear_Click"/>
+                <Button x:Name="BNext" Grid.Column="2" Content="{x:Static p:Resources.CommonNext}" Padding="3" Margin="3" IsEnabled="False" Click="BNext_Click"/>
             </Grid>
         </GroupBox>
     </Grid>

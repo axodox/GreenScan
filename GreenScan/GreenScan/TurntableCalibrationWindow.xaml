@@ -2,8 +2,9 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:h="clr-namespace:Green.Helper"
+        xmlns:p="clr-namespace:GreenScan.Properties"
         MouseLeftButtonDown="IDepth_MouseLeftButtonDown" MouseMove="IDepth_MouseMove"
-        Title="Turntable Calibration" Height="640" Width="640" SizeToContent="Height">
+        Title="{x:Static p:Resources.TurntableCalibrationTitle}" Height="640" Width="640" SizeToContent="Height">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
@@ -25,9 +26,9 @@
             </Grid.ColumnDefinitions>
             <TextBlock x:Name="TBDescription" Margin="3" Grid.ColumnSpan="3" TextWrapping="Wrap" TextAlignment="Justify"/>
             <ProgressBar x:Name="PBProgress" Margin="3" Grid.Row="1" Grid.Column="0"/>
-            <Button x:Name="BPrevious" Margin="3" Padding="3"  Grid.Row="1" Grid.Column="1" Content="Previous" Click="BPrevious_Click"/>
-            <Button x:Name="BNext" Margin="3" Padding="3" Grid.Row="1" Grid.Column="2" Content="Next" Click="BNext_Click"/>
-            <Button x:Name="BFinish" Margin="3" Padding="3" Grid.Row="1" Grid.Column="2" Content="Finish" Click="BFinish_Click" Visibility="Collapsed"/>
+            <Button x:Name="BPrevious" Margin="3" Padding="3"  Grid.Row="1" Grid.Column="1" Content="{x:Static p:Resources.CommonPrevious}" Click="BPrevious_Click"/>
+            <Button x:Name="BNext" Margin="3" Padding="3" Grid.Row="1" Grid.Column="2" Content="{x:Static p:Resources.CommonNext}" Click="BNext_Click"/>
+            <Button x:Name="BFinish" Margin="3" Padding="3" Grid.Row="1" Grid.Column="2" Content="{x:Static p:Resources.CommonFinish}" Click="BFinish_Click" Visibility="Collapsed"/>
         </Grid>
     </Grid>
 </Window>

@@ -13,6 +13,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using Turntables;
+using GreenResources = GreenScan.Properties.Resources;
 
 namespace GreenScan
 {
@@ -37,8 +38,7 @@ namespace GreenScan
         public TurntableStepCounterWindow(Turntable table)
         {
             InitializeComponent();
-            Table = table;
-            Table.MotorStopped += Table_MotorStopped;
+            Table = table;            
             State = States.None;
             Steps = Passes = TotalSteps = AverageSteps = 0;
             PiSteps = 0;
@@ -60,18 +60,18 @@ namespace GreenScan
                 case States.None:
                     Table.ToOrigin();
                     State = States.MovingToOrigin;
-                    TBProgress.Text = "Moving to origin...";
+                    TBProgress.Text = GreenResources.TurntableStepCounterStatusMovingToOrigin;
                     break;
                 case States.MovingToOrigin:
                     Table.Rotate(PremovementSteps);
                     State = States.Premovement;
-                    TBProgress.Text = "Premovement...";
+                    TBProgress.Text = GreenResources.TurntableStepCounterStatusPremovement;
                     break;
                 case States.Premovement:                    
                     Table.Rotate();
                     Table.StopAtMagneticSwitch = true;
                     State = States.WaitForSwitch;
-                    TBProgress.Text = "Waiting for magnetic switch...";
+                    TBProgress.Text = GreenResources.TurntableStepCounterStatusWaitingForSwitch;
                     break;
                 case States.WaitForSwitch:
                     Steps = Table.PositionInSteps;
@@ -93,6 +93,7 @@ namespace GreenScan
 
         private void BStart_Click(object sender, RoutedEventArgs e)
         {
+            Table.MotorStopped += Table_MotorStopped;
             ProcessStep();
             BStart.IsEnabled = false;
             PBProgress.Visibility = Visibility.Visible;
@@ -102,7 +103,7 @@ namespace GreenScan
         {
             if (Passes > 0)
             {
-                MessageBoxResult mbr = MessageBox.Show("Would you like to save the results as settings?", "End of measurement", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
+                MessageBoxResult mbr = MessageBox.Show(GreenResources.TurntableStepCounterSaveResults, GreenResources.TurntableStepCounterCloseTitle, MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
                 switch (mbr)
                 {
                     case MessageBoxResult.Yes:
@@ -113,9 +114,9 @@ namespace GreenScan
                         return;
                 }
             }
+            Table.MotorStopped -= Table_MotorStopped;
             Table.StopAtMagneticSwitch = false;
-            Table.ToOrigin();
-            
+            Table.ToOrigin();            
         }        
     }
 }

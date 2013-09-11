@@ -208,6 +208,11 @@
     <Compile Include="KinectCalibrationWindow.xaml.cs">
       <DependentUpon>KinectCalibrationWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Properties\Resources.hu-HU.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.hu-HU.resx</DependentUpon>
+    </Compile>
     <Compile Include="Settings.cs" />
     <Compile Include="TurntableCalibrationWindow.xaml.cs">
       <DependentUpon>TurntableCalibrationWindow.xaml</DependentUpon>
@@ -260,8 +265,12 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
     <EmbeddedResource Include="Properties\Resources.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
+      <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.hu-HU.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.hu-HU.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <None Include="GreenScan_TemporaryKey.pfx" />
     <None Include="Properties\Settings.settings">

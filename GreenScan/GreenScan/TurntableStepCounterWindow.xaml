@@ -1,7 +1,8 @@
 ﻿<Window x:Class="GreenScan.TurntableStepCounterWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Turntable Step Counter" Width="300" SizeToContent="Height" WindowStyle="ToolWindow" ResizeMode="NoResize" Closing="Window_Closing">
+        xmlns:p="clr-namespace:GreenScan.Properties"
+        Title="{x:Static p:Resources.TurntableStepCounterTitle}" Width="300" SizeToContent="Height" WindowStyle="ToolWindow" ResizeMode="NoResize" Closing="Window_Closing">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -9,29 +10,29 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <GroupBox Grid.Row="0" Header="Information" Margin="3">
-            <TextBlock TextWrapping="Wrap">With this tool, you can count the steps corresponding to one full rotation of the turntable. Press Start to begin!</TextBlock>
+        <GroupBox Grid.Row="0" Header="{x:Static p:Resources.CommonInformation}" Margin="3">
+            <TextBlock TextWrapping="Wrap" Text="{x:Static p:Resources.TurntableStepCounterInformation}"/>
         </GroupBox>
-        <GroupBox Grid.Row="1" Header="Progress" Margin="3">
+        <GroupBox Grid.Row="1" Header="{x:Static p:Resources.CommonProgress}" Margin="3">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock x:Name="TBProgress" Text="Ready." Grid.Column="0" VerticalAlignment="Center"/>
-                <Button x:Name="BStart" Content="Start" Grid.Column="1" Margin="3" Padding="3" Click="BStart_Click"/>
+                <TextBlock x:Name="TBProgress" Text="{x:Static p:Resources.TurntableStepCounterStatusReady}" Grid.Column="0" VerticalAlignment="Center"/>
+                <Button x:Name="BStart" Content="{x:Static p:Resources.CommonStart}" Grid.Column="1" Margin="3" Padding="3" Click="BStart_Click"/>
             </Grid>
         </GroupBox>
-        <GroupBox Grid.Row="2" Header="Results" Margin="3">
+        <GroupBox Grid.Row="2" Header="{x:Static p:Resources.CommonResults}" Margin="3">
             <TextBlock>
                 <Run x:Name="RPasses" Text="0"/>
-                <Run Text="pass(es)."/>
+                <Run Text="{x:Static p:Resources.TurntableStepCounterPasses}"/>
                 <LineBreak/>
                 <Run x:Name="RSteps" Text="0"/>
-                <Run Text="steps."/>
+                <Run Text="{x:Static p:Resources.TurntableStepCounterSteps}"/>
                 <LineBreak/>
                 <Run x:Name="RStepsPerRotation" Text="0"/>
-                <Run Text="steps per rotation."/>
+                <Run Text="{x:Static p:Resources.TurntableStepCounterStepsPerRotation}"/>
             </TextBlock>
         </GroupBox>
         <ProgressBar x:Name="PBProgress" Grid.Row="3" IsIndeterminate="True" Height="6" Background="{x:Null}" BorderBrush="{x:Null}" Visibility="Collapsed"/>

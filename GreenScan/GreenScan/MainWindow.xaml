@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:s="clr-namespace:Green.Settings.UI;assembly=GreenSettings"
         xmlns:g="clr-namespace:Green.Graphics;assembly=GreenGraphics"
+        xmlns:p="clr-namespace:GreenScan.Properties"
         xmlns:local="clr-namespace:Green.Scan" x:Name="MW" x:Class="Green.Scan.MainWindow"
         Closing="Window_Closing" SnapsToDevicePixels="True"
         Title="GreenScan" Width="720" Height="480" Icon="icon.ico" MouseWheel="Window_MouseWheel" MouseDown="Window_MouseDown" MouseDoubleClick="Window_MouseDoubleClick" IsEnabled="False" ResizeMode="CanResizeWithGrip">
@@ -87,58 +88,58 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
                 <Menu>
-                    <MenuItem Header="File">
-                        <MenuItem Header="Open model..." Command="{x:Static local:GreenScanCommands.Open}"/>
-                        <MenuItem Header="Save model" Command="{x:Static local:GreenScanCommands.Save}"/>
+                    <MenuItem Header="{x:Static p:Resources.MenuFile}">
+                        <MenuItem Header="{x:Static p:Resources.MenuOpenModel}" Command="{x:Static local:GreenScanCommands.Open}"/>
+                        <MenuItem Header="{x:Static p:Resources.MenuSaveModel}" Command="{x:Static local:GreenScanCommands.Save}"/>
                         <Separator/>
-                        <MenuItem x:Name="MIExport" Header="Export as" IsEnabled="{Binding ProvidesData, Mode=OneWay}">
-                            <MenuItem Header="Image PNG">
-                                <MenuItem Header="As screenshot" Command="{x:Static local:GreenScanCommands.Export}" CommandParameter="PNG"/>
-                                <MenuItem Header="As original" Command="{x:Static local:GreenScanCommands.Export}" CommandParameter="PNG/raw"/>
+                        <MenuItem x:Name="MIExport" Header="{x:Static p:Resources.MenuExportAs}" IsEnabled="{Binding ProvidesData, Mode=OneWay}">
+                            <MenuItem Header="{x:Static p:Resources.MenuExportAsPng}">
+                                <MenuItem Header="{x:Static p:Resources.MenuExportAsPngAsScreenshot}" Command="{x:Static local:GreenScanCommands.Export}" CommandParameter="PNG"/>
+                                <MenuItem Header="{x:Static p:Resources.MenuExportAsPngAsOriginal}" Command="{x:Static local:GreenScanCommands.Export}" CommandParameter="PNG/raw"/>
                             </MenuItem>
-                            <MenuItem Header="Binary STL" Command="{x:Static local:GreenScanCommands.Export}" CommandParameter="STL"/>
-                            <MenuItem Header="Autodesk FBX" Command="{x:Static local:GreenScanCommands.Export}" CommandParameter="FBX"/>
-                            <MenuItem Header="AutoCAD DXF" Command="{x:Static local:GreenScanCommands.Export}" CommandParameter="DXF"/>
-                            <MenuItem Header="Collada DAE" Command="{x:Static local:GreenScanCommands.Export}" CommandParameter="DAE"/>
-                            <MenuItem Header="Alias OBJ" Command="{x:Static local:GreenScanCommands.Export}" CommandParameter="OBJ"/>
-                            <MenuItem Header="Vector4 FL4" Command="{x:Static local:GreenScanCommands.Export}" CommandParameter="FL4"/>
+                            <MenuItem Header="{x:Static p:Resources.MenuExportAsStl}" Command="{x:Static local:GreenScanCommands.Export}" CommandParameter="STL"/>
+                            <MenuItem Header="{x:Static p:Resources.MenuExportAsFbx}" Command="{x:Static local:GreenScanCommands.Export}" CommandParameter="FBX"/>
+                            <MenuItem Header="{x:Static p:Resources.MenuExportAsDxf}" Command="{x:Static local:GreenScanCommands.Export}" CommandParameter="DXF"/>
+                            <MenuItem Header="{x:Static p:Resources.MenuExportAsDae}" Command="{x:Static local:GreenScanCommands.Export}" CommandParameter="DAE"/>
+                            <MenuItem Header="{x:Static p:Resources.MenuExportAsObj}" Command="{x:Static local:GreenScanCommands.Export}" CommandParameter="OBJ"/>
+                            <MenuItem Header="{x:Static p:Resources.MenuExportAsFl4}" Command="{x:Static local:GreenScanCommands.Export}" CommandParameter="FL4"/>
                         </MenuItem>
-                        <MenuItem Header="Browse save directory..." Command="{x:Static local:GreenScanCommands.Browse}"/>
+                        <MenuItem Header="{x:Static p:Resources.MenuFileBrowseSaveDirectory}" Command="{x:Static local:GreenScanCommands.Browse}"/>
                         <Separator/>
-                        <MenuItem Header="Exit" Command="{x:Static local:GreenScanCommands.Close}"/>
+                        <MenuItem Header="{x:Static p:Resources.MenuFileExit}" Command="{x:Static local:GreenScanCommands.Close}"/>
                     </MenuItem>
-                    <MenuItem Header="Device">
-                        <MenuItem x:Name="MIStart" Header="Start" ItemsSource="{Binding Converter={StaticResource KinectManagerToDeviceListConverter}}"/>
-                        <MenuItem Header="Stop" Command="{x:Static local:GreenScanCommands.Stop}"/>
+                    <MenuItem Header="{x:Static p:Resources.MenuDevice}">
+                        <MenuItem x:Name="MIStart" Header="{x:Static p:Resources.MenuDeviceStart}" ItemsSource="{Binding Converter={StaticResource KinectManagerToDeviceListConverter}}"/>
+                        <MenuItem Header="{x:Static p:Resources.MenuDeviceStop}" Command="{x:Static local:GreenScanCommands.Stop}"/>
                         <Separator/>
-                        <s:EnumMenu x:Name="MIMode" Header="Mode" IsEnabled="{Binding SavingInProgress, Converter={StaticResource BooleanInverter}, ElementName=MW}" />
+                        <s:EnumMenu x:Name="MIMode" Header="{x:Static p:Resources.MenuDeviceMode}" IsEnabled="{Binding SavingInProgress, Converter={StaticResource BooleanInverter}, ElementName=MW}" />
                         <Separator/>
-                        <MenuItem Header="Calibrate..." Command="{x:Static local:GreenScanCommands.Calibrate}"/>                        
+                        <MenuItem Header="{x:Static p:Resources.MenuDeviceCalibrate}" Command="{x:Static local:GreenScanCommands.Calibrate}"/>                        
                     </MenuItem>
-                    <MenuItem x:Name="MITurntable" Header="Turntable" Visibility="{Binding IsConnected, Converter={StaticResource BooleanToVisibilityConverter}}">
-                        <MenuItem Header="Scan" Command="{x:Static local:TurntableCommands.Scan}"/>
-                        <MenuItem Header="Return to origin" Command="{x:Static local:TurntableCommands.ToOrigin}"/>
-                        <MenuItem Header="Stop" Command="{x:Static local:TurntableCommands.Stop}"/>
+                    <MenuItem x:Name="MITurntable" Header="{x:Static p:Resources.MenuTurntable}" Visibility="{Binding IsConnected, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <MenuItem Header="{x:Static p:Resources.MenuTurntableScan}" Command="{x:Static local:TurntableCommands.Scan}"/>
+                        <MenuItem Header="{x:Static p:Resources.MenuTurntableReturnToOrigin}" Command="{x:Static local:TurntableCommands.ToOrigin}"/>
+                        <MenuItem Header="{x:Static p:Resources.MenuTurntableStop}" Command="{x:Static local:TurntableCommands.Stop}"/>
                         <Separator/>
-                        <MenuItem Header="Open model..." Command="{x:Static local:TurntableCommands.Open}"/>
-                        <MenuItem Header="Save model" Command="{x:Static local:TurntableCommands.Save}"/>
-                        <MenuItem x:Name="MITurntableExport" Header="Export as">
-                            <MenuItem Header="Binary STL" Command="{x:Static local:TurntableCommands.Export}" CommandParameter="STL"/>
-                            <MenuItem Header="Autodesk FBX" Command="{x:Static local:TurntableCommands.Export}" CommandParameter="FBX"/>
-                            <MenuItem Header="AutoCAD DXF" Command="{x:Static local:TurntableCommands.Export}" CommandParameter="DXF"/>
-                            <MenuItem Header="Collada DAE" Command="{x:Static local:TurntableCommands.Export}" CommandParameter="DAE"/>
-                            <MenuItem Header="Alias OBJ" Command="{x:Static local:TurntableCommands.Export}" CommandParameter="OBJ"/>
-                            <MenuItem Header="Vector4 FL4" Command="{x:Static local:TurntableCommands.Export}" CommandParameter="FL4"/>
+                        <MenuItem Header="{x:Static p:Resources.MenuOpenModel}" Command="{x:Static local:TurntableCommands.Open}"/>
+                        <MenuItem Header="{x:Static p:Resources.MenuSaveModel}" Command="{x:Static local:TurntableCommands.Save}"/>
+                        <MenuItem x:Name="MITurntableExport" Header="{x:Static p:Resources.MenuExportAs}">
+                            <MenuItem Header="{x:Static p:Resources.MenuExportAsStl}" Command="{x:Static local:TurntableCommands.Export}" CommandParameter="STL"/>
+                            <MenuItem Header="{x:Static p:Resources.MenuExportAsFbx}" Command="{x:Static local:TurntableCommands.Export}" CommandParameter="FBX"/>
+                            <MenuItem Header="{x:Static p:Resources.MenuExportAsDxf}" Command="{x:Static local:TurntableCommands.Export}" CommandParameter="DXF"/>
+                            <MenuItem Header="{x:Static p:Resources.MenuExportAsDae}" Command="{x:Static local:TurntableCommands.Export}" CommandParameter="DAE"/>
+                            <MenuItem Header="{x:Static p:Resources.MenuExportAsObj}" Command="{x:Static local:TurntableCommands.Export}" CommandParameter="OBJ"/>
+                            <MenuItem Header="{x:Static p:Resources.MenuExportAsFl4}" Command="{x:Static local:TurntableCommands.Export}" CommandParameter="FL4"/>
                         </MenuItem>
                         <Separator/>
-                        <MenuItem Header="Calibrate..." Command="{x:Static local:TurntableCommands.Calibrate}"/>
-                        <MenuItem Header="Count steps..." Command="{x:Static local:TurntableCommands.CountSteps}"/>
+                        <MenuItem Header="{x:Static p:Resources.MenuTurntableCalibrate}" Command="{x:Static local:TurntableCommands.Calibrate}"/>
+                        <MenuItem Header="{x:Static p:Resources.MenuTurntableCountSteps}" Command="{x:Static local:TurntableCommands.CountSteps}"/>
                     </MenuItem>
-                    <MenuItem Header="About" Command="{x:Static local:GreenScanCommands.About}"/>
+                    <MenuItem Header="{x:Static p:Resources.MenuAbout}" Command="{x:Static local:GreenScanCommands.About}"/>
                 </Menu>
                 <g:GraphicsCanvas x:Name="GraphicsCore" Grid.Row="1" />
                 <StatusBar Grid.Row="2">
-                    <StatusBarItem x:Name="SBIStatusText" Content="Ready."/>
+                    <StatusBarItem x:Name="SBIStatusText" Content="{x:Static p:Resources.StatusReady}"/>
                 </StatusBar>
             </Grid>
             <Grid Grid.Column="2">

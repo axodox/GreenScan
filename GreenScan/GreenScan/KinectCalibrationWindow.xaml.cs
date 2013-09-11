@@ -3,6 +3,7 @@ using Green.Settings;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using GreenResources = GreenScan.Properties.Resources;
 
 namespace GreenScan
 {
@@ -34,7 +35,7 @@ namespace GreenScan
         {
             using (System.Windows.Forms.FolderBrowserDialog FBD = new System.Windows.Forms.FolderBrowserDialog())
             {
-                FBD.Description = "Select calibration directory";
+                FBD.Description = GreenResources.KinectCalibrationSelectDirectory;
                 FBD.SelectedPath = TBPath.Text;
                 if (FBD.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                 {
@@ -76,7 +77,7 @@ namespace GreenScan
 
         private void PrepareStep()
         {
-            TBProgress.Text = SceneNumber.ToString() + " image(s) captured.";
+            TBProgress.Text = string.Format(GreenResources.KinectCalibrationStatus, SceneNumber);
             
             for (int i = 0; i < CheckBoxes.Length; i++)
             {

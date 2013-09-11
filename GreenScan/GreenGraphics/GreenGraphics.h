@@ -48,7 +48,7 @@ namespace Green
 			KinectDevice::Modes KinectMode;
 			Quad *QMain;
 			Plane *PMain;
-			SamplerState *SLinearWrap, *SLinearClamp;
+			SamplerState *SLinearWrap, *SLinearClamp, *SPointClamp;
 			VertexShader *VSSimple, *VSCommon, *VSReprojection;
 			GeometryShader *GSReprojection;
 			PixelShader *PSSimple, *PSInfrared, *PSDepth, *PSColor, *PSSine, *PSPeriodicScale, *PSPeriodicShadedScale, *PSScale, *PSShadedScale, *PSBlinn, *PSTextured;
@@ -152,6 +152,7 @@ namespace Green
 
 				SLinearWrap = new SamplerState(Device, D3D11_FILTER_MIN_MAG_MIP_LINEAR, D3D11_TEXTURE_ADDRESS_WRAP);
 				SLinearClamp = new SamplerState(Device, D3D11_FILTER_MIN_MAG_MIP_LINEAR, D3D11_TEXTURE_ADDRESS_CLAMP);
+				SPointClamp = new SamplerState(Device, D3D11_FILTER_MIN_MAG_MIP_POINT, D3D11_TEXTURE_ADDRESS_CLAMP);
 
 				ZeroMemory(&Params, sizeof(RenderingParameters));				
 				CBDepthAndColor = new ConstantBuffer<DepthAndColorConstants>(Device);
@@ -215,6 +216,7 @@ namespace Green
 				delete PSDistortionCorrection;
 				delete SLinearWrap;
 				delete SLinearClamp;
+				delete SPointClamp;
 				delete CBDepthAndColor;
 				delete CBCommon;
 				delete THueMap;
@@ -327,7 +329,7 @@ namespace Green
 						TGauss->Load<float>(Params.GaussCoeffs);
 						PreprocessingChanged = false;
 					}
-					SLinearWrap->SetForPS();
+					SPointClamp->SetForPS();
 					TGauss->SetForPS(1);
 					for(int i = 0; i < Params.DepthGaussIterations; i++)
 					{
@@ -344,6 +346,7 @@ namespace Green
 						QMain->Draw();
 					}
 					RTPDepth->Swap();
+					SLinearWrap->SetForPS();
 
 					//Process with modules
 					for(int i = 0; i < MaxModuleCount; i++)

@@ -13,7 +13,7 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
-
+using GreenResources = GreenScan.Properties.Resources;
 namespace Green.Scan
 {
     /// <summary>
@@ -29,7 +29,7 @@ namespace Green.Scan
         public MainWindow()
         {
             InitializeComponent();
-            ShowStatus("Loading...", true);
+            ShowStatus(GreenResources.StatusLoading, true);
 
             BackgroundWorker SecurityWorker = new BackgroundWorker();
             SecurityWorker.DoWork += SecurityWorker_DoWork;
@@ -48,7 +48,7 @@ namespace Green.Scan
         {
             if ((bool)e.Result == true)
             {
-                ShowStatus("Ready.");
+                ShowStatus(GreenResources.StatusReady);
                 Remote.IsEnabled = true;
                 IsEnabled = true;
             }
@@ -114,7 +114,7 @@ namespace Green.Scan
 
         void SetKinectToDepthAndColorMode(Action completedCallback)
         {
-            ShowStatus("Preparing Kinect...", true);
+            ShowStatus(GreenResources.StatusPreparingKinect, true);
             BackgroundWorker StartUpWorker = new BackgroundWorker();
             if (DeviceManager.Mode != KinectManager.Modes.DepthAndColor)
                 Settings.KinectMode.Value = KinectManager.Modes.DepthAndColor;
@@ -138,11 +138,11 @@ namespace Green.Scan
             (sender as BackgroundWorker).Dispose();
             if (DeviceManager.Processing && DeviceManager.Mode == KinectManager.Modes.DepthAndColor)
             {
-                ShowStatus("Ready.");
+                ShowStatus(GreenResources.StatusReady);
                 (e.Result as Action)();
             }
             else
-                ShowStatus("Cannot connect to Kinect.");
+                ShowStatus(GreenResources.StatusCannotConnectToKinect);
         }
 
         #region Settings
@@ -184,9 +184,9 @@ namespace Green.Scan
             Remote.RemoteConnected += (object sender, RemoteEventArgs e) =>
             {
                 if (Remote.RemoteCount == 1)
-                    TBRemoting.Text = "Remoted from " + e.RemoteEndPoint.ToString();
+                    TBRemoting.Text = string.Format(GreenResources.RemotingRemotedFrom, e.RemoteEndPoint.ToString());
                 else
-                    TBRemoting.Text = Remote.RemoteCount+ " remote(s) connected.";
+                    TBRemoting.Text = string.Format(GreenResources.RemotingRemotesConnected, Remote.RemoteCount);
                 if (Remote.RemoteCount == 1)
                 {
                     Settings.IsReadOnly = true;
@@ -195,7 +195,7 @@ namespace Green.Scan
             };
             Remote.RemoteDisconnected += (object sender, RemoteEventArgs e) =>
             {
-                TBRemoting.Text = Remote.RemoteCount + " remote(s) connected.";
+                TBRemoting.Text = string.Format(GreenResources.RemotingRemotesConnected, Remote.RemoteCount);
                 if (Remote.RemoteCount == 0)
                 {
                     Settings.IsReadOnly = false;
@@ -414,11 +414,11 @@ namespace Green.Scan
         private void SaveDialog(bool ok)
         {
             if (ok)
-                ShowStatus("Save complete.");
+                ShowStatus(GreenResources.StatusSaveComplete);
             else
             {
-                ShowStatus("Ready.");
-                MessageBox.Show("Saving was unsuccessful.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                ShowStatus(GreenResources.StatusReady);
+                MessageBox.Show(GreenResources.SaveUnsuccesful, GreenResources.TitleError, MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -445,7 +445,7 @@ namespace Green.Scan
             SaveWorker.DoWork += SaveWorker_DoWork;
             SaveWorker.RunWorkerCompleted += SaveWorker_RunWorkerCompleted;
             SaveWorker.RunWorkerAsync(new SaveTask(modelSaver, GenerateFilename(), format));
-            ShowStatus("Saving in progress...", true, double.NaN);
+            ShowStatus(GreenResources.StatusSaveInProgress, true, double.NaN);
         }
 
         void SaveWorker_DoWork(object sender, DoWorkEventArgs e)
@@ -467,9 +467,9 @@ namespace Green.Scan
             if (path == null)
             {
                 OpenFileDialog OFD = new OpenFileDialog();
-                OFD.Filter = "GreenScan RAW files (*.gsr)|*.gsr";
+                OFD.Filter = GreenResources.OpenRawFileFilter + " (*.gsr)|*.gsr";
                 OFD.InitialDirectory = Settings.SaveDirectory.AbsolutePath;
-                OFD.Title = "Open file";
+                OFD.Title = GreenResources.OpenFileTitle;
                 if (OFD.ShowDialog(this) == true)
                 {
                     path = OFD.FileName;                    
@@ -486,9 +486,9 @@ namespace Green.Scan
         private void OpenDialog(bool ok)
         {
             if (ok)
-                ShowStatus("File loaded successfully.");
+                ShowStatus(GreenResources.StatusFileLoadedSuccesfully);
             else
-                MessageBox.Show("Opening was unsuccessful.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(GreenResources.OpenUnsuccesful, GreenResources.TitleError, MessageBoxButton.OK, MessageBoxImage.Error);
         }
 
         #endregion
@@ -596,7 +596,7 @@ namespace Green.Scan
 
         public void StartKinect(int index)
         {
-            ShowStatus("Starting...", true);
+            ShowStatus(GreenResources.StatusStarting, true);
             BackgroundWorker StartWorker = new BackgroundWorker();
             StartWorker.DoWork += StartWorker_DoWork;
             StartWorker.RunWorkerCompleted += StartWorker_RunWorkerCompleted;
@@ -607,9 +607,9 @@ namespace Green.Scan
         {
             (sender as BackgroundWorker).Dispose();
             if((bool)e.Result)
-                ShowStatus("Ready.");
+                ShowStatus(GreenResources.StatusReady);
             else
-                ShowStatus("The device can not be opened. May be on low power, brandwith or may be already in use.");
+                ShowStatus(GreenResources.StatusDeviceCannotBeOpened);
         }
 
         void StartWorker_DoWork(object sender, DoWorkEventArgs e)
@@ -687,7 +687,7 @@ namespace Green.Scan
 
         void StopCmdExecuted(object target, ExecutedRoutedEventArgs e)
         {
-            ShowStatus("Stopping...", true);
+            ShowStatus(GreenResources.StatusStopping, true);
             BackgroundWorker StopWorker = new BackgroundWorker();
             StopWorker.DoWork += StopWorker_DoWork;
             StopWorker.RunWorkerCompleted += StopWorker_RunWorkerCompleted;
@@ -697,7 +697,7 @@ namespace Green.Scan
         void StopWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             (sender as BackgroundWorker).Dispose();
-            ShowStatus("Ready.");
+            ShowStatus(GreenResources.StatusReady);
         }
 
         void StopWorker_DoWork(object sender, DoWorkEventArgs e)
@@ -792,9 +792,9 @@ namespace Green.Scan
             if (path == null)
             {
                 OpenFileDialog OFD = new OpenFileDialog();
-                OFD.Filter = "GreenScan Turntable RAW files (*.gtr)|*.gtr";
+                OFD.Filter = GreenResources.OpenTurntableRawFileFilter + " (*.gtr)|*.gtr";
                 OFD.InitialDirectory = Settings.SaveDirectory.AbsolutePath;
-                OFD.Title = "Open file";
+                OFD.Title = GreenResources.OpenFileTitle;
                 if (OFD.ShowDialog(this) == true)
                 {
                     path = OFD.FileName;

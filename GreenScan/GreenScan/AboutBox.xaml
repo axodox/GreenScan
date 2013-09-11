@@ -1,7 +1,8 @@
 ﻿<Window x:Class="Green.Branding.AboutBox"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="About" Height="400" Width="320" WindowStyle="SingleBorderWindow" ResizeMode="NoResize" ShowInTaskbar="False">
+        xmlns:p="clr-namespace:GreenScan.Properties"
+        Title="{x:Static p:Resources.AboutTitle}" Height="400" Width="320" WindowStyle="SingleBorderWindow" ResizeMode="NoResize" ShowInTaskbar="False">
     <Window.Resources>
         <Storyboard x:Key="Swap" Completed="Storyboard_Completed">
             <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleX)" Storyboard.TargetName="RFront">
@@ -56,12 +57,10 @@
             <Run Foreground="#FF7F7F7F">axodox</Run>
             <Run FontWeight="Bold">progressive™</Run>
         </TextBlock>
-        <TextBlock Grid.Row="2" FontSize="16" HorizontalAlignment="Center" Margin="6">
-            <Run>created by</Run>
-            <Run>Péter Major</Run>
-        </TextBlock>
+        <TextBlock Grid.Row="2" FontSize="16" HorizontalAlignment="Center" Margin="6" Text="{x:Static p:Resources.AboutCreatedBy}"/>
         <TextBlock Grid.Row="3" FontSize="10" HorizontalAlignment="Center">
-            2013 © All rights reserved.
+            <Run>2013 ©</Run>
+            <Run Text="{x:Static p:Resources.AboutCopyright}"/>
         </TextBlock>
     </Grid>
 </Window>

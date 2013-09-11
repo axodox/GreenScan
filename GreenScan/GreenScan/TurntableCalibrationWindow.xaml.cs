@@ -1,22 +1,17 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 using Green.Graphics;
 using Green.Scan;
 using Green.MathExtensions;
 using Green.Helper;
 using Green.Kinect;
 using Line = Green.MathExtensions.Line;
+using GreenResources = GreenScan.Properties.Resources;
 
 namespace GreenScan
 {
@@ -30,11 +25,11 @@ namespace GreenScan
         TurntableCalibrator Calibrator;
         private string[] StepDescriptions =
         {
-            "Remove any objects from the turntable, then click next.",
-            "Select the turntable on the image with the mouse: move the cursor to the upper-left corner of the imaginary boundary rectangle of the turntable, then hold down the left button, and move the mouse to the bottom-right corner and release the button. You may repeat this procedure to select the turntable correctly. Click next to continue.",
-            "Place the calibration etalon to the turntable: the etalon should face toward the scanner's mirror and it should snap in the holes on the turntable. Click next to continue.",
-            "Select the etalon on the image with the mouse (like in step 2). Click next to preview the calibration results.",
-            "Check if the the turntable's position has been selected correctly. Close the window to finish the calibration procedure."
+            GreenResources.TurntableCalibrationStep1,
+            GreenResources.TurntableCalibrationStep2,
+            GreenResources.TurntableCalibrationStep3,
+            GreenResources.TurntableCalibrationStep4,
+            GreenResources.TurntableCalibrationStep5
         };
 
         public TurntableCalibrationWindow(GraphicsCanvas canvas, ScanSettings settings)

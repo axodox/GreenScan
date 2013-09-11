@@ -118,103 +118,103 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="AboutCopyright" xml:space="preserve">
-    <value>All rights reserved.</value>
+    <value>Minden jog fenntartva.</value>
   </data>
   <data name="AboutCreatedBy" xml:space="preserve">
-    <value>created by Péter Major</value>
+    <value>készítette Major Péter</value>
   </data>
   <data name="AboutTitle" xml:space="preserve">
-    <value>About</value>
+    <value>Névjegy</value>
   </data>
   <data name="CommonBrowse" xml:space="preserve">
-    <value>Browse</value>
+    <value>Tallózás</value>
   </data>
   <data name="CommonFinish" xml:space="preserve">
-    <value>Finish</value>
+    <value>Befejezés</value>
   </data>
   <data name="CommonInformation" xml:space="preserve">
-    <value>Information</value>
+    <value>Információ</value>
   </data>
   <data name="CommonNext" xml:space="preserve">
-    <value>Next</value>
+    <value>Következő</value>
   </data>
   <data name="CommonPrevious" xml:space="preserve">
-    <value>Previous</value>
+    <value>Előző</value>
   </data>
   <data name="CommonProgress" xml:space="preserve">
-    <value>Progress</value>
+    <value>Állapot</value>
   </data>
   <data name="CommonResults" xml:space="preserve">
-    <value>Results</value>
+    <value>Eredmények</value>
   </data>
   <data name="CommonStart" xml:space="preserve">
-    <value>Start</value>
+    <value>Kezdés</value>
   </data>
   <data name="EnumGraphicsCanvasShadingModes" xml:space="preserve">
-    <value>Zebra|Rainbow|Shaded rainbow|Scale|Shaded scale|Blinn|Textured</value>
+    <value>Zebra|Szivárványszín|Árnyalt szivárványszín|Skála|Árnyalt skála|Blinn|Textúrázott</value>
   </data>
   <data name="EnumKinectManagerModes" xml:space="preserve">
-    <value>Depth|Color|Depth with color|Infrared</value>
+    <value>Mélység|Színes|Mélység + színes|Infravörös</value>
   </data>
   <data name="EnumRotatingScannerModes" xml:space="preserve">
-    <value>One-axis|Two-axis|Volumetric</value>
+    <value>Egytengelyű|Kéttengelyű|Volumetrikus</value>
   </data>
   <data name="EnumRotatingScannerViews" xml:space="preserve">
-    <value>Overlay|Depth - left leg|Depth - right leg|Texture - left leg|Texture - right leg|Model</value>
+    <value>Ellenőrző|Mélység - bal láb|Mélység - jobb láb|Textúra - bal láb|Textúra - jobb láb|Modell</value>
   </data>
   <data name="EnumRotatingScannerVolumetricViews" xml:space="preserve">
-    <value>Overlay|Projection|Slice|Model</value>
+    <value>Ellenőrző|Vetítési|Metszet|Modell</value>
   </data>
   <data name="KinectCalibrationClear" xml:space="preserve">
-    <value>Clear</value>
+    <value>Törlés</value>
   </data>
   <data name="KinectCalibrationColor" xml:space="preserve">
-    <value>Color</value>
+    <value>Színes</value>
   </data>
   <data name="KinectCalibrationControls" xml:space="preserve">
-    <value>Controls</value>
+    <value>Vezérlés</value>
   </data>
   <data name="KinectCalibrationDepth" xml:space="preserve">
-    <value>Depth</value>
+    <value>Mélységi</value>
   </data>
   <data name="KinectCalibrationInfrared" xml:space="preserve">
-    <value>Infrared</value>
+    <value>Infravörös</value>
   </data>
   <data name="KinectCalibrationPath" xml:space="preserve">
-    <value>Path</value>
+    <value>Mentés helye</value>
   </data>
   <data name="KinectCalibrationSelectDirectory" xml:space="preserve">
-    <value>Select calibration directory</value>
+    <value>Válassza ki a kalibráció célkönyvtárát!</value>
   </data>
   <data name="KinectCalibrationStatus" xml:space="preserve">
-    <value>{0} positions captured.</value>
+    <value>{0} helyzet rögzítve.</value>
   </data>
   <data name="KinectCalibrationTitle" xml:space="preserve">
-    <value>Kinect Calibration</value>
+    <value>A Kinect kalibrációja</value>
   </data>
   <data name="MenuAbout" xml:space="preserve">
-    <value>About</value>
+    <value>Névjegy</value>
   </data>
   <data name="MenuDevice" xml:space="preserve">
-    <value>Device</value>
+    <value>Eszköz</value>
   </data>
   <data name="MenuDeviceCalibrate" xml:space="preserve">
-    <value>Calibrate...</value>
+    <value>Kalibráció...</value>
   </data>
   <data name="MenuDeviceDevice" xml:space="preserve">
-    <value>Device</value>
+    <value>Eszköz</value>
   </data>
   <data name="MenuDeviceMode" xml:space="preserve">
-    <value>Mode</value>
+    <value>Működési mód</value>
   </data>
   <data name="MenuDeviceStart" xml:space="preserve">
-    <value>Start</value>
+    <value>Indítás</value>
   </data>
   <data name="MenuDeviceStop" xml:space="preserve">
-    <value>Stop</value>
+    <value>Leállítás</value>
   </data>
   <data name="MenuExportAs" xml:space="preserve">
-    <value>Export as</value>
+    <value>Exportálás mint</value>
   </data>
   <data name="MenuExportAsDae" xml:space="preserve">
     <value>Collada DAE</value>
@@ -226,360 +226,360 @@
     <value>Autodesk FBX</value>
   </data>
   <data name="MenuExportAsFl4" xml:space="preserve">
-    <value>Vector4 FL4</value>
+    <value>Vektor4 FL4</value>
   </data>
   <data name="MenuExportAsObj" xml:space="preserve">
     <value>Alias OBJ</value>
   </data>
   <data name="MenuExportAsPng" xml:space="preserve">
-    <value>Image PNG</value>
+    <value>Kép PNG</value>
   </data>
   <data name="MenuExportAsPngAsOriginal" xml:space="preserve">
-    <value>As original</value>
+    <value>Mint az eredeti</value>
   </data>
   <data name="MenuExportAsPngAsScreenshot" xml:space="preserve">
-    <value>As screenshot</value>
+    <value>Mint képernyőkép</value>
   </data>
   <data name="MenuExportAsStl" xml:space="preserve">
-    <value>Binary STL</value>
+    <value>Bináris STL</value>
   </data>
   <data name="MenuFile" xml:space="preserve">
-    <value>File</value>
+    <value>Fájl</value>
   </data>
   <data name="MenuFileBrowseSaveDirectory" xml:space="preserve">
-    <value>Browse save directory</value>
+    <value>Mentési könyvtár megnyitása...</value>
   </data>
   <data name="MenuFileExit" xml:space="preserve">
-    <value>Exit</value>
+    <value>Kilépés</value>
   </data>
   <data name="MenuOpenModel" xml:space="preserve">
-    <value>Open model...</value>
+    <value>Modell megnyitása...</value>
   </data>
   <data name="MenuSaveModel" xml:space="preserve">
-    <value>Save model</value>
+    <value>Modell mentése</value>
   </data>
   <data name="MenuTurntable" xml:space="preserve">
-    <value>Turntable</value>
+    <value>Forgópad</value>
   </data>
   <data name="MenuTurntableCalibrate" xml:space="preserve">
-    <value>Calibrate...</value>
+    <value>Kalibráció...</value>
   </data>
   <data name="MenuTurntableCountSteps" xml:space="preserve">
-    <value>Count steps...</value>
+    <value>Lépés számlálás...</value>
   </data>
   <data name="MenuTurntableReturnToOrigin" xml:space="preserve">
-    <value>Return to origin</value>
+    <value>Visszatérés alaphelyzetbe</value>
   </data>
   <data name="MenuTurntableScan" xml:space="preserve">
-    <value>Scan</value>
+    <value>Szkennelés</value>
   </data>
   <data name="MenuTurntableStop" xml:space="preserve">
-    <value>Stop</value>
+    <value>Leállítás</value>
   </data>
   <data name="OpenFileTitle" xml:space="preserve">
-    <value>Open file</value>
+    <value>Fájl megnyitása</value>
   </data>
   <data name="OpenRawFileFilter" xml:space="preserve">
-    <value>GreenScan raw files</value>
+    <value>GreenScan nyers fájlok</value>
   </data>
   <data name="OpenTurntableRawFileFilter" xml:space="preserve">
-    <value>GreenScan Turntable raw files</value>
+    <value>GreenScan forgópad nyers fájlok</value>
   </data>
   <data name="OpenUnsuccesful" xml:space="preserve">
-    <value>Opening was unsuccessful.</value>
+    <value>Fájl megnyitása sikertelen.</value>
   </data>
   <data name="RemotingRemotedFrom" xml:space="preserve">
-    <value>Romoted from {0}.</value>
+    <value>Távirányítva innen: {0}.</value>
   </data>
   <data name="RemotingRemotesConnected" xml:space="preserve">
-    <value>{0} remote(s) connected.</value>
+    <value>{0} távirányító kapcsolódik.</value>
   </data>
   <data name="SaveUnsuccesful" xml:space="preserve">
-    <value>Saving was unsuccessful!</value>
+    <value>Mentés sikertelen!</value>
   </data>
   <data name="SettingColorDispositionX" xml:space="preserve">
-    <value>Color X disposition (pixels)</value>
+    <value>Színes kép eltolása X irányban (pixelben)</value>
   </data>
   <data name="SettingColorDispositionY" xml:space="preserve">
-    <value>Color Y disposition (pixels)</value>
+    <value>Színes kép eltolása Y irányban (pixelben)</value>
   </data>
   <data name="SettingColorExtrinsics" xml:space="preserve">
-    <value>Color extrinsics</value>
+    <value>Színes extrinzik mátrix</value>
   </data>
   <data name="SettingColorIntrinsics" xml:space="preserve">
-    <value>Color intrinsic matrix</value>
+    <value>Színes intrinzik mátrix</value>
   </data>
   <data name="SettingColorRemapping" xml:space="preserve">
-    <value>Color remapping</value>
+    <value>Színes leképezés</value>
   </data>
   <data name="SettingColorScaleX" xml:space="preserve">
-    <value>Color X scale (units)</value>
+    <value>Színes kép nagyítása X irányban (egységben)</value>
   </data>
   <data name="SettingColorScaleY" xml:space="preserve">
-    <value>Color Y scale (units)</value>
+    <value>Színes kép nagyítása Y irányban (egységben)</value>
   </data>
   <data name="SettingDepthAveraging" xml:space="preserve">
-    <value>Depth averaging buffer size (slots)</value>
+    <value>Mélység átlagolási puffer mérete (rekeszek)</value>
   </data>
   <data name="SettingDepthCoeffs" xml:space="preserve">
-    <value>Depth coefficients (units)</value>
+    <value>Mélység együtthatók (egységben)</value>
   </data>
   <data name="SettingDepthGaussIterations" xml:space="preserve">
-    <value>Depth Gauss filtering (iterations)</value>
+    <value>Mélységkép Gauss szűrése (iterációk)</value>
   </data>
   <data name="SettingDepthGaussSigma" xml:space="preserve">
-    <value>Depth Gauss filtering sigma (units)</value>
+    <value>Mélységkép Gauss szűrése - szigma (egységben)</value>
   </data>
   <data name="SettingDepthMaximum" xml:space="preserve">
-    <value>Depth maximum (meters)</value>
+    <value>Maximális mélység (méterben)</value>
   </data>
   <data name="SettingDepthMinimum" xml:space="preserve">
-    <value>Depth minimum (meters)</value>
+    <value>Minimális mélység (méterben)</value>
   </data>
   <data name="SettingDepthToIRMapping" xml:space="preserve">
-    <value>Depth to IR mapping</value>
+    <value>Mélységből -&gt; Infravörös leképezés</value>
   </data>
   <data name="SettingGroupCamera" xml:space="preserve">
-    <value>Camera</value>
+    <value>Kamerák</value>
   </data>
   <data name="SettingGroupKinect" xml:space="preserve">
     <value>Kinect</value>
   </data>
   <data name="SettingGroupKinectFooter" xml:space="preserve">
-    <value>*Applies to Kinect for Windows only</value>
+    <value>*Csak a Kinect for Windows eszközökre vonatkozik</value>
   </data>
   <data name="SettingGroupPerformance" xml:space="preserve">
-    <value>Performance</value>
+    <value>Teljesítmény</value>
   </data>
   <data name="SettingGroupPreprocessing" xml:space="preserve">
-    <value>Preprocessing</value>
+    <value>Előfeldolgozás</value>
   </data>
   <data name="SettingGroupSave" xml:space="preserve">
-    <value>Saving</value>
+    <value>Mentés</value>
   </data>
   <data name="SettingGroupShading" xml:space="preserve">
-    <value>Shading</value>
+    <value>Árnyalás</value>
   </data>
   <data name="SettingGroupTurntable" xml:space="preserve">
-    <value>Turntable</value>
+    <value>Forgópad</value>
   </data>
   <data name="SettingGroupView" xml:space="preserve">
-    <value>View</value>
+    <value>Nézet</value>
   </data>
   <data name="SettingInfraredDistortion" xml:space="preserve">
-    <value>Infrared distortion coefficients {K1, K2; P1, P2}</value>
+    <value>Infravörös torzítási együtthatók {K1, K2; P1, P2}</value>
   </data>
   <data name="SettingInfraredDistortionCorrectionEnabled" xml:space="preserve">
-    <value>Infrared distortion correction enabled</value>
+    <value>Infravörös torzítás korrekció bekapcsolva</value>
   </data>
   <data name="SettingInfraredIntrinsics" xml:space="preserve">
-    <value>Infrared intrinsic matrix</value>
+    <value>Infravörös intrinzik mátrix</value>
   </data>
   <data name="SettingKinectEmitterEnabled" xml:space="preserve">
-    <value>Emitter enabled*</value>
+    <value>Infravörös projektor engedélyezve*</value>
   </data>
   <data name="SettingKinectMode" xml:space="preserve">
-    <value>Mode</value>
+    <value>Működési mód</value>
   </data>
   <data name="SettingKinectNearMode" xml:space="preserve">
-    <value>Near mode*</value>
+    <value>Közel mód engedélyezve*</value>
   </data>
   <data name="SettingMoveX" xml:space="preserve">
-    <value>Move X (units)</value>
+    <value>Eltolás X irányban (egységben)</value>
   </data>
   <data name="SettingMoveY" xml:space="preserve">
-    <value>Move Y (units)</value>
+    <value>Eltolás Y irányban (egységben)</value>
   </data>
   <data name="SettingRotation" xml:space="preserve">
-    <value>Rotation (units)</value>
+    <value>Forgatás (egységben)</value>
   </data>
   <data name="SettingRotationX" xml:space="preserve">
-    <value>Rotation X (degrees)</value>
+    <value>Forgatás X tengely körül (fokban)</value>
   </data>
   <data name="SettingRotationY" xml:space="preserve">
-    <value>Rotation Y (degrees)</value>
+    <value>Forgatás Y tengely körül (fokban)</value>
   </data>
   <data name="SettingRotationZ" xml:space="preserve">
-    <value>Rotation Z (degrees)</value>
+    <value>Forgatás Z tengely körül (fokban)</value>
   </data>
   <data name="SettingSaveCalibrationDirectory" xml:space="preserve">
-    <value>Calibration directory</value>
+    <value>Kalibráció könyvtára</value>
   </data>
   <data name="SettingSaveDirectory" xml:space="preserve">
-    <value>Directory</value>
+    <value>Célkönyvtár</value>
   </data>
   <data name="SettingSaveLabel" xml:space="preserve">
-    <value>Label</value>
+    <value>Címke</value>
   </data>
   <data name="SettingSaveModelResolution" xml:space="preserve">
-    <value>Model resolution (vertices)</value>
+    <value>Modell felbontása (vertexekben)</value>
   </data>
   <data name="SettingSaveNoTimestamp" xml:space="preserve">
-    <value>No timestamp if label specified</value>
+    <value>Nincs időbélyeg, ha a címkét megadták</value>
   </data>
   <data name="SettingSaveScalingPower" xml:space="preserve">
-    <value>Scaling power (10^x)</value>
+    <value>Skálázás (10^x)</value>
   </data>
   <data name="SettingSaveTextureResolution" xml:space="preserve">
-    <value>Texture resolution (pixels)</value>
+    <value>Textúra felbontása (pixelekben)</value>
   </data>
   <data name="SettingScale" xml:space="preserve">
-    <value>Scale (units)</value>
+    <value>Nagyítás (egységben)</value>
   </data>
   <data name="SettingShadingMode" xml:space="preserve">
-    <value>Mode</value>
+    <value>Árnyalási mód</value>
   </data>
   <data name="SettingShadingPeriode" xml:space="preserve">
-    <value>Shading periode (meters)</value>
+    <value>Árnyalási periódus (egységben)</value>
   </data>
   <data name="SettingShadingPhase" xml:space="preserve">
-    <value>Shading phase (units)</value>
+    <value>Árnyalási fázis (egységben)</value>
   </data>
   <data name="SettingTranslationX" xml:space="preserve">
-    <value>Translation X (meters)</value>
+    <value>Eltolás X irányban (méterben)</value>
   </data>
   <data name="SettingTranslationY" xml:space="preserve">
-    <value>Translation Y (meters)</value>
+    <value>Eltolás Y irányban (méterben)</value>
   </data>
   <data name="SettingTranslationZ" xml:space="preserve">
-    <value>Translation Z (meters)</value>
+    <value>Eltolás Z irányban (méterben)</value>
   </data>
   <data name="SettingTriangleGridResolution" xml:space="preserve">
-    <value>Triangle grid resolution</value>
+    <value>Háromszögháló felbontása</value>
   </data>
   <data name="SettingTriangleRemoveLimit" xml:space="preserve">
-    <value>Triangle remove limit (units)</value>
+    <value>Háromszög eldobási határ (egységben)</value>
   </data>
   <data name="SettingTurntableAxialView" xml:space="preserve">
-    <value>View</value>
+    <value>Nézet</value>
   </data>
   <data name="SettingTurntableClippingHeight" xml:space="preserve">
-    <value>Clipping height (meters)</value>
+    <value>Vágási magasság (méterben)</value>
   </data>
   <data name="SettingTurntableClippingRadius" xml:space="preserve">
-    <value>Clipping radius (meters)</value>
+    <value>Vágási sugár (méterben)</value>
   </data>
   <data name="SettingTurntableCoreX" xml:space="preserve">
-    <value>Leg distance (meters)</value>
+    <value>Lábak távolsága (méterben)</value>
   </data>
   <data name="SettingTurntableCoreY" xml:space="preserve">
-    <value>Leg position (meters)</value>
+    <value>Lábak pozíciója (méterben)</value>
   </data>
   <data name="SettingTurntableCubeResolution" xml:space="preserve">
-    <value>Cube resolution (voxels)</value>
+    <value>Kocka felbontása (voxelben)</value>
   </data>
   <data name="SettingTurntableCubeSize" xml:space="preserve">
-    <value>Cube size (centimeters)</value>
+    <value>Kocka mérete (centiméterben)</value>
   </data>
   <data name="SettingTurntableMode" xml:space="preserve">
-    <value>Mode</value>
+    <value>Modellalkotási mód</value>
   </data>
   <data name="SettingTurntableModelResolution" xml:space="preserve">
-    <value>Model resolution (vertices/leg)</value>
+    <value>Modell felbontása (vertexek/láb)</value>
   </data>
   <data name="SettingTurntableSlice" xml:space="preserve">
-    <value>Current depth (units)</value>
+    <value>Jelenlegi mélység (egységben)</value>
   </data>
   <data name="SettingTurntableTextureResolution" xml:space="preserve">
-    <value>Texture resolution (pixels/leg)</value>
+    <value>Textúra felbontása (pixelek/láb)</value>
   </data>
   <data name="SettingTurntableThreshold" xml:space="preserve">
-    <value>Threshold (units)</value>
+    <value>Küszöb (egységben)</value>
   </data>
   <data name="SettingTurntableTransform" xml:space="preserve">
-    <value>Turntable matrix</value>
+    <value>Forgópad mátrix</value>
   </data>
   <data name="SettingTurntableVolumetricView" xml:space="preserve">
-    <value>View</value>
+    <value>Nézet</value>
   </data>
   <data name="SettingUseModuleShading" xml:space="preserve">
-    <value>Use module shading (if available)</value>
+    <value>Használjon modul árnyalást (ha elérhető)</value>
   </data>
   <data name="SettingWireframeShading" xml:space="preserve">
-    <value>Wireframe shading</value>
+    <value>Dróthálós árnyalás</value>
   </data>
   <data name="StatusCannotConnectToKinect" xml:space="preserve">
-    <value>Cannot connect to Kinect!</value>
+    <value>Nem sikerült kapcsolódni a Kinecthez!</value>
   </data>
   <data name="StatusDeviceCannotBeOpened" xml:space="preserve">
-    <value>The device can not be opened. May be on low power, brandwith or may be already in use.</value>
+    <value>Az eszközt nem sikerült megnyitni. Ellenőrizze, hogy be van-e dugva a tápegysége, elégséges a sávszélesség és jelenleg nincs-e használatban.</value>
   </data>
   <data name="StatusFileLoadedSuccesfully" xml:space="preserve">
-    <value>File loaded successfully.</value>
+    <value>Fájl sikeresen betöltve.</value>
   </data>
   <data name="StatusLoading" xml:space="preserve">
-    <value>Loading...</value>
+    <value>Betöltés...</value>
   </data>
   <data name="StatusPreparingKinect" xml:space="preserve">
-    <value>Preparing Kinect...</value>
+    <value>Kinect előkészítése...</value>
   </data>
   <data name="StatusReady" xml:space="preserve">
-    <value>Ready.</value>
+    <value>Kész.</value>
   </data>
   <data name="StatusSaveComplete" xml:space="preserve">
-    <value>Save complete.</value>
+    <value>Mentés kész.</value>
   </data>
   <data name="StatusSaveInProgress" xml:space="preserve">
-    <value>Save in progress...</value>
+    <value>Mentés folyamatban...</value>
   </data>
   <data name="StatusStarting" xml:space="preserve">
-    <value>Starting...</value>
+    <value>Kezdés...</value>
   </data>
   <data name="StatusStopping" xml:space="preserve">
-    <value>Stopping...</value>
+    <value>Leállás...</value>
   </data>
   <data name="TitleError" xml:space="preserve">
-    <value>Error</value>
+    <value>Hiba</value>
   </data>
   <data name="TurntableCalibrationStep1" xml:space="preserve">
-    <value>Remove any objects from the turntable, then click next.</value>
+    <value>Távolítson el mindent a forgópadról, majd kattintson a következő gombra!</value>
   </data>
   <data name="TurntableCalibrationStep2" xml:space="preserve">
-    <value>Select the turntable on the image with the mouse: move the cursor to the upper-left corner of the imaginary boundary rectangle of the turntable, then hold down the left button, and move the mouse to the bottom-right corner and release the button. You may repeat this procedure to select the turntable correctly. Click next to continue.</value>
+    <value>Jelölje ki a forgópadot a képen az egérrel! Az egér bal gombját nyomja le a forgópad képzeletbeli burkoló téglalapjának bal-felső sarkában, majd a gombot lenyomva tartva mozgassa az egeret a jobb-alsó sarokba és engedje fel! Ügyeljen arra, hogy csak a forgópad kerüljön kijelölésre! Ez a művelet akárhányszor megismételhető. Kattintson a következőre a folytatáshoz!</value>
   </data>
   <data name="TurntableCalibrationStep3" xml:space="preserve">
-    <value>Place the calibration etalon to the turntable: the etalon should face toward the scanner's mirror and it should snap in the holes on the turntable. Click next to continue.</value>
+    <value>Helyezze a kalibráló etalont a forgópadra, úgy hogy az szembe nézzen a tükörrel, és a lapok kb. 90-120 fokos szöget zárjanak be egymással! Kattintson a következőre a folytatáshoz!</value>
   </data>
   <data name="TurntableCalibrationStep4" xml:space="preserve">
-    <value>Select the etalon on the image with the mouse (like in step 2). Click next to preview the calibration results.</value>
+    <value>Jelölje ki az etalont, ügyelve arra, hogy semmi mást nem jelöl ki a képen. Ügyeljen arra is, hogy a kijelölés szimmetrikus legyen az etalon hajtási tengelyére! Kattintson a következőre, hogy megtekinthesse a kalibráció eredményeit!</value>
   </data>
   <data name="TurntableCalibrationStep5" xml:space="preserve">
-    <value>Check if the the turntable's position has been selected correctly. Click to finish to save the results.</value>
+    <value>Ellenőrizze, hogy a forgópad és az etalon lapjainak helymeghatározása jól sikerült-e! Kattintson a befejezésre az eredmények elfogadásához.</value>
   </data>
   <data name="TurntableCalibrationTitle" xml:space="preserve">
-    <value>Turntable Calibration</value>
+    <value>A forgópad kalibrációja</value>
   </data>
   <data name="TurntableStepCounterCloseTitle" xml:space="preserve">
-    <value>End of measurement</value>
+    <value>Mérés befejezése</value>
   </data>
   <data name="TurntableStepCounterInformation" xml:space="preserve">
-    <value>With this tool, you can count the steps corresponding to one full rotation of the turntable. Press Start to begin!</value>
+    <value>Ezzel az eszközzel megmérheti, hogy hány lépés szükséges a fogópad egy teljes körbeforgatásához.</value>
   </data>
   <data name="TurntableStepCounterPasses" xml:space="preserve">
-    <value>pass(es).</value>
+    <value>menet(ek).</value>
   </data>
   <data name="TurntableStepCounterSaveResults" xml:space="preserve">
-    <value>Would you like to save the results as settings?</value>
+    <value>El kívánja menteni az ereményeket a beállításokba?</value>
   </data>
   <data name="TurntableStepCounterStatusMovingToOrigin" xml:space="preserve">
-    <value>Moving to origin....</value>
+    <value>Alaphelyzet megkeresése....</value>
   </data>
   <data name="TurntableStepCounterStatusPremovement" xml:space="preserve">
-    <value>Premovement...</value>
+    <value>Előmozgás...</value>
   </data>
   <data name="TurntableStepCounterStatusReady" xml:space="preserve">
-    <value>Ready.</value>
+    <value>Készenlét</value>
   </data>
   <data name="TurntableStepCounterStatusWaitingForSwitch" xml:space="preserve">
-    <value>Waiting for magnetic switch...</value>
+    <value>Várakozás a mágneskapcsolóra...</value>
   </data>
   <data name="TurntableStepCounterSteps" xml:space="preserve">
-    <value>steps.</value>
+    <value>lépés.</value>
   </data>
   <data name="TurntableStepCounterStepsPerRotation" xml:space="preserve">
-    <value>steps per rotation.</value>
+    <value>lépészsám fordulatonként.</value>
   </data>
   <data name="TurntableStepCounterTitle" xml:space="preserve">
-    <value>Turntable step counter</value>
+    <value>Forgópad lépésszámláló</value>
   </data>
 </root>

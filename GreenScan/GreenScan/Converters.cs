@@ -8,6 +8,7 @@ using Green.Kinect;
 using System.Windows.Controls;
 using Green.Settings;
 using System.Windows;
+using GreenResources = GreenScan.Properties.Resources;
 
 namespace Green.Scan
 {
@@ -23,7 +24,7 @@ namespace Green.Scan
             MenuItem[] items = new MenuItem[count];
             for (int i = 0; i < count; i++)
             {
-                items[i] = new MenuItem() { Header = "Device " + i };
+                items[i] = new MenuItem() { Header = GreenResources.MenuDeviceDevice + " " + i };
                 items[i].Command = GreenScanCommands.Start;
                 items[i].CommandParameter = i.ToString();
             }
