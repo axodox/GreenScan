@@ -759,7 +759,21 @@ namespace Green.Scan
 
         void TurntableExportCmdCanExecute(object target, CanExecuteRoutedEventArgs e)
         {
-            e.CanExecute = TurntableScanner.CanSave && !SavingInProgress;
+            if (TurntableScanner.GetMode() == RotatingScanner.Modes.Volumetric)
+            {
+                switch ((string)e.Parameter)
+                {
+                    case "STL":
+                    case "FL4":
+                        e.CanExecute = false;
+                        break;
+                    default:
+                        e.CanExecute = TurntableScanner.CanSave && !SavingInProgress;
+                        break;
+                }
+            }
+            else
+                e.CanExecute = TurntableScanner.CanSave && !SavingInProgress;
         }
 
         void TurntableExportCmdExecuted(object target, ExecutedRoutedEventArgs e)

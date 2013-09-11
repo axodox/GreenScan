@@ -131,6 +131,14 @@ namespace Green
 					ScannerModule->SetMode((RotatingScannerModule::Modes)mode);
 			}
 
+			Modes GetMode()
+			{
+				if (ScannerModule)
+					return (Modes)ScannerModule->GetMode();
+				else
+					return Mode;
+			}
+
 			void SetVolumetric(float cubeSize, int cubeRes, VolumetricViews view, float depth, float threshold)
 			{
 				if (ScannerModule)

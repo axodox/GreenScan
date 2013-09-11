@@ -154,6 +154,11 @@ namespace Green
 				CrossChanged = true;
 			}
 
+			void SetOverlay()
+			{
+				DrawsOverlay = (Params.View == Views::Overlay && (Mode == Modes::OneAxis || Mode == Modes::TwoAxis)) || (Params.VolumetricView == VolumetricViews::Overlay && Mode == Modes::Volumetric);
+			}
+
 			void DrawIfNeeded()
 			{
 				if(StaticInput)
@@ -287,6 +292,7 @@ namespace Green
 				SaveTextureReady = true;
 
 				Mode = NextMode;
+				SetOverlay();
 				switch (Mode)
 				{
 				case Modes::OneAxis:
@@ -388,6 +394,7 @@ namespace Green
 			void Stop()
 			{
 				Scanning = false;
+				if(Processing && Mode == Modes::Volumetric) CalculateCubeMesh();
 			}
 
 			virtual void ProcessFrame(RenderTargetPair* depth, Texture2D* color) override
@@ -879,7 +886,7 @@ namespace Green
 					for(int x = 0; x < CubeResExt; x++)
 					{
 						if(*pIndex > 0) pVertices[*pIndex - 1] = VertexPosition(start + x * cubeStep, z * cubeStep, start + y * cubeStep);
-						if(*pFace & 2)
+						if(*pFace & 1)
 						{
 							*pIndicies++ = GetIndex(indexCube, x, y, z);
 							*pIndicies++ = GetIndex(indexCube, x, y + 1, z + 1);
@@ -889,7 +896,7 @@ namespace Green
 							*pIndicies++ = GetIndex(indexCube, x, y + 1, z);
 							*pIndicies++ = GetIndex(indexCube, x, y + 1, z + 1);
 						}
-						if(*pFace & 1)
+						if(*pFace & 2)
 						{
 							*pIndicies++ = GetIndex(indexCube, x, y, z + 1);							
 							*pIndicies++ = GetIndex(indexCube, x, y + 1, z + 1);
@@ -899,7 +906,7 @@ namespace Green
 							*pIndicies++ = GetIndex(indexCube, x, y + 1, z);
 							*pIndicies++ = GetIndex(indexCube, x, y, z);							
 						}
-						if(*pFace & 8)
+						if(*pFace & 4)
 						{
 							*pIndicies++ = GetIndex(indexCube, x, y, z);
 							*pIndicies++ = GetIndex(indexCube, x, y, z + 1);
@@ -909,7 +916,7 @@ namespace Green
 							*pIndicies++ = GetIndex(indexCube, x + 1, y, z + 1);
 							*pIndicies++ = GetIndex(indexCube, x + 1, y, z);
 						}
-						if(*pFace & 4)
+						if(*pFace & 8)
 						{
 							*pIndicies++ = GetIndex(indexCube, x + 1, y, z + 1);
 							*pIndicies++ = GetIndex(indexCube, x, y, z + 1);
@@ -919,7 +926,7 @@ namespace Green
 							*pIndicies++ = GetIndex(indexCube, x + 1, y, z + 1);							
 							*pIndicies++ = GetIndex(indexCube, x, y, z);
 						}
-						if(*pFace & 32)
+						if(*pFace & 16)
 						{
 							*pIndicies++ = GetIndex(indexCube, x, y, z);
 							*pIndicies++ = GetIndex(indexCube, x + 1, y + 1, z);
@@ -929,7 +936,7 @@ namespace Green
 							*pIndicies++ = GetIndex(indexCube, x + 1, y, z);
 							*pIndicies++ = GetIndex(indexCube, x + 1, y + 1, z);
 						}
-						if(*pFace & 16)
+						if(*pFace & 32)
 						{
 							*pIndicies++ = GetIndex(indexCube, x, y + 1, z);
 							*pIndicies++ = GetIndex(indexCube, x + 1, y + 1, z);							
@@ -969,9 +976,36 @@ namespace Green
 			bool SaveCube(LPWSTR path, ModelFormats format)
 			{
 				if(!Processing || Mode != Modes::Volumetric) return false;
+
+				VertexPosition* vertices = nullptr;
+				unsigned* indicies = nullptr;
+				unsigned vertexCount = 0, indexCount = 0;
+
+				bool ok = GetCube(vertices, vertexCount, indicies, indexCount);
+				if(!ok) return false;
 				
-				CalculateCubeMesh();
-				return true;
+				switch (format)
+				{
+				case ModelFormats::FBX:
+					ok = FBXMeshSave(path, (XMFLOAT3*)vertices, vertexCount, indicies, indexCount, L"fbx");
+					break;
+				case ModelFormats::DXF:
+					ok = FBXMeshSave(path, (XMFLOAT3*)vertices, vertexCount, indicies, indexCount, L"dxf");
+					break;
+				case ModelFormats::DAE:
+					ok = FBXMeshSave(path, (XMFLOAT3*)vertices, vertexCount, indicies, indexCount, L"dae");
+					break;
+				case ModelFormats::OBJ:
+					ok = FBXMeshSave(path, (XMFLOAT3*)vertices, vertexCount, indicies, indexCount, L"obj");
+					break;
+				default:
+					ok = false;
+					break;
+				}			
+
+				delete [vertexCount] vertices;
+				delete [indexCount] indicies;
+				return ok;
 			}
 
 			virtual void Draw() override
@@ -1210,7 +1244,7 @@ namespace Green
 			void SetShading(Views view)
 			{
 				Params.View = view;
-				DrawsOverlay = view == Views::Overlay;
+				SetOverlay();
 				DrawIfNeeded();
 			}
 
@@ -1229,6 +1263,11 @@ namespace Green
 				}
 			}
 
+			Modes GetMode()
+			{
+				return Mode;
+			}
+
 			void SetVolumetric(float cubeSize, int cubeRes, VolumetricViews view, float depth, float threshold)
 			{
 				TurntableOptions.CubeSize = XMFLOAT2(cubeSize, sqrt(2.f) * cubeSize);
@@ -1236,6 +1275,7 @@ namespace Green
 				TurntableOptions.Threshold = threshold;
 				Params.VolumetricView = view;
 				NextCubeRes = cubeRes;
+				SetOverlay();
 				SetCross();
 				DrawIfNeeded();
 			}

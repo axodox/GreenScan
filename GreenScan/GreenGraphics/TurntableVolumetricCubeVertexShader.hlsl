@@ -25,6 +25,6 @@ VertexPositionInstance main(VertexPositionTextureInstance vi)
 
 	VertexPositionInstance vo;
 	vo.Position = outputPos;
-	vo.Instance = vi.Instance;
+	vo.Instance = CubeRes - vi.Instance - 1;
 	return vo;
 }

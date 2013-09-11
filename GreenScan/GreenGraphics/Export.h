@@ -410,3 +410,65 @@ bool FBXSave(LPWSTR path, XMFLOAT4* const sVertices, int width, int height, LPWS
 	LPSTRDelete(format);
 	return ok;
 }
+
+bool FBXMeshSave(LPWSTR path, XMFLOAT3* const vertices, unsigned vertexCount, unsigned* indicies, unsigned indexCount, LPWSTR wFormat)
+{
+	WCHAR wfilename[MAX_PATH];
+	wcscpy_s(wfilename, path);
+	wcscat_s(wfilename, L".");
+	wcscat_s(wfilename, wFormat);
+	char* filename = LPWSTRToLPSTR(wfilename);
+	char* format = LPWSTRToLPSTR(wFormat);
+
+	//Create objects
+	FbxManager* fbxManager = FbxManager::Create();	
+	FbxIOSettings* fbxIOSettings = FbxIOSettings::Create(fbxManager, IOSROOT);
+	FbxScene* fbxScene = FbxScene::Create(fbxManager, "");
+	FbxExporter* fbxExporter = FbxExporter::Create(fbxManager, "");
+	FbxNode* fbxNode = FbxNode::Create(fbxManager, "");
+	FbxMesh* fbxMesh = FbxMesh::Create(fbxManager, "");
+
+	//Build model
+	FbxNode* fbxRootNode = fbxScene->GetRootNode();
+	fbxRootNode->AddChild(fbxNode);
+	
+	fbxMesh->InitControlPoints(vertexCount);
+	FbxVector4* fbxVectors = fbxMesh->GetControlPoints();
+	XMFLOAT3* pVectors = vertices;
+
+	for(int i = 0; i < vertexCount; i++)
+	{
+		*fbxVectors++ = FbxVector4(pVectors->x, pVectors->y, pVectors->z);
+		pVectors++;
+	}
+	fbxNode->SetNodeAttribute(fbxMesh);
+
+	int triangleCount = indexCount / 3;
+	unsigned* pIndicies = indicies;
+	for(int i = 0; i < triangleCount; i++)
+	{
+		fbxMesh->BeginPolygon(-1, -1, false);
+		fbxMesh->AddPolygon(*pIndicies++);
+		fbxMesh->AddPolygon(*pIndicies++);
+		fbxMesh->AddPolygon(*pIndicies++);
+		fbxMesh->EndPolygon();
+	}
+
+	//Save
+	fbxManager->SetIOSettings(fbxIOSettings);
+	int formatIndex = fbxManager->GetIOPluginRegistry()->FindWriterIDByExtension(format);
+	fbxExporter->Initialize(filename, formatIndex, fbxManager->GetIOSettings());
+	bool ok = fbxExporter->Export(fbxScene);
+
+	//Destroy objects
+	fbxMesh->Destroy();
+	fbxNode->Destroy();
+	fbxExporter->Destroy();
+	fbxScene->Destroy();
+	fbxIOSettings->Destroy();
+	fbxManager->Destroy();
+
+	LPSTRDelete(filename);
+	LPSTRDelete(format);
+	return ok;
+}
