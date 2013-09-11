@@ -107,7 +107,6 @@ namespace Green.Scan
         {
             Remote.Dispose();
             if (TurntableScanner != null) TurntableScanner.Dispose();
-            if (TCW != null) TCW.Close();
             DeviceManager.CloseKinect();
             DeviceManager.Dispose();
             Settings.Save("Settings.ini");
@@ -117,6 +116,8 @@ namespace Green.Scan
         {
             ShowStatus("Preparing Kinect...", true);
             BackgroundWorker StartUpWorker = new BackgroundWorker();
+            if (DeviceManager.Mode != KinectManager.Modes.DepthAndColor)
+                Settings.KinectMode.Value = KinectManager.Modes.DepthAndColor;
             StartUpWorker.DoWork += StartUpWorker_DoWork;
             StartUpWorker.RunWorkerCompleted += StartUpWorker_RunWorkerCompleted;
             StartUpWorker.RunWorkerAsync(completedCallback);
@@ -127,9 +128,9 @@ namespace Green.Scan
             e.Result = e.Argument;
             if (DeviceManager.DeviceCount == 0) return;
             if (!DeviceManager.DeviceOpened)
-                if (!DeviceManager.OpenKinect(0)) return;
-            if (!DeviceManager.Processing || DeviceManager.Mode != KinectManager.Modes.DepthAndColor)
-                if (!DeviceManager.StartKinect(KinectManager.Modes.DepthAndColor)) return;
+                if (!DeviceManager.OpenKinect(0)) return;            
+            if(!DeviceManager.Processing)
+                DeviceManager.StartKinect(KinectManager.Modes.DepthAndColor);
         }
 
         void StartUpWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
@@ -302,7 +303,8 @@ namespace Green.Scan
                 Settings.TurntableCubeSize.Value / 100,
                 Settings.TurntableCubeResolution.Value,
                 Settings.TurntableVolumetricView.Value,
-                Settings.TurntableSlice.Value);
+                Settings.TurntableSlice.Value,
+                Settings.TurntableThreshold.Value);
         }
 
         #endregion
@@ -521,14 +523,15 @@ namespace Green.Scan
             }
         }
 
-        TurntableCalibrationWindow TCW;
         private void CalibrateTurntable()
         {
             SetKinectToDepthAndColorMode(() =>
             {
+                Settings.UseModuleShading.StoreValue();
                 Settings.UseModuleShading.Value = false;
-                TCW = new TurntableCalibrationWindow(GraphicsCore, Settings);
-                TCW.Show();
+                TurntableCalibrationWindow TCW = new TurntableCalibrationWindow(GraphicsCore, Settings);
+                TCW.ShowDialog();
+                Settings.UseModuleShading.RestoreValue();
             });
         }
 

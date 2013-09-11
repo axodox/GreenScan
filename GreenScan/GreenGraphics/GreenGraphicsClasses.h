@@ -29,6 +29,7 @@ namespace Green
 			friend class RenderTarget2DGroup;
 			friend class ReadableRenderTarget2D;
 			friend class ReadableRenderTarget3D;
+			template <class T, class U> friend class Mesh;
 			friend class Quad;
 			friend class Line;
 			friend class Plane;
@@ -359,9 +360,11 @@ namespace Green
 		template <class T>
 		class VertexBuffer : public VertexBufferBase
 		{
+			template <class T, class U> friend class Mesh;
 		private:
 			GraphicsDevice* Host;
 			ID3D11Buffer* Buffer;
+			int Size;
 		public:			
 			VertexBuffer(GraphicsDevice* graphicsDevice, int size, VertexDefinition* definition, T* vertices = 0)
 			{
@@ -390,6 +393,12 @@ namespace Green
 				}
 				
 				Definition = definition;
+				Size = size;
+			}
+
+			int GetSize()
+			{
+				return Size;
 			}
 
 			void Load(T* vertices, int count)
@@ -416,9 +425,11 @@ namespace Green
 		template <class T>
 		class IndexBuffer
 		{
+			template <class T, class U> friend class Mesh;
 		private:
 			GraphicsDevice* Host;
 			ID3D11Buffer* Buffer;
+			int Size;
 		public:			
 			IndexBuffer(GraphicsDevice* graphicsDevice, int size, T* indicies = 0)
 			{
@@ -445,6 +456,12 @@ namespace Green
 
 					Error(Host->Device->CreateBuffer(&bd, &sd, &Buffer));
 				}
+				Size = size;
+			}
+
+			int GetSize()
+			{
+				return Size;
 			}
 
 			void Load(T* indicies, int count)
@@ -696,6 +713,11 @@ namespace Green
 				Host->DeviceContext->Unmap(Texture, 0);
 			}
 
+			void Load(Texture1D* source)
+			{
+				Host->DeviceContext->CopyResource(Texture, source->Texture);
+			}
+
 			void SetForVS(int slot = 0)
 			{
 				Host->DeviceContext->VSSetShaderResources(slot, 1, &ResourceView);
@@ -824,6 +846,11 @@ namespace Green
 				Host->DeviceContext->Unmap(Texture, 0);
 			}
 
+			void Load(Texture2D* source)
+			{
+				Host->DeviceContext->CopyResource(Texture, source->Texture);
+			}
+
 			void Load24bit(void* data)
 			{
 				D3D11_MAPPED_SUBRESOURCE ms;
@@ -943,6 +970,11 @@ namespace Green
 				Error(Host->DeviceContext->Map(Texture, 0, D3D11_MAP_WRITE_DISCARD, 0, &ms));
 				memcpy(ms.pData, data, Depth * Width * Height * sizeof(T));
 				Host->DeviceContext->Unmap(Texture, 0);
+			}
+
+			void Load(Texture3D* source)
+			{
+				Host->DeviceContext->CopyResource(Texture, source->Texture);
 			}
 
 			void SetForVS(int slot = 0)
@@ -1223,6 +1255,7 @@ namespace Green
 			template <class T> void GetData(T* data)
 			{
 				D3D11_MAPPED_SUBRESOURCE ms;
+				ZeroMemory(&ms, sizeof(ms));
 				Error(Host->DeviceContext->Map(StagingTexture, 0, D3D11_MAP_READ, 0, &ms));
 				for(int row = 0; row < Height; row++)
 					memcpy(data + row * Width, (byte*)ms.pData + row * ms.RowPitch, Width * sizeof(T));
@@ -1453,6 +1486,38 @@ namespace Green
 			}
 		};
 
+		template <class T, class U>
+		class Mesh
+		{
+		private:
+			GraphicsDevice* Host;
+			VertexBuffer<T>* VB;
+			IndexBuffer<U>* IB;
+			D3D11_PRIMITIVE_TOPOLOGY Topology;
+		public:
+			Mesh(GraphicsDevice* graphicsDevice, T* vertices, unsigned vertexCount, VertexDefinition* definition, U* indicies, unsigned indexCount, D3D11_PRIMITIVE_TOPOLOGY topology)
+			{
+				Host = graphicsDevice;
+				VB = new VertexBuffer<T>(graphicsDevice, vertexCount, definition, vertices);
+				IB = new IndexBuffer<U>(graphicsDevice, indexCount, indicies);
+				Topology = topology;
+			}
+
+			void Draw()
+			{
+				VB->Set();
+				IB->Set();
+				Host->DeviceContext->IASetPrimitiveTopology(Topology);
+				Host->DeviceContext->DrawIndexed(IB->Size, 0, 0);
+			}
+
+			~Mesh()
+			{
+				delete VB;
+				delete IB;
+			}
+		};
+
 		class Quad
 		{
 		private:
@@ -1606,6 +1671,14 @@ namespace Green
 				IB->Set();
 				Host->DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 				Host->DeviceContext->DrawIndexed(IndexCount, 0, 0);
+			}
+
+			void DrawInstanced(int count)
+			{
+				VB->Set();
+				IB->Set();
+				Host->DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+				Host->DeviceContext->DrawIndexedInstanced(IndexCount, count, 0, 0, 0);
 			}
 
 			~Plane()

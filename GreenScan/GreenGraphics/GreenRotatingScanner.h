@@ -28,7 +28,8 @@ namespace Green
 			enum class VolumetricViews {
 				Overlay,
 				Projection,
-				Slice
+				Slice,
+				Model
 			};
 			bool Processing;
 		private:
@@ -37,7 +38,9 @@ namespace Green
 			RenderTarget3D *CubeTarget;
 			RenderTarget2DGroup *PolarTargetGroup;
 			ReadableRenderTarget2D **SaveModelTargets, **SaveTextureTargets;
-			int NextModelWidth, NextModelHeight, NextTextureWidth, NextTextureHeight, TargetCount, CubeRes, NextCubeRes;
+			ReadableRenderTarget3D *SaveCubeTarget;
+			Mesh<VertexPosition, unsigned>* CubeMesh;
+			int NextModelWidth, NextModelHeight, NextTextureWidth, NextTextureHeight, TargetCount, CubeRes, CubeResExt, NextCubeRes;
 			bool SaveTextureReady, Scanning, ClearNext, StaticInputNext;
 			Modes NextMode, Mode;
 			struct RenderingParameters
@@ -58,6 +61,7 @@ namespace Green
 				XMFLOAT4X4 ModelToScreenTransform;
 				XMFLOAT4X4 DepthToWorldTransform;
 				XMFLOAT4X4 WorldToTurntableTransform;
+				XMFLOAT4 CameraPosition;
 				XMFLOAT2 CorePosition;
 				XMFLOAT2 ClipLimit;
 				XMFLOAT2 TextureMove;
@@ -67,6 +71,7 @@ namespace Green
 				XMINT2 ColorResolution;
 				XMINT2 ModelResolution;
 				float Side;
+				float Threshold;
 				int CubeRes;
 				int Slice;
 			} TurntableOptions;
@@ -74,16 +79,16 @@ namespace Green
 			ConstantBuffer<TurntableConstants>* Constants;
 			VertexPositionColor* CrossVertices;
 			VertexBuffer<VertexPositionColor>* Cross;
-			VertexShader *VSOverlay, *VSTwoAxisPolar, *VSOneAxisPolar, *VSVolumetricOrtho, *VSVolumetricCube, *VSCommon, *VSModel, *VSSimple;
-			GeometryShader *GSTwoAxisPolar, *GSOneAxisPolar, *GSVolumetricOrtho, *GSVolumetricCube, *GSModel;
-			PixelShader *PSOverlay, *PSTwoAxisPolar, *PSOneAxisPolar, *PSVolumetricOrtho, *PSVolumetricCube, *PSPolarDepth, *PSVolumetricDepth, *PSVolumetricSlice, *PSPolarTexture, *PSTest, *PSModel, *PSModelOutput, *PSTextureOutput, *PSSimple;
+			VertexShader *VSOverlay, *VSTwoAxisPolar, *VSOneAxisPolar, *VSVolumetricOrtho, *VSVolumetricCube, *VSCommon, *VSModel, *VSVolumetricModel, *VSSimple;
+			GeometryShader *GSTwoAxisPolar, *GSOneAxisPolar, *GSVolumetricOrtho, *GSVolumetricCube, *GSModel, *GSVolumetricModel;
+			PixelShader *PSOverlay, *PSTwoAxisPolar, *PSOneAxisPolar, *PSVolumetricOrtho, *PSVolumetricCube, *PSPolarDepth, *PSVolumetricDepth, *PSVolumetricSlice, *PSPolarTexture, *PSTest, *PSModel, *PSVolumetricModel, *PSModelOutput, *PSTextureOutput, *PSSimple;
 			BlendState *BOpaque, *BAdditive, *BAlpha;
-			RasterizerState *RDefault, *RCullNone;
+			RasterizerState *RDefault, *RCullNone, *RWireFrame;
 			ID3D11DeviceContext *Context;
 			Plane *PMain;
 			Line *LMain;
 			Quad *QMain;
-			SamplerState *SLinearClamp;
+			SamplerState *SLinearClamp, *SPointClamp;
 			HANDLE SaveEvent;
 
 			bool CrossChanged, RawSave, RestartOnNextFrame;
@@ -168,6 +173,7 @@ namespace Green
 				Device = nullptr;
 				RestartOnNextFrame = false;
 				NextCubeRes = 0;
+				CubeMesh = nullptr;
 			}
 
 			virtual void CreateResources(GraphicsDevice* device) override
@@ -187,6 +193,8 @@ namespace Green
 				VSCommon->SetInputLayout(VertexDefinition::VertexPositionTexture);
 				VSModel = new VertexShader(Device, L"TurntableModelVertexShader.cso");
 				VSModel->SetInputLayout(VertexDefinition::VertexPositionTexture);
+				VSVolumetricModel = new VertexShader(Device, L"VolumetricModelVertexShader.cso");
+				VSVolumetricModel->SetInputLayout(VertexDefinition::VertexPosition);
 				VSSimple = new VertexShader(Device, L"SimpleVertexShader.cso");
 				VSSimple->SetInputLayout(VertexDefinition::VertexPositionTexture);
 
@@ -195,6 +203,7 @@ namespace Green
 				GSVolumetricOrtho = new GeometryShader(Device, L"TurntableVolumetricOrthoGeometryShader.cso");
 				GSVolumetricCube = new GeometryShader(Device, L"TurntableVolumetricCubeGeometryShader.cso");
 				GSModel = new GeometryShader(Device, L"TurntableModelGeometryShader.cso");
+				GSVolumetricModel = new GeometryShader(Device, L"VolumetricModelGeometryShader.cso");
 				
 				PSOverlay = new PixelShader(Device, L"TurntableOverlayPixelShader.cso");
 				PSTwoAxisPolar = new PixelShader(Device, L"TurntableTwoAxisPolarPixelShader.cso");
@@ -206,6 +215,7 @@ namespace Green
 				PSVolumetricSlice = new PixelShader(Device, L"TurntableVolumetricSlicePixelShader.cso");
 				PSPolarTexture = new PixelShader(Device, L"TurntablePolarTexturePixelShader.cso");
 				PSModel = new PixelShader(Device, L"TurntableModelPixelShader.cso");
+				PSVolumetricModel = new PixelShader(Device, L"VolumetricModelPixelShader.cso");
 				PSTest = new PixelShader(Device, L"TurntableTestPixelShader.cso");
 				PSSimple = new PixelShader(Device, L"SimplePixelShader.cso");
 				PSModelOutput = new PixelShader(Device, L"TurntableOutputModelPixelShader.cso");
@@ -224,12 +234,14 @@ namespace Green
 				delete VSVolumetricCube;
 				delete VSCommon;
 				delete VSModel;
+				delete VSVolumetricModel;
 				delete VSSimple;
 				delete GSTwoAxisPolar;
 				delete GSOneAxisPolar;
 				delete GSVolumetricOrtho;
 				delete GSVolumetricCube;
 				delete GSModel;
+				delete GSVolumetricModel;
 				delete PSOverlay;
 				delete PSTwoAxisPolar;
 				delete PSOneAxisPolar;
@@ -240,6 +252,7 @@ namespace Green
 				delete PSVolumetricSlice;
 				delete PSPolarTexture;
 				delete PSModel;
+				delete PSVolumetricModel;
 				delete PSTest;
 				delete PSSimple;
 				delete PSModelOutput;
@@ -265,10 +278,12 @@ namespace Green
 				BAlpha = new BlendState(Device, BlendState::AlphaBlend);
 				RDefault = new RasterizerState(Device, RasterizerState::Default);
 				RCullNone = new RasterizerState(Device, RasterizerState::CullNone);
+				RWireFrame = new RasterizerState(Device, RasterizerState::Wireframe);
 				PMain = new Plane(Device, KinectDevice::DepthWidth, KinectDevice::DepthHeight);
 
 				QMain = new Quad(Device);
 				SLinearClamp = new SamplerState(Device, D3D11_FILTER_MIN_MAG_MIP_LINEAR, D3D11_TEXTURE_ADDRESS_CLAMP);
+				SPointClamp = new SamplerState(Device, D3D11_FILTER_MIN_MAG_MIP_POINT, D3D11_TEXTURE_ADDRESS_CLAMP);
 				SaveTextureReady = true;
 
 				Mode = NextMode;
@@ -296,6 +311,7 @@ namespace Green
 				case Modes::Volumetric:
 					CrossVertexCount = 6 + 3 * 2 * 4;
 					CubeRes = NextCubeRes;
+					CubeResExt = CubeRes + 1;
 					OrthoTarget = new RenderTarget2D(Device, CubeRes, CubeRes, DXGI_FORMAT_R32_FLOAT);
 					CubeTarget = new RenderTarget3D(Device, CubeRes, CubeRes, CubeRes, DXGI_FORMAT_R8_UNORM);
 					LMain = new Line(Device, CubeRes);
@@ -346,9 +362,11 @@ namespace Green
 				delete BAlpha;
 				delete RDefault;
 				delete RCullNone;
+				delete RWireFrame;
 				delete PMain;
 				delete QMain;
 				delete SLinearClamp;
+				delete SPointClamp;
 			}
 
 			void Scan()
@@ -469,43 +487,58 @@ namespace Green
 					if(version == SaveVersion)
 					{
 						NextMode = mode;
-						StaticInputNext = true;
-						StartProcessing();
-						int modelWidth, modelHeight, texWidth, texHeight;
-						fread(&modelWidth, 4, 1, file);
-						fread(&modelHeight, 4, 1, file);
-						int modelLen = modelWidth * modelHeight;
-						XMFLOAT2* modelData = new XMFLOAT2[modelLen];
+						StaticInputNext = true;						
 
-						RDefault->Set();
-						BOpaque->Apply();
-						SLinearClamp->SetForPS();
-						Device->SetShaders(VSSimple, PSSimple);
-						for(int i = 0; i < TargetCount; i++)
+						switch(NextMode)
 						{
-							fread(modelData, sizeof(XMFLOAT2), modelLen, file);
-							Texture2D* model = new Texture2D(Device, modelWidth, modelHeight, DXGI_FORMAT_R32G32_FLOAT, modelData, modelWidth * sizeof(XMFLOAT2));
-							ModelTargets[i]->SetAsRenderTarget();
-							model->SetForPS();
-							QMain->Draw();
-							SafeDelete(model);
-						}
-						delete [modelLen] modelData;
+						case Modes::OneAxis:
+						case Modes::TwoAxis:
+							{
+								StartProcessing();
+								int modelWidth, modelHeight, texWidth, texHeight;
+								fread(&modelWidth, 4, 1, file);
+								fread(&modelHeight, 4, 1, file);
+								int modelLen = modelWidth * modelHeight;
+								XMFLOAT2* modelData = new XMFLOAT2[modelLen];
 
-						fread(&texWidth, 4, 1, file);
-						fread(&texHeight, 4, 1, file);
-						int texLen = texWidth * texHeight;
-						XMFLOAT4* textureData = new XMFLOAT4[texLen];
-						for(int i = 0; i < TargetCount; i++)
-						{
-							fread(textureData, sizeof(XMFLOAT4), texLen, file);
-							Texture2D* texture = new Texture2D(Device, texWidth, texHeight, DXGI_FORMAT_R32G32B32A32_FLOAT, textureData, texWidth * sizeof(XMFLOAT4));
-							TextureTargets[i]->SetAsRenderTarget();
-							texture->SetForPS();
-							QMain->Draw();
-							SafeDelete(texture);
-						}
-						delete [texLen] textureData;
+								for(int i = 0; i < TargetCount; i++)
+								{
+									fread(modelData, sizeof(XMFLOAT2), modelLen, file);
+									Texture2D* model = new Texture2D(Device, modelWidth, modelHeight, DXGI_FORMAT_R32G32_FLOAT, modelData, modelWidth * sizeof(XMFLOAT2));
+									ModelTargets[i]->Load(model);
+									SafeDelete(model);
+								}
+								delete [modelLen] modelData;
+
+								fread(&texWidth, 4, 1, file);
+								fread(&texHeight, 4, 1, file);
+								int texLen = texWidth * texHeight;
+								XMFLOAT4* textureData = new XMFLOAT4[texLen];
+								for(int i = 0; i < TargetCount; i++)
+								{
+									fread(textureData, sizeof(XMFLOAT4), texLen, file);
+									Texture2D* texture = new Texture2D(Device, texWidth, texHeight, DXGI_FORMAT_R32G32B32A32_FLOAT, textureData, texWidth * sizeof(XMFLOAT4));
+									TextureTargets[i]->Load(texture);
+									SafeDelete(texture);
+								}
+								delete [texLen] textureData;
+							}
+							break;
+						case Modes::Volumetric:
+							{
+								fread(&NextCubeRes, 4, 1, file);
+								StartProcessing();
+								int modelLen = pow(CubeRes, 3);
+								BYTE* modelData = new BYTE[modelLen];
+								fread(modelData, 1, modelLen, file);
+								Texture3D* texture = new Texture3D(Device, CubeRes, CubeRes, CubeRes, DXGI_FORMAT_R8_UNORM, modelData, CubeRes, CubeRes * CubeRes);
+								CubeTarget->Load(texture);
+								SafeDelete(texture);
+								delete [modelLen] modelData;
+								CalculateCubeMesh();
+							}
+							break;
+						}						
 						
 						ok = true;
 						DrawIfNeeded();
@@ -521,13 +554,23 @@ namespace Green
 				RawSave = true;
 				SaveEvent = CreateEvent(0, 0, 0, 0);
 
-				SaveModelTargets = new ReadableRenderTarget2D*[TargetCount];
-				SaveTextureTargets = new ReadableRenderTarget2D*[TargetCount];
-				for(int i = 0; i < TargetCount; i++)
+				switch(Mode)
 				{
-					SaveModelTargets[i] = new ReadableRenderTarget2D(ModelTargets[i]);
-					SaveTextureTargets[i] = new ReadableRenderTarget2D(TextureTargets[i]);
+				case Modes::OneAxis:
+				case Modes::TwoAxis:
+					SaveModelTargets = new ReadableRenderTarget2D*[TargetCount];
+					SaveTextureTargets = new ReadableRenderTarget2D*[TargetCount];
+					for(int i = 0; i < TargetCount; i++)
+					{
+						SaveModelTargets[i] = new ReadableRenderTarget2D(ModelTargets[i]);
+						SaveTextureTargets[i] = new ReadableRenderTarget2D(TextureTargets[i]);
+					}
+					break;
+				case Modes::Volumetric:
+					SaveCubeTarget = new ReadableRenderTarget3D(CubeTarget);
+					break;
 				}
+				
 				SaveTextureReady = false;
 
 				bool ok = false;
@@ -546,42 +589,70 @@ namespace Green
 					{
 						fwrite(&SaveVersion, 4, 1, file);
 						fwrite(&Mode, 4, 1, file);
-					
-						fwrite(&Params.SaveWidth, 4, 1, file);
-						fwrite(&Params.SaveHeight, 4, 1, file);
-						int modelLen = Params.SaveWidth * Params.SaveHeight;
-						XMFLOAT2* modelData = new XMFLOAT2[modelLen];
-
-						for(int i = 0; i < TargetCount; i++)
+						
+						switch(Mode)
 						{
-							SaveModelTargets[i]->GetData<XMFLOAT2>(modelData);
-							fwrite(modelData, sizeof(XMFLOAT2), modelLen, file);
+						case Modes::OneAxis:
+						case Modes::TwoAxis:
+							{
+								fwrite(&Params.SaveWidth, 4, 1, file);
+								fwrite(&Params.SaveHeight, 4, 1, file);
+								int modelLen = Params.SaveWidth * Params.SaveHeight;
+								XMFLOAT2* modelData = new XMFLOAT2[modelLen];
+
+								for(int i = 0; i < TargetCount; i++)
+								{
+									SaveModelTargets[i]->GetData<XMFLOAT2>(modelData);
+									fwrite(modelData, sizeof(XMFLOAT2), modelLen, file);
+								}
+								delete [modelLen] modelData;
+
+								fwrite(&Params.SaveTextureWidth, 4, 1, file);
+								fwrite(&Params.SaveTextureHeight, 4, 1, file);
+								int texLen = Params.SaveTextureWidth * Params.SaveTextureHeight;
+								XMFLOAT4* textureData = new XMFLOAT4[texLen];
+
+								for(int i = 0; i < TargetCount; i++)
+								{
+									SaveTextureTargets[i]->GetData<XMFLOAT4>(textureData);
+									fwrite(textureData, sizeof(XMFLOAT4), texLen, file);
+								}
+
+								delete [texLen] textureData;
+							}
+							break;
+						case Modes::Volumetric:
+							{
+								fwrite(&CubeRes, 4, 1, file);
+								int modelLen = pow(CubeRes, 3);
+								BYTE* modelData = new BYTE[modelLen];
+								SaveCubeTarget->GetData(modelData);
+								fwrite(modelData, 1, modelLen, file);
+								delete [modelLen] modelData;
+							}
+							break;
 						}
-						delete [modelLen] modelData;
-
-						fwrite(&Params.SaveTextureWidth, 4, 1, file);
-						fwrite(&Params.SaveTextureHeight, 4, 1, file);
-						int texLen = Params.SaveTextureWidth * Params.SaveTextureHeight;
-						XMFLOAT4* textureData = new XMFLOAT4[texLen];
-
-						for(int i = 0; i < TargetCount; i++)
-						{
-							SaveTextureTargets[i]->GetData<XMFLOAT4>(textureData);
-							fwrite(textureData, sizeof(XMFLOAT4), texLen, file);
-						}
-
-						delete [texLen] textureData;
+						
 						fclose(file);
 					}
 				}
 
-				for(int i = 0; i < TargetCount; i++)
+				switch(Mode)
 				{
-					SafeDelete(SaveModelTargets[i]);
-					SafeDelete(SaveTextureTargets[i]);
+				case Modes::OneAxis:
+				case Modes::TwoAxis:
+					for(int i = 0; i < TargetCount; i++)
+					{
+						SafeDelete(SaveModelTargets[i]);
+						SafeDelete(SaveTextureTargets[i]);
+					}
+					delete [TargetCount] SaveModelTargets;
+					delete [TargetCount] SaveTextureTargets;
+					break;
+				case Modes::Volumetric:
+					SafeDelete(SaveCubeTarget);
+					break;
 				}
-				delete [TargetCount] SaveModelTargets;
-				delete [TargetCount] SaveTextureTargets;
 
 				CloseHandle(SaveEvent);
 				return ok;
@@ -590,6 +661,7 @@ namespace Green
 			bool SaveModel(LPWSTR path, ModelFormats format)
 			{
 				if(!Processing) return false;
+				if(Mode == Modes::Volumetric) return SaveCube(path, format);
 				RawSave = false;
 				SaveEvent = CreateEvent(0, 0, 0, 0);
 
@@ -690,6 +762,216 @@ namespace Green
 				delete [TargetCount] SaveTextureTargets;
 				CloseHandle(SaveEvent);
 				return ok;
+			}
+		private:
+			bool IsVoxelFilled(byte* const data, int x, int y, int z, byte threshold)
+			{
+				if(x < 0 || y < 0 || z < 0 || x >= CubeRes || y >= CubeRes || z >= CubeRes)
+					return false;
+				else
+					return *(data + x + CubeRes * y + CubeRes * CubeRes * z) > threshold;
+			}
+
+			void CheckVertex(unsigned* const vertices, int x, int y, int z, unsigned &index)
+			{
+				if(x < 0 || y < 0 || z < 0 || x >= CubeResExt || y >= CubeResExt || z >= CubeResExt)
+					return;
+				unsigned* vertex = vertices + x + CubeResExt * y + CubeResExt * CubeResExt * z;
+				if(*vertex == 0)
+				{
+					*vertex = ++index;
+				}
+			}
+
+			unsigned GetIndex(unsigned* const vertices, int x, int y, int z)
+			{
+				if(x < 0 || y < 0 || z < 0 || x >= CubeResExt || y >= CubeResExt || z >= CubeResExt)
+					return 0u;
+				return *(vertices + x + CubeResExt * y + CubeResExt * CubeResExt * z) - 1u;
+			}
+
+			bool GetCube(VertexPosition* &vertices, unsigned &vertexCount, unsigned* &indicies, unsigned &indexCount)
+			{
+				RawSave = false;
+				SaveEvent = CreateEvent(0, 0, 0, 0);
+								
+				SaveCubeTarget = new ReadableRenderTarget3D(CubeTarget);
+				SaveTextureReady = false;
+
+				bool ok = false;
+				if(StaticInput)
+				{
+					Draw();
+					ok = true;
+				}
+				else
+					ok = WaitForSingleObject(SaveEvent, 1000) == WAIT_OBJECT_0;
+
+				if(ok)
+				{
+					int modelLen = pow(CubeRes, 3);
+					byte* modelData = new byte[modelLen];
+					SaveCubeTarget->GetData(modelData);
+
+					//Count quads
+					int modelLenExt = pow(CubeResExt, 3);
+					byte threshold = TurntableOptions.Threshold * 255.f;
+					bool a, b, c, p;
+					vertexCount = 0;
+					unsigned* indexCube = new unsigned[modelLenExt], *pIndex = indexCube, faceCount = 0;
+					ZeroMemory(indexCube, modelLenExt * 4);
+					byte* faceCube = new byte[modelLenExt], *pFace = faceCube;
+					ZeroMemory(faceCube, modelLenExt);
+					for(int z = 0; z < CubeResExt; z++)
+					for(int y = 0; y < CubeResExt; y++)
+					for(int x = 0; x < CubeResExt; x++)
+					{
+						p = IsVoxelFilled(modelData, x, y, z, threshold);
+						a = IsVoxelFilled(modelData, x - 1, y, z, threshold);
+						b = IsVoxelFilled(modelData, x, y - 1, z, threshold);
+						c = IsVoxelFilled(modelData, x, y, z - 1, threshold);
+						if(p != a)
+						{
+							if(p) *pFace |= 1;
+							else *pFace |= 2;
+							faceCount++;
+							CheckVertex(indexCube, x, y, z, vertexCount);
+							CheckVertex(indexCube, x, y + 1, z, vertexCount);
+							CheckVertex(indexCube, x, y + 1, z + 1, vertexCount);
+							CheckVertex(indexCube, x, y, z + 1, vertexCount);
+						}
+						if(p != b)
+						{
+							if(p) *pFace |= 4;
+							else *pFace |= 8;
+							faceCount++;
+							CheckVertex(indexCube, x, y, z, vertexCount);
+							CheckVertex(indexCube, x + 1, y, z, vertexCount);
+							CheckVertex(indexCube, x + 1, y, z + 1, vertexCount);
+							CheckVertex(indexCube, x, y, z + 1, vertexCount);
+						}
+						if(p != c)
+						{
+							if(p) *pFace |= 16;
+							else *pFace |= 32;
+							faceCount++;
+							CheckVertex(indexCube, x, y, z, vertexCount);
+							CheckVertex(indexCube, x, y + 1, z, vertexCount);
+							CheckVertex(indexCube, x + 1, y, z, vertexCount);
+							CheckVertex(indexCube, x + 1, y + 1, z, vertexCount);
+						}
+						pFace++;
+					}
+					delete [modelLen] modelData;
+
+					indexCount = faceCount * 2 * 3;
+					vertices = new VertexPosition[vertexCount];
+					indicies = new unsigned[indexCount];
+					VertexPosition* pVertices = vertices;
+					unsigned* pIndicies = indicies;
+					pFace = faceCube;
+					pIndex = indexCube;
+					float cubeSize = TurntableOptions.CubeSize.x;
+					float start = -cubeSize / 2.f;
+					float cubeStep = cubeSize / CubeRes;
+					for(int z = 0; z < CubeResExt; z++)
+					for(int y = 0; y < CubeResExt; y++)
+					for(int x = 0; x < CubeResExt; x++)
+					{
+						if(*pIndex > 0) pVertices[*pIndex - 1] = VertexPosition(start + x * cubeStep, z * cubeStep, start + y * cubeStep);
+						if(*pFace & 2)
+						{
+							*pIndicies++ = GetIndex(indexCube, x, y, z);
+							*pIndicies++ = GetIndex(indexCube, x, y + 1, z + 1);
+							*pIndicies++ = GetIndex(indexCube, x, y, z + 1);
+
+							*pIndicies++ = GetIndex(indexCube, x, y, z);
+							*pIndicies++ = GetIndex(indexCube, x, y + 1, z);
+							*pIndicies++ = GetIndex(indexCube, x, y + 1, z + 1);
+						}
+						if(*pFace & 1)
+						{
+							*pIndicies++ = GetIndex(indexCube, x, y, z + 1);							
+							*pIndicies++ = GetIndex(indexCube, x, y + 1, z + 1);
+							*pIndicies++ = GetIndex(indexCube, x, y, z);
+
+							*pIndicies++ = GetIndex(indexCube, x, y + 1, z + 1);
+							*pIndicies++ = GetIndex(indexCube, x, y + 1, z);
+							*pIndicies++ = GetIndex(indexCube, x, y, z);							
+						}
+						if(*pFace & 8)
+						{
+							*pIndicies++ = GetIndex(indexCube, x, y, z);
+							*pIndicies++ = GetIndex(indexCube, x, y, z + 1);
+							*pIndicies++ = GetIndex(indexCube, x + 1, y, z + 1);
+
+							*pIndicies++ = GetIndex(indexCube, x, y, z);
+							*pIndicies++ = GetIndex(indexCube, x + 1, y, z + 1);
+							*pIndicies++ = GetIndex(indexCube, x + 1, y, z);
+						}
+						if(*pFace & 4)
+						{
+							*pIndicies++ = GetIndex(indexCube, x + 1, y, z + 1);
+							*pIndicies++ = GetIndex(indexCube, x, y, z + 1);
+							*pIndicies++ = GetIndex(indexCube, x, y, z);							
+
+							*pIndicies++ = GetIndex(indexCube, x + 1, y, z);
+							*pIndicies++ = GetIndex(indexCube, x + 1, y, z + 1);							
+							*pIndicies++ = GetIndex(indexCube, x, y, z);
+						}
+						if(*pFace & 32)
+						{
+							*pIndicies++ = GetIndex(indexCube, x, y, z);
+							*pIndicies++ = GetIndex(indexCube, x + 1, y + 1, z);
+							*pIndicies++ = GetIndex(indexCube, x, y + 1, z);
+
+							*pIndicies++ = GetIndex(indexCube, x, y, z);
+							*pIndicies++ = GetIndex(indexCube, x + 1, y, z);
+							*pIndicies++ = GetIndex(indexCube, x + 1, y + 1, z);
+						}
+						if(*pFace & 16)
+						{
+							*pIndicies++ = GetIndex(indexCube, x, y + 1, z);
+							*pIndicies++ = GetIndex(indexCube, x + 1, y + 1, z);							
+							*pIndicies++ = GetIndex(indexCube, x, y, z);
+
+							*pIndicies++ = GetIndex(indexCube, x + 1, y + 1, z);
+							*pIndicies++ = GetIndex(indexCube, x + 1, y, z);							
+							*pIndicies++ = GetIndex(indexCube, x, y, z);
+						}
+						pFace++;
+						pIndex++;
+					}					
+					delete [modelLenExt] faceCube;
+					delete [modelLenExt] indexCube;				
+				}
+				SafeDelete(SaveCubeTarget);
+				CloseHandle(SaveEvent);
+				return ok;
+			}
+
+			bool CalculateCubeMesh()
+			{
+				VertexPosition* vertices = nullptr;
+				unsigned* indicies = nullptr;
+				unsigned vertexCount = 0, indexCount = 0;
+
+				bool ok = GetCube(vertices, vertexCount, indicies, indexCount);
+				if(!ok) return false;
+				
+				SafeDelete(CubeMesh);
+				CubeMesh = new Mesh<VertexPosition, unsigned>(Device, vertices, vertexCount, VertexDefinition::VertexPosition, indicies, indexCount, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+				delete [vertexCount] vertices;
+				delete [indexCount] indicies;
+			}
+		public:
+			bool SaveCube(LPWSTR path, ModelFormats format)
+			{
+				if(!Processing || Mode != Modes::Volumetric) return false;
+				
+				CalculateCubeMesh();
+				return true;
 			}
 
 			virtual void Draw() override
@@ -813,7 +1095,6 @@ namespace Green
 								TextureTargets[i]->SetForPS();
 								PMain->Draw();
 							}
-							drawCross = true;
 							break;
 						default:
 							drawCross = true;
@@ -823,25 +1104,39 @@ namespace Green
 					break;
 				case Modes::Volumetric:
 					{
+						if (!SaveTextureReady)
+						{
+							SaveTextureReady = true;
+							SaveCubeTarget->CopyToStage();
+							SetEvent(SaveEvent);
+						}
+
+						Device->SetAsRenderTarget();
 						switch (Params.VolumetricView)
 						{
 						case VolumetricViews::Projection:
-							Device->SetAsRenderTarget();
 							RDefault->Set();
 							BOpaque->Apply();
 							Device->SetShaders(VSSimple, PSVolumetricDepth);
 							OrthoTarget->SetForPS();	
-							SLinearClamp->SetForPS();
+							SPointClamp->SetForPS();
 							QMain->Draw();
 							break;
 						case VolumetricViews::Slice:
-							Device->SetAsRenderTarget();
 							RDefault->Set();
 							BOpaque->Apply();
 							Device->SetShaders(VSSimple, PSVolumetricSlice);
 							CubeTarget->SetForPS();
-							SLinearClamp->SetForPS();
+							SPointClamp->SetForPS();
 							QMain->Draw();
+							break;
+						case VolumetricViews::Model:
+							if(!CubeMesh) break;
+
+							RDefault->Set();
+							BOpaque->Apply();
+							Device->SetShaders(VSVolumetricModel, PSVolumetricModel, GSVolumetricModel);
+							CubeMesh->Draw();
 							break;
 						default:
 							drawCross = true;
@@ -907,7 +1202,7 @@ namespace Green
 				Params.TransZ = transZ;
 				Params.RotX = rotX;
 				Params.RotY = rotY;
-				Params.RotZ = rotZ;				
+				Params.RotZ = rotZ;			
 				SetTurntableOptions();
 				DrawIfNeeded();
 			}
@@ -934,13 +1229,15 @@ namespace Green
 				}
 			}
 
-			void SetVolumetric(float cubeSize, int cubeRes, VolumetricViews view, float depth)
+			void SetVolumetric(float cubeSize, int cubeRes, VolumetricViews view, float depth, float threshold)
 			{
 				TurntableOptions.CubeSize = XMFLOAT2(cubeSize, sqrt(2.f) * cubeSize);
 				TurntableOptions.Slice = (CubeRes - 1) * depth;
+				TurntableOptions.Threshold = threshold;
 				Params.VolumetricView = view;
 				NextCubeRes = cubeRes;
 				SetCross();
+				DrawIfNeeded();
 			}
 
 			void SetTurntableOptions()
@@ -958,12 +1255,15 @@ namespace Green
 				XMMATRIX R = 
 					XMMatrixRotationZ(XMConvertToRadians(Params.RotZ)) *
 					XMMatrixRotationX(XMConvertToRadians(Params.RotX)) *
-					XMMatrixRotationY(XMConvertToRadians(Params.RotY));
+					XMMatrixRotationY(XMConvertToRadians(Params.RotY));				
 				XMStoreFloat4x4(&TurntableOptions.ModelToScreenTransform, DepthIntrinsics * T * R);
 				XMStoreFloat4x4(&TurntableOptions.TurntableToScreenTransform, TurntableToScreenTransform);
 				XMStoreFloat4x4(&TurntableOptions.DepthToTurntableTransform, DepthToTurntableTransform);
 				XMStoreFloat4x4(&TurntableOptions.WorldToTurntableTransform, XMMatrixRotationY(-Params.Rotation));
 				XMStoreFloat4x4(&TurntableOptions.DepthToWorldTransform, DepthToWorldTransform);
+				float rotY = -XMConvertToRadians(Params.RotY);
+				float rotX = XMConvertToRadians(Params.RotX);
+				TurntableOptions.CameraPosition = XMFLOAT4(sin(rotY) * cos(rotX), sin(rotX), -cos(rotY) * cos(rotX), 1);
 			}
 		};
 	}

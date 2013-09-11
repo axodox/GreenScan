@@ -91,6 +91,7 @@ namespace Green
 			XMFLOAT3 Position;
 			VertexPosition() {}
 			VertexPosition(XMFLOAT3 position) : Position(position) {}
+			VertexPosition(float x, float y, float z) : Position(XMFLOAT3(x, y, z)) {}
 		};
 
 		struct VertexPositionColor

@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:h="clr-namespace:Green.Helper"
         MouseLeftButtonDown="IDepth_MouseLeftButtonDown" MouseMove="IDepth_MouseMove"
-        Title="TurntableCalibrationWindow" Height="640" Width="640" SizeToContent="Height">
+        Title="Turntable Calibration" Height="640" Width="640" SizeToContent="Height">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>

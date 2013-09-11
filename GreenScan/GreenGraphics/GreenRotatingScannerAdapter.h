@@ -27,7 +27,8 @@ namespace Green
 			enum class VolumetricViews {
 				Overlay,
 				Projection,
-				Slice
+				Slice,
+				Model
 			};
 		private:
 			Turntable^ table;
@@ -129,10 +130,10 @@ namespace Green
 					ScannerModule->SetMode((RotatingScannerModule::Modes)mode);
 			}
 
-			void SetVolumetric(float cubeSize, int cubeRes, VolumetricViews view, float depth)
+			void SetVolumetric(float cubeSize, int cubeRes, VolumetricViews view, float depth, float threshold)
 			{
 				if (ScannerModule)
-					ScannerModule->SetVolumetric(cubeSize, cubeRes, (RotatingScannerModule::VolumetricViews)view, depth);
+					ScannerModule->SetVolumetric(cubeSize, cubeRes, (RotatingScannerModule::VolumetricViews)view, depth, threshold);
 			}
 
 			virtual event StatusEventHandler^ StatusChanged;

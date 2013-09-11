@@ -84,6 +84,7 @@ namespace Green.Scan
         public NumericSetting<int> TurntableCubeResolution { get; private set; }
         public EnumSetting<RotatingScanner.VolumetricViews> TurntableVolumetricView { get; private set; }
         public NumericSetting<float> TurntableSlice { get; private set; }
+        public NumericSetting<float> TurntableThreshold { get; private set; }
 
         public ScanSettings()
             : base()
@@ -229,10 +230,12 @@ namespace Green.Scan
             TurntableVolumetricView = new EnumSetting<RotatingScanner.VolumetricViews>("VolumetricView", RotatingScanner.VolumetricViews.Overlay) { FriendlyName = "View", AvailabilityProvider = turntableModeIsVolumetric };
             DependentAvailability turntableVolumetricSliceView = new DependentAvailability(new Setting[] { TurntableMode, TurntableVolumetricView }, new string[] { "Volumetric", "Slice" });
             TurntableSlice = new NumericSetting<float>("Slice", 0, 0, 1, 2) { FriendlyName = "Current depth (units)", AvailabilityProvider = turntableVolumetricSliceView };
+            TurntableThreshold = new NumericSetting<float>("Threshold", 0, 0, 1, 2) { FriendlyName = "Threshold (units)", AvailabilityProvider = turntableModeIsVolumetric };
             TurntableCubeSize = new NumericSetting<float>("CubeSize", 30, 10, 50) { FriendlyName = "Cube size (centimeters)", AvailabilityProvider = turntableModeIsVolumetric };
             TurntableCubeResolution = new NumericSetting<int>("CubeResolution", 128, 16, 512) { FriendlyName = "Cube resolution (voxels)", AvailabilityProvider = turntableModeIsVolumetric };
             TurntableProperties.Settings.Add(TurntableVolumetricView);
             TurntableProperties.Settings.Add(TurntableSlice);
+            TurntableProperties.Settings.Add(TurntableThreshold);
             TurntableProperties.Settings.Add(TurntableCubeSize);
             TurntableProperties.Settings.Add(TurntableCubeResolution);            
 

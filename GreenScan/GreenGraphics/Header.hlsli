@@ -3,6 +3,19 @@
 #define MaxDepth 10.f
 #define GaussCoeffCount 9
 
+struct VertexPositionWorld
+{
+	float4 Position : SV_POSITION;
+	float3 World : TEXCOORD0;
+};
+
+struct VertexPositionWorldNormal
+{
+	float4 Position : SV_POSITION;
+	float3 World : TEXCOORD0;
+	float3 Normal : NORMAL0;
+};
+
 struct VertexPositionTextureIn
 {
 	float3 Position : POSITION0;
@@ -13,6 +26,27 @@ struct VertexPositionTextureOut
 {
 	float4 Position : SV_POSITION;
 	float2 Texture : TEXCOORD0;
+};
+
+struct VertexPositionTextureInstanceIn
+{
+	float3 Position : POSITION0;
+	float2 Texture : TEXCOORD0;
+	uint Instance : SV_InstanceID;
+};
+
+struct VertexPositionTextureInstanceOut
+{
+	float4 Position : SV_POSITION;
+	float2 Texture : TEXCOORD0;
+	uint Instance : POSITION0;
+};
+
+struct VertexPositionTextureTarget
+{
+	float4 Position : SV_POSITION;
+	float2 Texture : TEXCOORD0;
+	uint Target: SV_RenderTargetArrayIndex;
 };
 
 struct VertexPositionColorIn
@@ -107,6 +141,7 @@ cbuffer TurntableConstants : register(b2)
 	float4x4 ModelToScreenTransform;
 	float4x4 DepthToWorldTransform;
 	float4x4 WorldToTurntableTransform;
+	float4 CameraPosition;
 	float2 CorePosition;
 	float2 ClipLimit;
 	float2 TextureMove;
@@ -116,6 +151,7 @@ cbuffer TurntableConstants : register(b2)
 	int2 ColorResolution;
 	int2 ModelResolution;
 	float Side;	
+	float Threshold;
 	int CubeRes;
 	int Slice;
 };
