@@ -275,7 +275,7 @@ namespace Turntables
             States statusWord;
             Commands executingCommand = Commands.About;
             int targetStep = 0, origin = 0;
-
+            int lastPositionInSteps = -1;
             try
             {
                 while (CommunicationThreadOn)
@@ -356,9 +356,10 @@ namespace Turntables
                             break;
                     }
 
+                    lastPositionInSteps = PositionInSteps;
                     PositionInSteps = steps;
 
-                    if (PositionChanged != null) PositionChanged(this, null);
+                    if (PositionChanged != null && lastPositionInSteps != PositionInSteps) PositionChanged(this, null);
                     if (!MagneticSwitch && StopAtMagneticSwitch)
                     {
                         SendCommandAsync(Commands.Stop);

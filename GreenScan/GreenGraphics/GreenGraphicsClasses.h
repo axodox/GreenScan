@@ -108,7 +108,7 @@ namespace Green
 					NULL,
 					&DeviceContext));
 
-				LPRECT clientRect;
+				LPRECT clientRect = 0;
 				GetClientRect(hWnd, clientRect);
 				Viewport = new D3D11_VIEWPORT();
 				Viewport->MaxDepth = D3D11_MAX_DEPTH;
@@ -204,10 +204,10 @@ namespace Green
 					break;
 				case BlendType::Additive:
 					rtbd.BlendEnable = true;
-					rtbd.SrcBlend = D3D11_BLEND_ONE;//D3D11_BLEND_SRC_ALPHA;
+					rtbd.SrcBlend = D3D11_BLEND_ONE;
 					rtbd.DestBlend = D3D11_BLEND_ONE;
 					rtbd.BlendOp = D3D11_BLEND_OP_ADD;
-					rtbd.SrcBlendAlpha = D3D11_BLEND_ONE;//D3D11_BLEND_SRC_ALPHA;
+					rtbd.SrcBlendAlpha = D3D11_BLEND_ONE;
 					rtbd.DestBlendAlpha = D3D11_BLEND_ONE;
 					rtbd.BlendOpAlpha = D3D11_BLEND_OP_ADD;
 					break;
@@ -1361,7 +1361,7 @@ namespace Green
 				td.Height = tex2Dd.Height;
 				td.MipLevels = 1;
 				td.ArraySize = 1;
-				td.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+				td.Format = DXGI_FORMAT_D32_FLOAT;
 				td.SampleDesc.Count = 1;
 				td.SampleDesc.Quality = 0;
 				td.Usage = D3D11_USAGE_DEFAULT;

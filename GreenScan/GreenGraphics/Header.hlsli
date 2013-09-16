@@ -152,6 +152,7 @@ cbuffer TurntableConstants : register(b2)
 	int2 ModelResolution;
 	float Side;	
 	float Threshold;
+	float GradientLimit;
 	int CubeRes;
 	int Slice;
 };

@@ -86,6 +86,8 @@ namespace Green.Scan
         public EnumSetting<RotatingScanner.VolumetricViews> TurntableVolumetricView { get; private set; }
         public NumericSetting<float> TurntableSlice { get; private set; }
         public NumericSetting<float> TurntableThreshold { get; private set; }
+        public NumericSetting<float> TurntableGradientLimit { get; private set; }
+        public BooleanSetting TurntableHasMirror { get; private set; }
 
         public ScanSettings()
             : base()
@@ -258,7 +260,12 @@ namespace Green.Scan
             TurntableProperties.Settings.Add(TurntableModelResolution);
             TurntableProperties.Settings.Add(TurntableTextureResolution);
 
-            TurntableTransform = new MatrixSetting("TurntableTransform", new float[,] { { 1f, 0f, 0f, 0f }, { 0f, 1f, 0f, 0f }, { 0f, 0f, 1f, 0f }, { 0f, 0f, 0f, 1f } }) { FriendlyName = GreenResources.SettingTurntableTransform };
+            TurntableGradientLimit = new NumericSetting<float>("GradientLimit", 0.05f, 0f, 0.2f, 4);
+            TurntableHasMirror = new BooleanSetting("HasMirror", true) { FriendlyName = GreenResources.SettingTurntableHasMirror };
+            TurntableProperties.Settings.Add(TurntableHasMirror);
+            TurntableProperties.Settings.Add(TurntableGradientLimit);
+
+            TurntableTransform = new MatrixSetting("TurntableTransform", new float[,] { { 1f, 0f, 0f, 0f }, { 0f, 1f, 0f, 0f }, { 0f, 0f, 1f, 0f }, { 0f, 0f, 0f, 1f } }) { FriendlyName = GreenResources.SettingTurntableTransform, IsHidden = true };
             TurntableProperties.Settings.Add(TurntableTransform);
 
             TurntableEllipse = new RectangleSetting("SelectionEllipse", new Rect(0d, 0d, 0d, 0d)) { IsHidden = true };

@@ -8,7 +8,7 @@ void main(
 {
 	for (uint i = 0; i < 3; i++)
 	{
-		if(input[i].Position.z < -1.f || input[i].Position.z > 1.f) return;
+		if(input[i].Position.z < 0.f || input[i].Position.z > 1.f) return;
 	}
 
 	for (uint i = 0; i < 3; i++)

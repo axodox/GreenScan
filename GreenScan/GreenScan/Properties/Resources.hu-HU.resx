@@ -471,6 +471,9 @@
   <data name="SettingTurntableCubeSize" xml:space="preserve">
     <value>Kocka mérete (centiméterben)</value>
   </data>
+  <data name="SettingTurntableHasMirror" xml:space="preserve">
+    <value>Tükör használata</value>
+  </data>
   <data name="SettingTurntableMode" xml:space="preserve">
     <value>Modellalkotási mód</value>
   </data>

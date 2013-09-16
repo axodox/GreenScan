@@ -34,10 +34,10 @@ VertexPositionOut main(VertexPositionTextureIn vi)
 	float4 posOutput;
 	posOutput.x = posWorld.x / CubeSize.y * 2.f;
 	posOutput.y = posWorld.y / CubeSize.x * 2.f - 1.f;
-	posOutput.z = posWorld.z / CubeSize.y * 2.f;
+	posOutput.z = posWorld.z / CubeSize.y + 0.5f;
 	posOutput.w = 1.f;
 
-	if(depth == 0.f || CheckTriangle(vi.Texture)) posOutput.z = -10.f;
+	if(depth == 0.f || CheckTriangle(vi.Texture)) posOutput.z = -1.f;
 
 	VertexPositionOut output;
 	output.Position = posOutput;

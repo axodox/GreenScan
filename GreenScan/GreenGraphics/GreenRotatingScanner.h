@@ -34,7 +34,7 @@ namespace Green
 			bool Processing;
 		private:
 			GraphicsDevice* Device;
-			RenderTarget2D **ModelTargets, **TextureTargets, *OrthoTarget;
+			RenderTarget2D **ModelTargets, **TextureTargets, *OrthoTarget, *FilterTarget;
 			RenderTarget3D *CubeTarget;
 			RenderTarget2DGroup *PolarTargetGroup;
 			ReadableRenderTarget2D **SaveModelTargets, **SaveTextureTargets;
@@ -72,6 +72,7 @@ namespace Green
 				XMINT2 ModelResolution;
 				float Side;
 				float Threshold;
+				float GradientLimit;
 				int CubeRes;
 				int Slice;
 			} TurntableOptions;
@@ -81,7 +82,7 @@ namespace Green
 			VertexBuffer<VertexPositionColor>* Cross;
 			VertexShader *VSOverlay, *VSTwoAxisPolar, *VSOneAxisPolar, *VSVolumetricOrtho, *VSVolumetricCube, *VSCommon, *VSModel, *VSVolumetricModel, *VSSimple;
 			GeometryShader *GSTwoAxisPolar, *GSOneAxisPolar, *GSVolumetricOrtho, *GSVolumetricCube, *GSModel, *GSVolumetricModel;
-			PixelShader *PSOverlay, *PSTwoAxisPolar, *PSOneAxisPolar, *PSVolumetricOrtho, *PSVolumetricCube, *PSPolarDepth, *PSVolumetricDepth, *PSVolumetricSlice, *PSPolarTexture, *PSTest, *PSModel, *PSVolumetricModel, *PSModelOutput, *PSTextureOutput, *PSSimple;
+			PixelShader *PSOverlay, *PSTwoAxisPolar, *PSOneAxisPolar, *PSVolumetricOrtho, *PSVolumetricOrthoFilter, *PSVolumetricCube, *PSPolarDepth, *PSVolumetricDepth, *PSVolumetricSlice, *PSPolarTexture, *PSTest, *PSModel, *PSVolumetricModel, *PSModelOutput, *PSTextureOutput, *PSSimple;
 			BlendState *BOpaque, *BAdditive, *BAlpha;
 			RasterizerState *RDefault, *RCullNone, *RWireFrame;
 			ID3D11DeviceContext *Context;
@@ -96,6 +97,7 @@ namespace Green
 			static const int CilinderSides = 18;
 			void SetCross()
 			{
+				if (!Processing) return;
 				switch (Mode)
 				{
 				case Modes::OneAxis:
@@ -161,7 +163,7 @@ namespace Green
 
 			void DrawIfNeeded()
 			{
-				if(StaticInput)
+				if(StaticInput && Processing)
 				{
 					RequestDraw(Host);
 				}
@@ -179,6 +181,7 @@ namespace Green
 				RestartOnNextFrame = false;
 				NextCubeRes = 0;
 				CubeMesh = nullptr;
+				Params.Rotation = 0;
 			}
 
 			virtual void CreateResources(GraphicsDevice* device) override
@@ -214,6 +217,7 @@ namespace Green
 				PSTwoAxisPolar = new PixelShader(Device, L"TurntableTwoAxisPolarPixelShader.cso");
 				PSOneAxisPolar = new PixelShader(Device, L"TurntableOneAxisPolarPixelShader.cso");
 				PSVolumetricOrtho = new PixelShader(Device, L"TurntableVolumetricOrthoPixelShader.cso");
+				PSVolumetricOrthoFilter = new PixelShader(Device, L"TurntableVolumetricOrthoFilterPixelShader.cso");
 				PSVolumetricCube = new PixelShader(Device, L"TurntableVolumetricCubePixelShader.cso");
 				PSPolarDepth = new PixelShader(Device, L"TurntablePolarDepthPixelShader.cso");
 				PSVolumetricDepth = new PixelShader(Device, L"TurntableVolumetricDepthPixelShader.cso");
@@ -251,6 +255,7 @@ namespace Green
 				delete PSTwoAxisPolar;
 				delete PSOneAxisPolar;
 				delete PSVolumetricOrtho;
+				delete PSVolumetricOrthoFilter;
 				delete PSVolumetricCube;
 				delete PSPolarDepth;
 				delete PSVolumetricDepth;
@@ -319,6 +324,7 @@ namespace Green
 					CubeRes = NextCubeRes;
 					CubeResExt = CubeRes + 1;
 					OrthoTarget = new RenderTarget2D(Device, CubeRes, CubeRes, DXGI_FORMAT_R32_FLOAT);
+					FilterTarget = new RenderTarget2D(Device, CubeRes, CubeRes, DXGI_FORMAT_R32_FLOAT);
 					CubeTarget = new RenderTarget3D(Device, CubeRes, CubeRes, CubeRes, DXGI_FORMAT_R8_UNORM);
 					LMain = new Line(Device, CubeRes);
 					TurntableOptions.CubeRes = CubeRes - 1;
@@ -356,6 +362,7 @@ namespace Green
 					break;
 				case Modes::Volumetric:
 					delete OrthoTarget;
+					delete FilterTarget;
 					delete CubeTarget;
 					delete LMain;
 					break;
@@ -444,14 +451,20 @@ namespace Green
 					BOpaque->Apply();					
 					OrthoTarget->SetAsRenderTarget();
 					Device->SetShaders(VSVolumetricOrtho, PSVolumetricOrtho, GSVolumetricOrtho);
-					depth->SetForVS();
-					SLinearClamp->SetForPS();
+					depth->SetForVS();					
 					PMain->Draw();
+
+					FilterTarget->Clear();				
+					FilterTarget->SetAsRenderTarget();
+					Device->SetShaders(VSSimple, PSVolumetricOrthoFilter);
+					OrthoTarget->SetForPS();
+					SLinearClamp->SetForPS();
+					QMain->Draw();
 
 					CubeTarget->SetAsRenderTarget();
 					BAdditive->Apply();
 					Device->SetShaders(VSVolumetricCube, PSVolumetricCube, GSVolumetricCube);
-					OrthoTarget->SetForVS();
+					FilterTarget->SetForVS();
 					LMain->DrawInstanced(CubeRes);
 					break;
 				}
@@ -771,12 +784,12 @@ namespace Green
 				return ok;
 			}
 		private:
-			bool IsVoxelFilled(byte* const data, int x, int y, int z, byte threshold)
+			bool IsVoxelFilled(byte* const data, int x, int y, int z)
 			{
 				if(x < 0 || y < 0 || z < 0 || x >= CubeRes || y >= CubeRes || z >= CubeRes)
 					return false;
 				else
-					return *(data + x + CubeRes * y + CubeRes * CubeRes * z) > threshold;
+					return *(data + x + CubeRes * y + CubeRes * CubeRes * z) == 255;
 			}
 
 			void CheckVertex(unsigned* const vertices, int x, int y, int z, unsigned &index)
@@ -817,12 +830,101 @@ namespace Green
 				if(ok)
 				{
 					int modelLen = pow(CubeRes, 3);
-					byte* modelData = new byte[modelLen];
+					byte* modelData = new byte[modelLen], *pModelData, *eModelData = modelData + modelLen;
 					SaveCubeTarget->GetData(modelData);
+					
+					//Thresholding
+					byte threshold = TurntableOptions.Threshold * 255;
+					for(pModelData = modelData; pModelData < eModelData; pModelData++)
+						if(*pModelData > threshold) *pModelData = 255;
+						else *pModelData = 0;
+					
+					//Mark outer space with scanline flood-fill
+					stack<unsigned> voxelsToFill;
+					unsigned levelSize = CubeRes * CubeRes, index;
+					byte* pLevel, *pVoxel;
+					bool lastPushUp, lastPushDown, scanDirection;
+					for(int z = 0; z < CubeRes; z++)
+					{
+						for(int i = 0; i < CubeRes; i++)
+						{
+							voxelsToFill.push(i);
+							voxelsToFill.push(levelSize - i - 1);
+							voxelsToFill.push(CubeRes * i);
+							voxelsToFill.push(CubeRes * (i + 1) - 1);
+						}
+						
+						pLevel = modelData + levelSize * z;
+						while(!voxelsToFill.empty())
+						{
+							index = voxelsToFill.top();
+							voxelsToFill.pop();
+							pVoxel = pLevel + index;
+							if(*pVoxel == 255) continue;
+							*pVoxel = 1;
+							
+							lastPushUp = lastPushDown = false;
+							unsigned x = index % CubeRes, y = index / CubeRes;
+							scanDirection = true;
+							int i = x;
+							while(true)
+							{
+								if(scanDirection)
+								{
+									i--;
+									pVoxel--;
+									if(i < 0 || *pVoxel == 255)
+									{
+										i = x;
+										pVoxel = pLevel + index;
+										scanDirection = false;
+										lastPushUp = lastPushDown = false;
+										continue;
+									}
+								}
+								else
+								{
+									i++;
+									pVoxel++;
+									if(i == CubeRes || *pVoxel == 255)
+									{
+										break;
+									}
+								}
 
+								*pVoxel = 1;
+
+								if(y > 0 && *(pVoxel - CubeRes) == 0)
+								{
+									if(!lastPushUp)
+									{
+										voxelsToFill.push(i + CubeRes * (y - 1));
+										lastPushUp = true;
+									}
+								}
+								else 
+									lastPushUp = false;
+
+								if(y < CubeRes - 1 && *(pVoxel + CubeRes) == 0)
+								{
+									if(!lastPushDown)
+									{
+										voxelsToFill.push(i + CubeRes * (y + 1));
+										lastPushDown = true;
+									}
+								}
+								else
+									lastPushDown = false;
+							}
+						}
+					}
+
+					//Fill closed spaces
+					for(pModelData = modelData; pModelData < eModelData; pModelData++)
+						if(*pModelData == 0) *pModelData = 255;
+					
 					//Count quads
 					int modelLenExt = pow(CubeResExt, 3);
-					byte threshold = TurntableOptions.Threshold * 255.f;
 					bool a, b, c, p;
 					vertexCount = 0;
 					unsigned* indexCube = new unsigned[modelLenExt], *pIndex = indexCube, faceCount = 0;
@@ -833,10 +935,10 @@ namespace Green
 					for(int y = 0; y < CubeResExt; y++)
 					for(int x = 0; x < CubeResExt; x++)
 					{
-						p = IsVoxelFilled(modelData, x, y, z, threshold);
-						a = IsVoxelFilled(modelData, x - 1, y, z, threshold);
-						b = IsVoxelFilled(modelData, x, y - 1, z, threshold);
-						c = IsVoxelFilled(modelData, x, y, z - 1, threshold);
+						p = IsVoxelFilled(modelData, x, y, z);
+						a = IsVoxelFilled(modelData, x - 1, y, z);
+						b = IsVoxelFilled(modelData, x, y - 1, z);
+						c = IsVoxelFilled(modelData, x, y, z - 1);
 						if(p != a)
 						{
 							if(p) *pFace |= 1;
@@ -967,7 +1069,7 @@ namespace Green
 				if(!ok) return false;
 				
 				SafeDelete(CubeMesh);
-				CubeMesh = new Mesh<VertexPosition, unsigned>(Device, vertices, vertexCount, VertexDefinition::VertexPosition, indicies, indexCount, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+				if(vertexCount > 0) CubeMesh = new Mesh<VertexPosition, unsigned>(Device, vertices, vertexCount, VertexDefinition::VertexPosition, indicies, indexCount, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 				delete [vertexCount] vertices;
 				delete [indexCount] indicies;
@@ -1018,10 +1120,10 @@ namespace Green
 				if (!Processing) return;
 
 				Device->SetAsRenderTarget();
+				Constants->Update(&TurntableOptions);
 				Constants->SetForVS(2);
 				Constants->SetForGS(2);
-				Constants->SetForPS(2);
-				Constants->Update(&TurntableOptions);
+				Constants->SetForPS(2);				
 
 				bool drawCross = false;
 
@@ -1152,7 +1254,7 @@ namespace Green
 							RDefault->Set();
 							BOpaque->Apply();
 							Device->SetShaders(VSSimple, PSVolumetricDepth);
-							OrthoTarget->SetForPS();	
+							FilterTarget->SetForPS();	
 							SPointClamp->SetForPS();
 							QMain->Draw();
 							break;
@@ -1268,11 +1370,12 @@ namespace Green
 				return Mode;
 			}
 
-			void SetVolumetric(float cubeSize, int cubeRes, VolumetricViews view, float depth, float threshold)
+			void SetVolumetric(float cubeSize, int cubeRes, VolumetricViews view, float depth, float threshold, float gradientLimit)
 			{
 				TurntableOptions.CubeSize = XMFLOAT2(cubeSize, sqrt(2.f) * cubeSize);
 				TurntableOptions.Slice = (CubeRes - 1) * depth;
 				TurntableOptions.Threshold = threshold;
+				TurntableOptions.GradientLimit = gradientLimit;
 				Params.VolumetricView = view;
 				NextCubeRes = cubeRes;
 				SetOverlay();

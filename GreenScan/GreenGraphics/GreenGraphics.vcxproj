@@ -700,6 +700,16 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release-x86|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release-x64|x64'">Vertex</ShaderType>
     </FxCompile>
+    <FxCompile Include="TurntableVolumetricOrthoFilterPixelShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release-x64|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release-x86|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release-x64|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release-x86|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug-x86|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug-x64|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug-x64|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug-x86|x64'">Pixel</ShaderType>
+    </FxCompile>
     <FxCompile Include="TurntableOutputModelPixelShader.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug-x64|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug-x86|Win32'">Pixel</ShaderType>

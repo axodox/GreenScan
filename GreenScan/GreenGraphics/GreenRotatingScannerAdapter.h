@@ -39,6 +39,7 @@ namespace Green
 			RotatingScannerModule* ScannerModule;
 			bool isConnected, isScanning;
 			Modes Mode;
+			bool HasMirror;
 
 			void OnPropertyChanged(String^ name)
 			{
@@ -68,7 +69,10 @@ namespace Green
 
 			void OnPositionChanged(Object^ sender, EventArgs^ e)
 			{
-				ScannerModule->SetTurntablePosition(table->PositionInRadians);
+				if(HasMirror)
+					ScannerModule->SetTurntablePosition(table->PositionInRadians);
+				else
+					ScannerModule->SetTurntablePosition(-table->PositionInRadians);
 			}
 
 			void OnProgressChanged(Object^ sender, EventArgs^ e)
@@ -139,10 +143,10 @@ namespace Green
 					return Mode;
 			}
 
-			void SetVolumetric(float cubeSize, int cubeRes, VolumetricViews view, float depth, float threshold)
+			void SetVolumetric(float cubeSize, int cubeRes, VolumetricViews view, float depth, float threshold, float gradientLimit)
 			{
 				if (ScannerModule)
-					ScannerModule->SetVolumetric(cubeSize, cubeRes, (RotatingScannerModule::VolumetricViews)view, depth, threshold);
+					ScannerModule->SetVolumetric(cubeSize, cubeRes, (RotatingScannerModule::VolumetricViews)view, depth, threshold, gradientLimit);
 			}
 
 			virtual event StatusEventHandler^ StatusChanged;
@@ -244,12 +248,13 @@ namespace Green
 			void SetCalibration(
 				array<float, 2>^ turntableTransform,
 				float height, float radius, 
-				float coreX, float coreY, int piSteps)
+				float coreX, float coreY, int piSteps, bool hasMirror)
 			{
 				pin_ptr<float> pTurntableTransform = &turntableTransform[0, 0];
 				if (ScannerModule) ScannerModule->SetCalibration(
 					pTurntableTransform, height, radius, coreX, coreY);
 				if(table) table->PiSteps = piSteps;
+				HasMirror = hasMirror;
 			}
 
 			~RotatingScanner()

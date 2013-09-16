@@ -98,7 +98,6 @@ byte ClampToByte(float x)
 
 typedef void (*Callback)(void* param); 
 
-
 #pragma managed
 #include <vcclr.h>
 LPWSTR StringToLPWSTR(System::String^ str)

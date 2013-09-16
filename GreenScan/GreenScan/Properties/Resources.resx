@@ -471,6 +471,9 @@
   <data name="SettingTurntableCubeSize" xml:space="preserve">
     <value>Cube size (centimeters)</value>
   </data>
+  <data name="SettingTurntableHasMirror" xml:space="preserve">
+    <value>Uses mirror</value>
+  </data>
   <data name="SettingTurntableMode" xml:space="preserve">
     <value>Mode</value>
   </data>

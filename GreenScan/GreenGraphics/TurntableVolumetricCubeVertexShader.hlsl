@@ -10,7 +10,7 @@ VertexPositionInstance main(VertexPositionTextureInstance vi)
 	float4 worldPos = float4(
 		vi.Position.x * CubeSize.y / 2.f,
 		vi.Instance / (CubeRes - 1.f) * CubeSize.x,
-		depth * CubeSize.y / 2.f,
+		(depth * 2.f - 1.f) * CubeSize.y / 2.f,
 		1.f);
 
 	float4 turntablePos = mul(worldPos, WorldToTurntableTransform);

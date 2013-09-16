@@ -1123,6 +1123,15 @@ namespace GreenScan.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Uses mirror.
+        /// </summary>
+        public static string SettingTurntableHasMirror {
+            get {
+                return ResourceManager.GetString("SettingTurntableHasMirror", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Mode.
         /// </summary>
         public static string SettingTurntableMode {

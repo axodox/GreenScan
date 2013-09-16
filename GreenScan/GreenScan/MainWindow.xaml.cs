@@ -78,7 +78,7 @@ namespace Green.Scan
 
         void KinectMode_ValueChanged(object sender, System.EventArgs e)
         {
-            if (DeviceManager.Processing)
+            if (DeviceManager.Processing && DeviceManager.Mode != Settings.KinectMode.Value)
             {
                 DeviceManager.StartKinect(Settings.KinectMode.Value);
             }
@@ -294,7 +294,8 @@ namespace Green.Scan
                 Settings.TurntableClippingRadius.Value,
                 Settings.TurntableCoreX.Value,
                 Settings.TurntableCoreY.Value,
-                Settings.TurntablePiSteps.Value);
+                Settings.TurntablePiSteps.Value,
+                Settings.TurntableHasMirror.Value);
             TurntableScanner.SetShading(
                 Settings.TurntableAxialView.Value);
             TurntableScanner.SetMode(
@@ -304,7 +305,8 @@ namespace Green.Scan
                 Settings.TurntableCubeResolution.Value,
                 Settings.TurntableVolumetricView.Value,
                 Settings.TurntableSlice.Value,
-                Settings.TurntableThreshold.Value);
+                Settings.TurntableThreshold.Value,
+                Settings.TurntableGradientLimit.Value);
         }
 
         #endregion
@@ -480,6 +482,7 @@ namespace Green.Scan
             {
                 DeviceManager.StopKinect();
                 OpenDialog(DeviceManager.OpenRaw(path));
+                Settings.KinectMode.Value = DeviceManager.Mode;
             }
         }
 
@@ -819,6 +822,7 @@ namespace Green.Scan
             {
                 DeviceManager.StopKinect();
                 OpenDialog(TurntableScanner.OpenRaw(path));
+                Settings.TurntableMode.Value = TurntableScanner.GetMode();
             }
         }
 

@@ -50,7 +50,8 @@ namespace Green
 			static VertexDefinition
 				*VertexPosition,
 				*VertexPositionColor,
-				*VertexPositionTexture;
+				*VertexPositionTexture,
+				*VertexPositionNormalTexture;
 
 			static void Init()
 			{
@@ -79,12 +80,25 @@ namespace Green
 					"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,
 					0, D3D11_INPUT_PER_VERTEX_DATA, 0);
 				VertexPositionTexture = new VertexDefinition(ied, 2);
+
+				ied = new D3D11_INPUT_ELEMENT_DESC[3];
+				ied[0] = CreateDescription(
+					"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,
+					0, D3D11_INPUT_PER_VERTEX_DATA, 0);
+				ied[1] = CreateDescription(
+					"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT,
+					0, D3D11_INPUT_PER_VERTEX_DATA, 0);
+				ied[2] = CreateDescription(
+					"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,
+					0, D3D11_INPUT_PER_VERTEX_DATA, 0);
+				VertexPositionNormalTexture = new VertexDefinition(ied, 3);
 			}
 		};
 
 		VertexDefinition* VertexDefinition::VertexPosition = 0;
 		VertexDefinition* VertexDefinition::VertexPositionColor = 0;
 		VertexDefinition* VertexDefinition::VertexPositionTexture = 0;
+		VertexDefinition* VertexDefinition::VertexPositionNormalTexture = 0;
 
 		struct VertexPosition
 		{
@@ -108,6 +122,15 @@ namespace Green
 			XMFLOAT2 Texture;
 			VertexPositionTexture() {}
 			VertexPositionTexture(XMFLOAT3 position, XMFLOAT2 texture) : Position(position), Texture(texture) {}
+		};
+
+		struct VertexPositionNormalTexture
+		{
+			XMFLOAT3 Position;
+			XMFLOAT3 Normal;
+			XMFLOAT2 Texture;
+			VertexPositionNormalTexture() {}
+			VertexPositionNormalTexture(XMFLOAT3 position, XMFLOAT3 normal, XMFLOAT2 texture) : Position(position), Normal(normal), Texture(texture) {}
 		};
 	}
 }

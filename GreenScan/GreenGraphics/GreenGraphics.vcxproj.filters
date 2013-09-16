@@ -248,6 +248,9 @@
     <FxCompile Include="VolumetricModelPixelShader.hlsl">
       <Filter>Source Files\TurntableShaders</Filter>
     </FxCompile>
+    <FxCompile Include="TurntableVolumetricOrthoFilterPixelShader.hlsl">
+      <Filter>Source Files\TurntableShaders</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Header.hlsli">
