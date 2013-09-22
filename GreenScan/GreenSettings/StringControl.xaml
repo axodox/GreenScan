@@ -8,7 +8,7 @@
     <UserControl.Resources>
         <ResourceDictionary Source="Style.xaml"/>
     </UserControl.Resources>
-    <Border Style="{StaticResource RootContainer}">
+    <Border Style="{StaticResource RootContainer}" IsEnabled="{Binding IsReadOnly, Converter={StaticResource BooleanInverter}}">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>

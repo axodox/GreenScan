@@ -4,15 +4,16 @@
 #include <Windows.h>
 #include <ShlObj.h>
 #include "Helper.h"
-//#include <Ole2.h>
 #include <NuiApi.h>
 #pragma comment(lib, "Kinect10.lib")
+#include "GreenGraphicsClasses.h"
+
+using namespace Green::Graphics;
+
 namespace Green
 {
 	namespace Kinect
 	{
-		typedef void (*KinectCountChangedCallback)(int count);
-
 		class KinectDevice
 		{
 		public:
@@ -42,24 +43,32 @@ namespace Green
 
 			typedef void (*KinectStartingCallback)(Modes mode, void* obj);
 			typedef void (*Callback)(void* obj);
+			typedef void (*ArgumentlessCallback)();
 			typedef void (*FrameReadyCallback)(void* data, void* obj);
-			
-		private:
-			void* CallbackObject;
+			typedef void (*KinectCountChangedCallback)(int count);
+			KinectCountChangedCallback KinectCountChanged;
 			KinectStartingCallback KinectStarting;
 			Callback KinectStopping;
-			KinectCountChangedCallback KinectCountChanged;
 			FrameReadyCallback ColorFrameReady, DepthFrameReady;
+			ArgumentlessCallback KinectDisconnected;
+
+		private:
+			void* CallbackObject;			
 			INuiSensor* Sensor;
 			static void CALLBACK StatusChangedCallback(
 				HRESULT hrStatus, const OLECHAR* instanceName, 
 				const OLECHAR* uniqueDeviceName, void* pUserData)
 			{
 				KinectDevice* kd = (KinectDevice*)pUserData;
-				if(kd->KinectCountChanged!=0)
+				if(kd->Sensor && kd->KinectDisconnected && !wcscmp(instanceName, kd->Sensor->NuiDeviceConnectionId()))
+				{
+					kd->KinectDisconnected();
+				}	
+				if(kd->KinectCountChanged)
 				{					
 					kd->KinectCountChanged(GetDeviceCount());
 				}
+							
 			}
 			HANDLE* NextFrameEvents;
 			HANDLE ColorStream, DepthStream;
@@ -133,21 +142,6 @@ namespace Green
 				return 0;
 			}
 		public:
-			void SetCountChangedCallback(KinectCountChangedCallback callback)
-			{
-				KinectCountChanged = callback;
-			}
-
-			void SetColorFrameReadyCallback(FrameReadyCallback callback)
-			{
-				ColorFrameReady = callback;
-			}
-
-			void SetDepthFrameReadyCallback(FrameReadyCallback callback)
-			{
-				DepthFrameReady = callback;
-			}
-
 			void SetEmitter(bool enabled)
 			{
 				EmitterEnabled = enabled;
@@ -191,16 +185,6 @@ namespace Green
 			void SetCallbackObject(void* obj)
 			{
 				CallbackObject = obj;
-			}
-
-			void SetKinectStartingCallback(KinectStartingCallback callback)
-			{
-				KinectStarting = callback;
-			}
-
-			void SetKinectStoppingCallback(Callback callback)
-			{
-				KinectStopping = callback;
 			}
 
 			bool StartKinect(Modes mode)
@@ -259,7 +243,7 @@ namespace Green
 			}
 
 			static const int SaveVersion = 1;
-			bool SaveRaw(LPWSTR path)
+			bool SaveRaw(LPWSTR path, LPWSTR metadata)
 			{
 				bool ok = false;
 
@@ -310,6 +294,9 @@ namespace Green
 							fwrite(DepthImage, DepthSize, 1, file);
 						}
 
+						unsigned metalen = wcslen(metadata) + 1;
+						fwrite(&metalen, 4, 1, file);
+						fwrite((char*)metadata, 2, metalen, file);
 						fclose(file);
 						ok = true;
 					}
@@ -334,7 +321,100 @@ namespace Green
 				return ok;
 			}
 
-			bool OpenRaw(LPWSTR path, Modes &mode)
+			void CloseFile()
+			{
+				if(KinectWorking) return;
+				if(KinectStopping != nullptr) KinectStopping(CallbackObject);
+			}
+
+			bool Import(LPWSTR path, float* depthIntrinsics)
+			{
+				enum class importTypes { Unknown, Vector4, Float4 } type;
+				if(KinectWorking) return false;
+				if(KinectStopping != nullptr) KinectStopping(CallbackObject);
+				
+				wchar_t* ext = wcsrchr(path, L'.') + 1;
+				type = importTypes::Unknown;
+				if(wcscmp(ext, L"vector4") == 0) type = importTypes::Vector4;
+				if(wcscmp(ext, L"fl4") == 0) type = importTypes::Float4;
+				if(type == importTypes::Unknown) return false;
+
+				FILE* file = _wfopen(path, L"rb");
+				if(!file) return false;
+		
+				struct ImportConstants
+				{
+					XMFLOAT4X4 DepthIntrinsics;
+					XMFLOAT4 Scale;
+					XMFLOAT2 DepthCoeffs;
+					XMINT2 DepthSize;
+				} importConstants;
+
+				int width, height;				 
+				if(type == importTypes::Float4)
+				{
+					fread(&width, 4, 1, file);
+					fread(&height, 4, 1, file);
+					importConstants.Scale = XMFLOAT4(1.f, 1.f, 1.f, 1.f);
+				}
+				else
+				{
+					width = 640;
+					height = 480;
+					importConstants.Scale = XMFLOAT4(1.f, -1.f, 1.f, 1.f);
+				}
+
+				XMFLOAT4* vertices = new XMFLOAT4[width * height];
+				fread(vertices, 16, width * height, file);
+				fclose(file);							
+
+				importConstants.DepthIntrinsics = XMFLOAT4X4(depthIntrinsics);
+				importConstants.DepthCoeffs = XMFLOAT2(0.125e-3f, 0.f);
+				importConstants.DepthSize = XMINT2(DepthWidth, DepthHeight);				
+
+				GraphicsDevice* device = new GraphicsDevice();
+				Texture2D* source = new Texture2D(device, width, height, DXGI_FORMAT_R32G32B32A32_FLOAT, vertices, width * 16);
+				delete [width * height] vertices;
+				
+				ReadableRenderTarget2D* target = new ReadableRenderTarget2D(device, DepthWidth, DepthHeight, DXGI_FORMAT_R16_UINT);
+				VertexShader* vs = new VertexShader(device, L"VectorImportVertexShader.cso");
+				GeometryShader* gs = new GeometryShader(device, L"VectorImportGeometryShader.cso");
+				PixelShader* ps = new PixelShader(device, L"VectorImportPixelShader.cso");
+				ConstantBuffer<ImportConstants>* cb = new ConstantBuffer<ImportConstants>(device);				
+				Plane* plane = new Plane(device, width, height);
+
+				cb->Update(&importConstants);
+				cb->SetForVS();
+				vs->SetInputLayout(plane);
+				target->SetAsRenderTarget();
+				source->SetForVS();
+				device->SetShaders(vs, ps, gs);
+				plane->Draw();
+
+				target->CopyToStage();
+				unsigned short* depthMap = new unsigned short[DepthWidth * DepthHeight];
+				target->GetData<unsigned short>(depthMap);
+
+				delete plane;
+				delete cb;
+				delete ps;
+				delete gs;
+				delete vs;				
+				delete target;
+				delete source;
+				delete device;
+
+				if(KinectStarting != nullptr) 
+					KinectStarting((Modes)(Modes::DepthAndColor | Modes::Virtual), CallbackObject);	
+
+				if(DepthFrameReady != nullptr)
+					DepthFrameReady(depthMap, CallbackObject);
+				delete [DepthWidth * DepthHeight] depthMap;
+
+				return true;
+			}
+
+			bool OpenRaw(LPWSTR path, Modes &mode, LPWSTR &metadata)
 			{
 				if(KinectWorking) return false;
 				if(KinectStopping != nullptr) KinectStopping(CallbackObject);
@@ -383,6 +463,11 @@ namespace Green
 								DepthFrameReady(DepthImage, CallbackObject);
 							delete [DepthSize] DepthImage;
 						}
+
+						unsigned metalen;
+						fread(&metalen, 4, 1, file);
+						metadata = new WCHAR[metalen];
+						fread(metadata, 2, metalen, file);
 					}
 					fclose(file);
 					ok = true;
@@ -393,12 +478,12 @@ namespace Green
 			void StopKinect()
 			{
 				if(Sensor == nullptr || !KinectWorking) return;
-				Sensor->NuiShutdown();				
+				Sensor->NuiShutdown();
 				WorkerThreadOn = false;
 				WaitForSingleObject(KinectStopped, 1000);	
 				KinectStopping(CallbackObject);
 				KinectWorking = false;
-			}
+			}			
 
 			KinectDevice()
 			{
@@ -407,6 +492,7 @@ namespace Green
 				NextFrameEvents[0] = CreateEvent(0, 1, 0, 0);
 				NextFrameEvents[1] = CreateEvent(0, 1, 0, 0);
 				KinectCountChanged = nullptr;
+				KinectDisconnected = nullptr;
 				KinectStarting = nullptr;
 				ColorFrameReady = nullptr;
 				DepthFrameReady = nullptr;

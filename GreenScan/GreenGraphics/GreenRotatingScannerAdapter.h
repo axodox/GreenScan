@@ -25,19 +25,28 @@ namespace Green
 				Volumetric
 			};
 
+			enum class AxialViews {
+				Overlay,
+				DepthL,
+				DepthR,
+				TextureL,
+				TextureR,
+				Model
+			};
+
 			enum class VolumetricViews {
 				Overlay,
 				Projection,
 				Slice,
 				Model
-			};
+			};			
 		private:
 			Turntable^ table;
 			KinectManager^ Kinect;
 			GraphicsCanvas^ Canvas;
 			DispatcherTimer^ ProgressTimer;
 			RotatingScannerModule* ScannerModule;
-			bool isConnected, isScanning;
+			bool isConnected, isScanning, toOrigin;
 			Modes Mode;
 			bool HasMirror;
 
@@ -48,23 +57,24 @@ namespace Green
 
 			void ToOrigin()
 			{
+				toOrigin = true;
 				table->ToOrigin();
 				StatusChanged(this, gcnew StatusEventArgs(GreenResources::GetString("TurntableFindingOrigin"), true));
 			}
 
 			void OnTableConnected(Object^ sender, EventArgs^ e)
 			{
+				if(isConnected) return;
+				isConnected = true;
 				ScannerModule = new RotatingScannerModule();
 				ScannerModule->SetMode((RotatingScannerModule::Modes)Mode);
+				OnPropertyChanged("IsConnected");
 				Canvas->GetDirectXWindow()->LoadModule(ScannerModule);
 
 				table = Turntable::DefaultDevice;
 				table->MotorStopped += gcnew EventHandler(this, &RotatingScanner::OnMotorStopped);				
 				table->PositionChanged += gcnew EventHandler(this, &RotatingScanner::OnPositionChanged);
 				ToOrigin();
-
-				isConnected = true;
-				OnPropertyChanged("IsConnected");				
 			}
 
 			void OnPositionChanged(Object^ sender, EventArgs^ e)
@@ -77,12 +87,14 @@ namespace Green
 
 			void OnProgressChanged(Object^ sender, EventArgs^ e)
 			{
+				if(!isConnected || toOrigin) return;
 				double progress = table->PositionInUnits;
 				StatusChanged(this, gcnew StatusEventArgs(GreenResources::GetString("TurntableScanningInProgress") + " " + (progress*100.0).ToString("F2") + "%", true, progress));
 			}
 
 			void OnMotorStopped(Object^ sender, EventArgs^ e)
 			{
+				toOrigin = false;
 				ProgressTimer->Stop();
 				StatusChanged(this, gcnew StatusEventArgs(GreenResources::GetString("TurntableReady")));
 				EndScan();
@@ -91,11 +103,8 @@ namespace Green
 
 			void OnTableDisconnected(Object^ sender, EventArgs^ e)
 			{
-				if(Turntable::DeviceCount != 0)
-				{
-					StatusChanged(this, gcnew StatusEventArgs(GreenResources::GetString("TurntableDisconnected"), true));
-					return;
-				}
+				StatusChanged(this, gcnew StatusEventArgs(GreenResources::GetString("TurntableDisconnected")));
+				if(Turntable::DeviceCount != 0) return;
 
 				isConnected = false;
 				OnPropertyChanged("IsConnected");
@@ -113,21 +122,6 @@ namespace Green
 				OnPropertyChanged("IsScanning");
 			}
 		public:
-			enum class Views {
-				Overlay,
-				DepthL,
-				DepthR,
-				TextureL,
-				TextureR,
-				Model
-			};
-
-			void SetShading(Views view)
-			{
-				if (ScannerModule)
-					ScannerModule->SetShading((RotatingScannerModule::Views)view);
-			}			
-
 			void SetMode(Modes mode)
 			{
 				Mode = mode;
@@ -143,10 +137,28 @@ namespace Green
 					return Mode;
 			}
 
-			void SetVolumetric(float cubeSize, int cubeRes, VolumetricViews view, float depth, float threshold, float gradientLimit)
+			void SetTurntable(array<float, 2>^ turntableTransform, int piSteps, bool hasMirror)
+			{
+				pin_ptr<float> pTurntableTransform = &turntableTransform[0, 0];
+				if (ScannerModule) ScannerModule->SetTurntable(pTurntableTransform);
+				if(table) table->PiSteps = piSteps;
+				HasMirror = hasMirror;
+			}
+
+			void SetAxial(
+				AxialViews view,
+				float height, float radius, float coreX, float coreY, 
+				int modelWidth, int modelHeight, int textureWidth, int textureHeight)
+			{
+				if (ScannerModule) ScannerModule->SetAxial(
+					(RotatingScannerModule::AxialViews)view, height, radius, coreX, coreY,
+					modelWidth, modelHeight, textureWidth, textureHeight);
+			}
+
+			void SetVolumetric(VolumetricViews view, float cubeSize, int cubeRes, float depth, float threshold, float gradientLimit)
 			{
 				if (ScannerModule)
-					ScannerModule->SetVolumetric(cubeSize, cubeRes, (RotatingScannerModule::VolumetricViews)view, depth, threshold, gradientLimit);
+					ScannerModule->SetVolumetric((RotatingScannerModule::VolumetricViews)view, cubeSize, cubeRes, depth, threshold, gradientLimit);
 			}
 
 			virtual event StatusEventHandler^ StatusChanged;
@@ -164,7 +176,7 @@ namespace Green
 			{ 
 				bool get() 
 				{
-					return isConnected && ScannerModule->Processing;
+					return isConnected && ScannerModule->State == RotatingScannerModule::States::Processing;
 				}
 			}
 			property Turntable^ Table 
@@ -190,11 +202,6 @@ namespace Green
 				ProgressTimer->Tick += gcnew EventHandler(this, &RotatingScanner::OnProgressChanged);
 			}
 
-			void SetPerformance(int modelWidth, int modelHeight, int textureWidth, int textureHeight)
-			{
-				if (ScannerModule) ScannerModule->SetPerformance(modelWidth, modelHeight, textureWidth, textureHeight);
-			}
-
 			void Scan()
 			{
 				if(!isConnected || isScanning) return;
@@ -214,22 +221,31 @@ namespace Green
 				return ok;
 			}
 
-			virtual bool OpenRaw(String^ path)
+			virtual bool OpenRaw(String^ path, String^ %metadata)
 			{
 				if (!ScannerModule) return false;
+				metadata = nullptr;
+				LPWSTR nMetadata = 0;
 				LPWSTR npath = StringToLPWSTR(path);
-				bool ok = ScannerModule->OpenRaw(npath);
-				if (!ok) ScannerModule->EndProcessing();
-				LPWSTRDelete(npath);
+				bool ok = ScannerModule->OpenRaw(npath, nMetadata);
+				if (ok)
+				{
+					metadata = gcnew String(nMetadata);
+					LPWSTRDelete(npath);
+				}
+				else
+					ScannerModule->EndProcessing();
 				return ok;
 			}
 
-			virtual bool SaveRaw(String^ path)
+			virtual bool SaveRaw(String^ path, String^ metadata)
 			{
 				if (!ScannerModule) return false;
 				LPWSTR npath = StringToLPWSTR(path);
-				bool ok = ScannerModule->SaveRaw(npath);
+				LPWSTR nMetadata = StringToLPWSTR(metadata);
+				bool ok = ScannerModule->SaveRaw(npath, nMetadata);
 				LPWSTRDelete(npath);
+				LPWSTRDelete(nMetadata);
 				return ok;
 			}
 
@@ -243,19 +259,7 @@ namespace Green
 			{
 				if(!isConnected || isScanning || table->AtOrigin) return;
 				ToOrigin();
-			}
-
-			void SetCalibration(
-				array<float, 2>^ turntableTransform,
-				float height, float radius, 
-				float coreX, float coreY, int piSteps, bool hasMirror)
-			{
-				pin_ptr<float> pTurntableTransform = &turntableTransform[0, 0];
-				if (ScannerModule) ScannerModule->SetCalibration(
-					pTurntableTransform, height, radius, coreX, coreY);
-				if(table) table->PiSteps = piSteps;
-				HasMirror = hasMirror;
-			}
+			}			
 
 			~RotatingScanner()
 			{

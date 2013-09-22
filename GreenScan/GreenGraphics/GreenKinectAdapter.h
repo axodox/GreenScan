@@ -22,15 +22,19 @@ namespace Green
 			};
 		private:
 			int deviceCount;
-			bool deviceOpened, processing, providesData;
+			bool deviceOpened, processing, providesData, fileOpened;
 			Modes mode;
-		public:
-			property Modes Mode	{ Modes get() { return mode; }}
+		public:			
 			virtual event PropertyChangedEventHandler^ PropertyChanged;
-			property int DeviceCount { int get() { return deviceCount; }}
-			property bool DeviceOpened { bool get()	{ return deviceOpened; }}
-			property bool Processing { bool get() { return processing; }}
-			property bool ProvidesData { bool get() { return providesData; }}
+			virtual event EventHandler^ DeviceCountChanged;
+			virtual event EventHandler^ DeviceDisconnected;
+			virtual event EventHandler^ DeviceStarting;
+			property Modes Mode	{ Modes get() { return mode; } private: void set(Modes value) { mode = value; OnPropertyChanged("Mode"); }}
+			property int DeviceCount { int get() { return deviceCount; } private: void set(int value) { deviceCount = value; OnPropertyChanged("DeviceCount"); }}
+			property bool DeviceOpened { bool get()	{ return deviceOpened; } private: void set(bool value) { deviceOpened = value; OnPropertyChanged("DeviceOpened"); }}
+			property bool FileOpened { bool get()	{ return fileOpened; } private: void set(bool value) { fileOpened = value; OnPropertyChanged("FileOpened"); }}
+			property bool Processing { bool get() { return processing; } private: void set(bool value) { processing = value; OnPropertyChanged("Processing"); }}
+			property bool ProvidesData { bool get() { return providesData; } private: void set(bool value) { providesData = value; OnPropertyChanged("ProvidesData"); }}
 			static property int DepthWidth { int get() { return KinectDevice::DepthWidth; }}
 			static property int DepthHeight { int get() { return KinectDevice::DepthHeight; }}
 			static property int ColorWidth { int get() { return KinectDevice::ColorWidth; }}
@@ -45,65 +49,106 @@ namespace Green
 			KinectCountChangedHandler^ KinectCountChanged;
 			void CountChangedCallback(int count)
 			{      
-				deviceCount = count;
-				OnPropertyChanged("DeviceCount");
+				DeviceCount = count;
+				DeviceCountChanged(this, EventArgs::Empty);
+			}
+
+			delegate void KinectDisconnectedHandler();
+			KinectDisconnectedHandler^ KinectDisconnected;
+			void KinectDisconnectedCallback()
+			{
+				DeviceDisconnected(this, EventArgs::Empty);
 			}
 		public:
 			bool OpenKinect(int index)
 			{
-				deviceOpened = Device->OpenKinect(index);
-				OnPropertyChanged("DeviceOpened");
-				return deviceOpened;
+				DeviceOpened = Device->OpenKinect(index);
+				return DeviceOpened;
 			}
 
 			bool StartKinect(Modes mode)
 			{
-				if(!deviceOpened) return false;
+				if(!DeviceOpened) return false;
 				StopKinect();	
+				DeviceStarting(this, EventArgs::Empty);
 				bool ok = false;
 				ok = Device->StartKinect((KinectDevice::Modes)mode);
 				if(ok)
 				{
-					this->mode = mode;
-					OnPropertyChanged("Mode");
-					processing = true;
-					OnPropertyChanged("Processing");
-					providesData = true;
-					OnPropertyChanged("ProvidesData");
+					this->Mode = mode;
+					Processing = true;
+					ProvidesData = true;	
+					FileOpened = false;
 				}
 				return ok;
 			}
 
-			bool SaveRaw(String^ path)
+			bool SaveRaw(String^ path, String^ metadata)
 			{
-				if(processing)
+				if(Processing)
 				{
-					LPWSTR npath = StringToLPWSTR(path);
-					bool ok = Device->SaveRaw(npath);
-					LPWSTRDelete(npath);
+					LPWSTR nPath = StringToLPWSTR(path);
+					LPWSTR nMetadata = StringToLPWSTR(metadata);
+					bool ok = Device->SaveRaw(nPath, nMetadata);
+					LPWSTRDelete(nPath);
+					LPWSTRDelete(nMetadata);
 					return ok;
 				}
 				else
 					return false;
 			}
 
-			bool OpenRaw(String^ path)
+			void CloseFile()
 			{
-				if(processing)
+				if(FileOpened)
+				{
+					FileOpened = false;
+					ProvidesData = false;
+					Device->CloseFile();
+				}
+			}
+
+			bool Import(String^ path, array<float, 2>^ infraredIntrinsics)
+			{
+				if(Processing || !Is3x3(infraredIntrinsics))
 					return false;
 				else
 				{
-					LPWSTR npath = StringToLPWSTR(path);
-					KinectDevice::Modes newmode;
-					bool ok = Device->OpenRaw(npath, newmode);
-					mode = (Modes)newmode;
-					OnPropertyChanged("Mode");
-					LPWSTRDelete(npath);
+					FileOpened = false;
+					pin_ptr<float> pInfraredIntrinsics = &To4x4(infraredIntrinsics)[0, 0];
+					LPWSTR nPath = StringToLPWSTR(path);
+					bool ok = Device->Import(nPath, pInfraredIntrinsics);
 					if(ok)
 					{
-						providesData = true;
-						OnPropertyChanged("ProvidesData");
+						Mode = Modes::DepthAndColor;									
+						ProvidesData = true;
+						FileOpened = true;
 					}
+					LPWSTRDelete(nPath);
+					return ok;
+				}
+			}
+
+			bool OpenRaw(String^ path, String^ %metadata)
+			{
+				if(Processing)
+					return false;
+				else
+				{
+					FileOpened = false;
+					LPWSTR nPath = StringToLPWSTR(path);
+					LPWSTR nMetadata = 0;
+					KinectDevice::Modes newmode;
+					bool ok = Device->OpenRaw(nPath, newmode, nMetadata);
+					if(ok)
+					{
+						metadata = gcnew String(nMetadata);						
+						LPWSTRDelete(nMetadata);
+						Mode = (Modes)newmode;					
+						ProvidesData = true;
+						FileOpened = true;
+					}
+					LPWSTRDelete(nPath);
 					return ok;
 				}
 			}
@@ -120,21 +165,22 @@ namespace Green
 
 			void StopKinect()
 			{
-				if(!processing) return;
-				processing = false;
-				OnPropertyChanged("Processing");
-				providesData = false;
-				OnPropertyChanged("ProvidesData");
+				if(!Processing) return;
+				Processing = false;
+				ProvidesData = false;
+				FileOpened = false;
 				Device->StopKinect();				
 			}
 			
 			KinectManager()
 			{
 				Device = new KinectDevice();
+				KinectDisconnected = gcnew KinectDisconnectedHandler(this, &KinectManager::KinectDisconnectedCallback);
+				Device->KinectDisconnected = (KinectDevice::ArgumentlessCallback)Marshal::GetFunctionPointerForDelegate(KinectDisconnected).ToPointer();
 				deviceOpened = false;
 				deviceCount = KinectDevice::GetDeviceCount();
 				KinectCountChanged = gcnew KinectCountChangedHandler(this, &KinectManager::CountChangedCallback);
-				Device->SetCountChangedCallback((KinectCountChangedCallback)Marshal::GetFunctionPointerForDelegate(KinectCountChanged).ToPointer());
+				Device->KinectCountChanged = (KinectDevice::KinectCountChangedCallback)Marshal::GetFunctionPointerForDelegate(KinectCountChanged).ToPointer();
 			}
 
 			void CloseKinect()
@@ -146,7 +192,6 @@ namespace Green
 			{
 				CloseKinect();
 			}
-
 		};
 	}
 }

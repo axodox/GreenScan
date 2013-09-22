@@ -1,105 +1,8 @@
+#include "Structs.hlsli"
 #define Pi 3.14159f
 #define MinDepth 0.4f
 #define MaxDepth 10.f
 #define GaussCoeffCount 9
-
-struct VertexPositionWorld
-{
-	float4 Position : SV_POSITION;
-	float3 World : TEXCOORD0;
-};
-
-struct VertexPositionWorldNormal
-{
-	float4 Position : SV_POSITION;
-	float3 World : TEXCOORD0;
-	float3 Normal : NORMAL0;
-};
-
-struct VertexPositionTextureIn
-{
-	float3 Position : POSITION0;
-	float2 Texture : TEXCOORD0;
-};
-
-struct VertexPositionTextureOut
-{
-	float4 Position : SV_POSITION;
-	float2 Texture : TEXCOORD0;
-};
-
-struct VertexPositionTextureInstanceIn
-{
-	float3 Position : POSITION0;
-	float2 Texture : TEXCOORD0;
-	uint Instance : SV_InstanceID;
-};
-
-struct VertexPositionTextureInstanceOut
-{
-	float4 Position : SV_POSITION;
-	float2 Texture : TEXCOORD0;
-	uint Instance : POSITION0;
-};
-
-struct VertexPositionTextureTarget
-{
-	float4 Position : SV_POSITION;
-	float2 Texture : TEXCOORD0;
-	uint Target: SV_RenderTargetArrayIndex;
-};
-
-struct VertexPositionColorIn
-{
-	float3 Position : POSITION0;
-	float4 Color : COLOR0;
-};
-
-struct VertexPositionColorOut
-{
-	float4 Position : SV_POSITION;
-	float4 Color : COLOR0;
-};
-
-struct VertexPositionTextureDepth
-{
-    float4 Position : SV_POSITION;
-	float3 WorldPosition : POSITION1;
-	float3 Normal: NORMAL0;
-	float Depth : NORMAL1;
-	float2 Texture : TEXCOORD0;
-};
-
-struct VertexPositionWorldTexture
-{
-    float4 Position : SV_POSITION;
-	float3 World : POSITION1;
-	float2 Texture : TEXCOORD0;
-};
-
-struct VertexPositionOut
-{
-    float4 Position : SV_POSITION;
-};
-
-struct VertexPositionTextureInstance
-{
-	float3 Position : POSITION0;
-	float2 Texture : TEXCOORD0;
-	uint Instance : SV_InstanceID;
-};
-
-struct VertexPositionInstance
-{
-	float4 Position : SV_POSITION;
-	uint Instance : POSITION0;
-};
-
-struct VertexPositionTarget
-{
-	float4 Position : SV_POSITION;
-	uint Target: SV_RenderTargetArrayIndex;
-};
 
 cbuffer CommonConstants : register(b0)
 {
@@ -153,8 +56,8 @@ cbuffer TurntableConstants : register(b2)
 	float Side;	
 	float Threshold;
 	float GradientLimit;
-	int CubeRes;
-	int Slice;
+	float Slice;
+	int CubeRes;	
 };
 
 float ToDepth(float raw)

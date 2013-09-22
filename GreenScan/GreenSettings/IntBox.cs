@@ -97,7 +97,7 @@ namespace Green.Settings.UI
         void OnValueChanged()
         {
             if (ValueChanged != null)
-                ValueChanged(this, new EventArgs());
+                ValueChanged(this, EventArgs.Empty);
         }
 
         public event EventHandler ValueChanged;

@@ -251,9 +251,24 @@
     <FxCompile Include="TurntableVolumetricOrthoFilterPixelShader.hlsl">
       <Filter>Source Files\TurntableShaders</Filter>
     </FxCompile>
+    <FxCompile Include="VectorImportVertexShader.hlsl">
+      <Filter>Source Files\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="VectorImportGeometryShader.hlsl">
+      <Filter>Source Files\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="VectorImportPixelShader.hlsl">
+      <Filter>Source Files\Shaders</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Header.hlsli">
+      <Filter>Source Files\Shaders</Filter>
+    </None>
+    <None Include="Structs.hlsli">
+      <Filter>Source Files\Shaders</Filter>
+    </None>
+    <None Include="ImportHeader.hlsli">
       <Filter>Source Files\Shaders</Filter>
     </None>
   </ItemGroup>

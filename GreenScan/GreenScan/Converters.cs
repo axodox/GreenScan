@@ -12,14 +12,12 @@ using GreenResources = GreenScan.Properties.Resources;
 
 namespace Green.Scan
 {
-    [ValueConversion(typeof(KinectManager), typeof(MenuItem[]))]
-    class KinectManagerToDeviceListConverter:IValueConverter
+    [ValueConversion(typeof(int), typeof(MenuItem[]))]
+    class DeviceCountToDeviceListConverter:IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         {
-            if (!(value is KinectManager)) return null;
-            KinectManager KM = (KinectManager)value;
-            int count = KM.DeviceCount;
+            int count = (int)value;
             if (count == 0) return null;
             MenuItem[] items = new MenuItem[count];
             for (int i = 0; i < count; i++)
@@ -29,6 +27,40 @@ namespace Green.Scan
                 items[i].CommandParameter = i.ToString();
             }
             return items;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    [ValueConversion(typeof(bool), typeof(string))]
+    class BooleanToProcessingIconConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            if (value is bool)
+                return ((bool)value ? "Icons/processing16.png": "Icons/stopped16.png");
+            else
+                return "Icons/warning16.png";
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    [ValueConversion(typeof(int), typeof(bool))]
+    class Int32ToBooleanConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            if (value is int)
+                return (int)value != 0;
+            else
+                return false;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)

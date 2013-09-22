@@ -8,7 +8,7 @@ struct PSOutput
 	float4 Tex : SV_TARGET1;
 };
 
-PSOutput main(VertexPositionWorldTexture v)
+PSOutput main(VertexPositionWorldDepthTexture v)
 {
 	PSOutput output;
 	float4 color = Texture.Sample(Sampler, (v.Texture + TextureMove) * TextureScale).bgra;

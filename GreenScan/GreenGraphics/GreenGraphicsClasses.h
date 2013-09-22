@@ -34,9 +34,72 @@ namespace Green
 			friend class Line;
 			friend class Plane;
 		private:
-			IDXGISwapChain* SwapChain;
+			void Init()
+			{
+				Error(D3D11CreateDevice(
+					NULL,
+					D3D_DRIVER_TYPE_HARDWARE,
+					NULL,
+					NULL,
+					NULL,
+					NULL,
+					D3D11_SDK_VERSION,
+					&Device,
+					NULL,
+					&DeviceContext));
+			}
+		protected:
 			ID3D11Device* Device;
-			ID3D11DeviceContext* DeviceContext;
+			ID3D11DeviceContext* DeviceContext;		
+			GraphicsDevice(bool manualInit)
+			{
+				if(!manualInit) Init();
+			}
+
+		public:
+			GraphicsDevice()
+			{				
+				Init();
+			}
+
+			void SetShaders(VertexShader* vs, PixelShader* ps, GeometryShader* gs = 0);
+
+			ID3D11DeviceContext* GetImmediateContext()
+			{
+				DeviceContext->AddRef();
+				return DeviceContext;
+			}
+
+			void WaitForDeviceToFinish()
+			{
+				D3D11_QUERY_DESC qd;
+				ZeroMemory(&qd, sizeof(qd));
+				qd.Query = D3D11_QUERY_EVENT;
+				
+				ID3D11Query* query;
+				Error(Device->CreateQuery(&qd, &query));
+
+				DeviceContext->Flush();
+				DeviceContext->End(query);
+				while(DeviceContext->GetData(query, 0, 0, 0) == S_FALSE) Sleep(100);
+
+				query->Release();
+			}
+
+			~GraphicsDevice()
+			{
+				DeviceContext->Release();
+				Device->Release();
+			}
+		};
+
+		class GraphicsDeviceWithSwapChain : public GraphicsDevice
+		{
+			friend class Texture2D;
+			friend class RenderTarget2D;
+			friend class ReadableRenderTarget2D;
+		private:
+			IDXGISwapChain* SwapChain;
 			ID3D11Texture2D *BackBufferTexture, *DepthBufferTexture;
 			ID3D11RenderTargetView* RenderTargetView;
 			ID3D11DepthStencilView* DepthStencilView;
@@ -82,8 +145,10 @@ namespace Green
 				Viewport->Height = td.Height;
 				DeviceContext->RSSetViewports(1, Viewport);
 			}
+
 		public:
-			GraphicsDevice(HWND hWnd)
+			GraphicsDeviceWithSwapChain(HWND hWnd)
+				: GraphicsDevice(true)
 			{
 				DXGI_SWAP_CHAIN_DESC scd;
 				ZeroMemory(&scd, sizeof(DXGI_SWAP_CHAIN_DESC));
@@ -93,12 +158,12 @@ namespace Green
 				scd.OutputWindow = hWnd;
 				scd.SampleDesc.Count = 1;
 				scd.Windowed = TRUE;
-
+				
 				Error(D3D11CreateDeviceAndSwapChain(
 					NULL,
 					D3D_DRIVER_TYPE_HARDWARE,
 					NULL,
-					NULL,
+					D3D11_CREATE_DEVICE_DISABLE_GPU_TIMEOUT,
 					NULL,
 					NULL,
 					D3D11_SDK_VERSION,
@@ -116,14 +181,6 @@ namespace Green
 				PrepareBackBuffer();
 
 				DeviceContext->OMSetRenderTargets(1, &RenderTargetView, DepthStencilView);
-			}
-
-			void SetShaders(VertexShader* vs, PixelShader* ps, GeometryShader* gs = 0);
-
-			ID3D11DeviceContext* GetImmediateContext()
-			{
-				DeviceContext->AddRef();
-				return DeviceContext;
 			}
 
 			float GetAspectRatio()
@@ -158,15 +215,13 @@ namespace Green
 				SwapChain->Present(0, 0);
 			}
 
-			~GraphicsDevice()
+			~GraphicsDeviceWithSwapChain()
 			{
-				SwapChain->Release();
-				Device->Release();
-				DeviceContext->Release();
 				BackBufferTexture->Release();
 				DepthBufferTexture->Release();
 				RenderTargetView->Release();
 				DepthStencilView->Release();
+				SwapChain->Release();
 				delete Viewport;				
 			}
 		};
@@ -303,17 +358,6 @@ namespace Green
 			}
 		};
 
-		class VertexBufferBase
-		{
-		protected:
-			VertexDefinition* Definition;
-		public:
-			VertexDefinition* GetDefinition()
-			{
-				return Definition;
-			}
-		};
-
 		class VertexShader
 		{
 			friend class GraphicsDevice;
@@ -340,7 +384,7 @@ namespace Green
 				Error(Host->Device->CreateVertexShader(Source, SourceLength, 0, &Shader));
 			}
 
-			void SetInputLayout(VertexDefinition* vertexDefinition)
+			void SetInputLayout(const VertexDefinition* vertexDefinition)
 			{
 				if(InputLayout != 0) InputLayout->Release();
 				Error(Host->Device->CreateInputLayout(
@@ -348,25 +392,31 @@ namespace Green
 					vertexDefinition->ElementCount,
 					Source, SourceLength, &InputLayout));
 			}
+
+			void SetInputLayout(IVertexDefinition* source)
+			{
+				SetInputLayout(source->GetVertexDefinition());
+			}
 			
 			~VertexShader()
 			{
 				Shader->Release();
-				if(InputLayout != 0) InputLayout->Release();
+				SafeRelease(InputLayout);
 				free(Source);
 			}
 		};
 
 		template <class T>
-		class VertexBuffer : public VertexBufferBase
+		class VertexBuffer : public IVertexDefinition
 		{
 			template <class T, class U> friend class Mesh;
 		private:
 			GraphicsDevice* Host;
 			ID3D11Buffer* Buffer;
 			int Size;
+			const VertexDefinition* Definition;
 		public:			
-			VertexBuffer(GraphicsDevice* graphicsDevice, int size, VertexDefinition* definition, T* vertices = 0)
+			VertexBuffer(GraphicsDevice* graphicsDevice, int size, const T* vertices = 0)
 			{
 				Host = graphicsDevice;
 
@@ -392,8 +442,13 @@ namespace Green
 					Error(Host->Device->CreateBuffer(&bd, &sd, &Buffer));
 				}
 				
-				Definition = definition;
+				Definition = T::GetVertexDefinition();
 				Size = size;
+			}
+
+			virtual const VertexDefinition* GetVertexDefinition() override
+			{
+				return Definition;
 			}
 
 			int GetSize()
@@ -401,7 +456,7 @@ namespace Green
 				return Size;
 			}
 
-			void Load(T* vertices, int count)
+			void Load(const T* vertices, int count)
 			{
 				D3D11_MAPPED_SUBRESOURCE ms;
 				Host->DeviceContext->Map(Buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &ms);
@@ -431,7 +486,7 @@ namespace Green
 			ID3D11Buffer* Buffer;
 			int Size;
 		public:			
-			IndexBuffer(GraphicsDevice* graphicsDevice, int size, T* indicies = 0)
+			IndexBuffer(GraphicsDevice* graphicsDevice, int size, const T* indicies = 0)
 			{
 				Host = graphicsDevice;
 
@@ -464,7 +519,7 @@ namespace Green
 				return Size;
 			}
 
-			void Load(T* indicies, int count)
+			void Load(const T* indicies, int count)
 			{
 				D3D11_MAPPED_SUBRESOURCE ms;
 				Host->DeviceContext->Map(Buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &ms);
@@ -509,7 +564,7 @@ namespace Green
 				Error(Host->Device->CreateBuffer(&bd, 0, &Buffer));
 			}
 
-			void Update(T* data)
+			void Update(const T* data)
 			{
 				D3D11_MAPPED_SUBRESOURCE ms;
 				Host->DeviceContext->Map(Buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &ms);
@@ -555,7 +610,7 @@ namespace Green
 				Host->DeviceContext->GSSetShader(Shader, 0, 0);
 			}
 		public:			
-			GeometryShader(GraphicsDevice* graphicsDevice, LPWSTR path)
+			GeometryShader(GraphicsDevice* graphicsDevice, const LPWSTR path)
 			{
 				Host = graphicsDevice;
 
@@ -584,7 +639,7 @@ namespace Green
 				Host->DeviceContext->PSSetShader(Shader, 0, 0);
 			}
 		public:			
-			PixelShader(GraphicsDevice* graphicsDevice, LPWSTR path)
+			PixelShader(GraphicsDevice* graphicsDevice, const LPWSTR path)
 			{
 				Host = graphicsDevice;
 
@@ -651,7 +706,7 @@ namespace Green
 			ID3D11ShaderResourceView* ResourceView;
 			int Length;
 		public:
-			Texture1D(GraphicsDevice* graphicsDevice, int length, DXGI_FORMAT format, void* data = 0, int stride = 0) : Length(length)
+			Texture1D(GraphicsDevice* graphicsDevice, int length, DXGI_FORMAT format, const void* data = 0, int stride = 0) : Length(length)
 			{
 				Host = graphicsDevice;
 
@@ -692,7 +747,7 @@ namespace Green
 				Error(Host->Device->CreateShaderResourceView(Texture, &textureViewDesc, &ResourceView));
 			}
 
-			static Texture1D* FromFile(GraphicsDevice* graphicsDevice, LPWSTR path)
+			static Texture1D* FromFile(GraphicsDevice* graphicsDevice, const LPWSTR path)
 			{
 				Bitmap bitmap(path);
 				int width = bitmap.GetWidth();
@@ -705,7 +760,7 @@ namespace Green
 				return texture;
 			}
 
-			template <class T> void Load(T* data)
+			template <class T> void Load(const T* data)
 			{
 				D3D11_MAPPED_SUBRESOURCE ms;
 				Error(Host->DeviceContext->Map(Texture, 0, D3D11_MAP_WRITE_DISCARD, 0, &ms));
@@ -746,15 +801,15 @@ namespace Green
 			DXGI_FORMAT Format;
 			int Width, Height;
 
-			Texture2D(GraphicsDevice* graphicsDevice)
+			Texture2D(GraphicsDeviceWithSwapChain* graphicsDeviceWithSwapChain)
 			{
-				Host = graphicsDevice;
-				Texture = Host->BackBufferTexture;
+				Host = graphicsDeviceWithSwapChain;
+				Texture = graphicsDeviceWithSwapChain->BackBufferTexture;
 				Texture->AddRef();
-				Format = graphicsDevice->Format;
+				Format = graphicsDeviceWithSwapChain->Format;
 				ResourceView = nullptr;
-				Width = Host->BackBufferWidth;
-				Height = Host->BackBufferHeight;
+				Width = graphicsDeviceWithSwapChain->BackBufferWidth;
+				Height = graphicsDeviceWithSwapChain->BackBufferHeight;
 			}
 
 			Texture2D(Texture2D* texture)
@@ -769,7 +824,7 @@ namespace Green
 				Format = texture->Format;
 			}
 		public:
-			Texture2D(GraphicsDevice* graphicsDevice, int width, int height, DXGI_FORMAT format, void* data = 0, int stride = 0) : Width(width), Height(height)
+			Texture2D(GraphicsDevice* graphicsDevice, int width, int height, DXGI_FORMAT format, const void* data = 0, int stride = 0) : Width(width), Height(height)
 			{
 				Host = graphicsDevice;
 				Format = format;
@@ -821,7 +876,7 @@ namespace Green
 				Error(Host->Device->CreateShaderResourceView(Texture, &textureViewDesc, &ResourceView));
 			}
 
-			static Texture2D* FromFile(GraphicsDevice* graphicsDevice, LPWSTR path)
+			static Texture2D* FromFile(GraphicsDevice* graphicsDevice, const LPWSTR path)
 			{
 				Bitmap bitmap(path);
 				int width = bitmap.GetWidth();
@@ -838,7 +893,7 @@ namespace Green
 			int GetHeight() { return Height; }
 			DXGI_FORMAT GetFormat() { return Format; }
 
-			template <class T> void Load(T* data)
+			template <class T> void Load(const T* data)
 			{
 				D3D11_MAPPED_SUBRESOURCE ms;
 				Error(Host->DeviceContext->Map(Texture, 0, D3D11_MAP_WRITE_DISCARD, 0, &ms));
@@ -851,7 +906,7 @@ namespace Green
 				Host->DeviceContext->CopyResource(Texture, source->Texture);
 			}
 
-			void Load24bit(void* data)
+			void Load24bit(const void* data)
 			{
 				D3D11_MAPPED_SUBRESOURCE ms;
 				Error(Host->DeviceContext->Map(Texture, 0, D3D11_MAP_WRITE_DISCARD, 0, &ms));
@@ -909,7 +964,7 @@ namespace Green
 				Format = texture->Format;
 			}
 		public:
-			Texture3D(GraphicsDevice* graphicsDevice, int width, int height, int depth, DXGI_FORMAT format, void* data = 0, int stride = 0, int slicelength = 0) : Width(width), Height(height), Depth(depth)
+			Texture3D(GraphicsDevice* graphicsDevice, int width, int height, int depth, DXGI_FORMAT format, const void* data = 0, int stride = 0, int slicelength = 0) : Width(width), Height(height), Depth(depth)
 			{
 				Host = graphicsDevice;
 				Format = format;
@@ -964,7 +1019,7 @@ namespace Green
 			int GetDepth() { return Depth; }
 			DXGI_FORMAT GetFormat() { return Format; }
 
-			template <class T> void Load(T* data)
+			template <class T> void Load(const T* data)
 			{
 				D3D11_MAPPED_SUBRESOURCE ms;
 				Error(Host->DeviceContext->Map(Texture, 0, D3D11_MAP_WRITE_DISCARD, 0, &ms));
@@ -1001,7 +1056,7 @@ namespace Green
 			ID3D11RenderTargetView* RenderTargetView;
 			D3D11_VIEWPORT* Viewport;
 
-			RenderTarget2D(GraphicsDevice* device) : Texture2D(device)
+			RenderTarget2D(GraphicsDeviceWithSwapChain* device) : Texture2D(device)
 			{
 				RenderTargetView = device->RenderTargetView;
 				RenderTargetView->AddRef();
@@ -1222,7 +1277,7 @@ namespace Green
 				Error(Host->Device->CreateTexture2D(&desc, 0, &StagingTexture));
 			}
 		public:
-			ReadableRenderTarget2D(GraphicsDevice* device)
+			ReadableRenderTarget2D(GraphicsDeviceWithSwapChain* device)
 				: RenderTarget2D(device)
 			{
 				CreateStagingTexture(Width, Height, device->Format);
@@ -1244,7 +1299,7 @@ namespace Green
 			{
 				Host->DeviceContext->OMSetRenderTargets(0, 0, 0);
 				Host->DeviceContext->CopyResource(StagingTexture, Texture);
-				Host->DeviceContext->Flush();
+				Host->WaitForDeviceToFinish();
 			}
 
 			ID3D11Texture2D* GetStagingTexture()
@@ -1304,7 +1359,7 @@ namespace Green
 			{
 				Host->DeviceContext->OMSetRenderTargets(0, 0, 0);
 				Host->DeviceContext->CopyResource(StagingTexture, Texture);
-				Host->DeviceContext->Flush();
+				Host->WaitForDeviceToFinish();
 			}
 
 			ID3D11Texture3D* GetStagingTexture()
@@ -1315,6 +1370,7 @@ namespace Green
 			template <class T> void GetData(T* data)
 			{
 				D3D11_MAPPED_SUBRESOURCE ms;
+				ZeroMemory(&ms, sizeof(ms));
 				Error(Host->DeviceContext->Map(StagingTexture, 0, D3D11_MAP_READ, 0, &ms));
 				int sliceSize = Width * Height, slRam, slVram;
 				for(int slice = 0; slice < Depth; slice++)
@@ -1423,7 +1479,7 @@ namespace Green
 				return TextureCount;
 			}
 
-			template <class T> void Load(T* data)
+			template <class T> void Load(const T* data)
 			{
 				if(TextureInWrite != -1) return;
 				int id = FrontTextureIndex;
@@ -1487,7 +1543,7 @@ namespace Green
 		};
 
 		template <class T, class U>
-		class Mesh
+		class Mesh : public IVertexDefinition
 		{
 		private:
 			GraphicsDevice* Host;
@@ -1495,12 +1551,17 @@ namespace Green
 			IndexBuffer<U>* IB;
 			D3D11_PRIMITIVE_TOPOLOGY Topology;
 		public:
-			Mesh(GraphicsDevice* graphicsDevice, T* vertices, unsigned vertexCount, VertexDefinition* definition, U* indicies, unsigned indexCount, D3D11_PRIMITIVE_TOPOLOGY topology)
+			Mesh(GraphicsDevice* graphicsDevice, const T* vertices, unsigned vertexCount, const U* indicies, unsigned indexCount, D3D11_PRIMITIVE_TOPOLOGY topology)
 			{
 				Host = graphicsDevice;
-				VB = new VertexBuffer<T>(graphicsDevice, vertexCount, definition, vertices);
+				VB = new VertexBuffer<T>(graphicsDevice, vertexCount, vertices);
 				IB = new IndexBuffer<U>(graphicsDevice, indexCount, indicies);
 				Topology = topology;
+			}
+
+			virtual const VertexDefinition* GetVertexDefinition() override
+			{
+				return VB->GetVertexDefinition();
 			}
 
 			void Draw()
@@ -1518,7 +1579,7 @@ namespace Green
 			}
 		};
 
-		class Quad
+		class Quad : public IVertexDefinition
 		{
 		private:
 			GraphicsDevice* Host;
@@ -1537,7 +1598,7 @@ namespace Green
 				vertices[2].Texture = XMFLOAT2(1.f, 1.f);
 				vertices[3].Position = XMFLOAT3(1.f, 1.f, 0.f);
 				vertices[3].Texture = XMFLOAT2(1.f, 0.f);
-				VB = new VertexBuffer<VertexPositionTexture>(Host, 4, VertexDefinition::VertexPositionTexture, vertices);
+				VB = new VertexBuffer<VertexPositionTexture>(Host, 4, vertices);
 				delete [4] vertices;
 			}
 
@@ -1546,9 +1607,9 @@ namespace Green
 				delete VB;
 			}
 
-			VertexDefinition* GetVertexDefinition()
+			virtual const VertexDefinition* GetVertexDefinition() override
 			{
-				return VB->GetDefinition();
+				return VB->GetVertexDefinition();
 			}
 
 			void Draw()
@@ -1559,7 +1620,7 @@ namespace Green
 			}
 		};
 
-		class Line
+		class Line : public IVertexDefinition
 		{
 		private:
 			GraphicsDevice* Host;
@@ -1581,13 +1642,13 @@ namespace Green
 						XMFLOAT2(i * xtexstep, 0.f));
 				}
 				
-				VB = new VertexBuffer<VertexPositionTexture>(Host, width, VertexDefinition::VertexPositionTexture, vertices);
+				VB = new VertexBuffer<VertexPositionTexture>(Host, width, vertices);
 				delete [VertexCount] vertices;
 			}
 
-			VertexDefinition* GetVertexDefinition()
+			virtual const VertexDefinition* GetVertexDefinition() override
 			{
-				return VB->GetDefinition();
+				return VB->GetVertexDefinition();
 			}
 
 			void Draw()
@@ -1610,7 +1671,7 @@ namespace Green
 			}
 		};
 
-		class Plane
+		class Plane : public IVertexDefinition
 		{
 		private:
 			GraphicsDevice* Host;
@@ -1636,7 +1697,7 @@ namespace Green
 							XMFLOAT2(i * xtexstep, j * ytexstep));
 					}
 				}
-				VB = new VertexBuffer<VertexPositionTexture>(Host, width * height, VertexDefinition::VertexPositionTexture, vertices);
+				VB = new VertexBuffer<VertexPositionTexture>(Host, width * height, vertices);
 				delete [vertexCount] vertices;				
 
 				unsigned int triangleWidth = width - 1, triangleHeight = height - 1;
@@ -1660,9 +1721,9 @@ namespace Green
 				delete [IndexCount] indicies;
 			}
 
-			VertexDefinition* GetVertexDefinition()
+			virtual const VertexDefinition* GetVertexDefinition() override
 			{
-				return VB->GetDefinition();
+				return VB->GetVertexDefinition();
 			}
 
 			void Draw()

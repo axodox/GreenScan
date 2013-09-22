@@ -26,7 +26,7 @@ namespace Green.Settings
                 {
                     isAvailable = value;
                     if (AvailabilityChanged != null)
-                        AvailabilityChanged(this, new EventArgs());
+                        AvailabilityChanged(this, EventArgs.Empty);
                 }
             }
         }        
@@ -151,7 +151,7 @@ namespace Green.Settings
             OnPropertyChanged("Value");
             OnPropertyChanged("StringValue");
             OnPropertyChanged("HasDefaultValue");
-            if (ValueChanged != null) ValueChanged(this, null);
+            if (ValueChanged != null) ValueChanged(this, EventArgs.Empty);
         }
 
         public abstract string StringValue { get; set; }
@@ -191,7 +191,22 @@ namespace Green.Settings
 
         public void RestoreValue()
         {
-            StringValue = StoredValue;
+            if (StoredValue != null && !IsReadOnly)
+            {
+                StringValue = StoredValue;
+                StoredValue = null;
+            }
+        }
+
+        private bool isReadOnly;
+        public bool IsReadOnly
+        {
+            get { return isReadOnly; }
+            set
+            {
+                isReadOnly = value;
+                OnPropertyChanged("IsReadOnly");
+            }
         }
     }
 
@@ -204,6 +219,7 @@ namespace Green.Settings
             get { return value; }
             set
             {
+                if (IsReadOnly) return;
                 this.value = value;
                 OnValueChanged();
             }
@@ -217,6 +233,7 @@ namespace Green.Settings
             }
             set
             {
+                if (IsReadOnly) return;
                 this.value[x, y] = value;
                 OnValueChanged();
             }
@@ -240,6 +257,7 @@ namespace Green.Settings
             }
             set
             {
+                if (IsReadOnly) return;
                 try
                 {
                     string[] lines = value.Split('|');
@@ -286,6 +304,7 @@ namespace Green.Settings
 
         public override void ResetValue()
         {
+            if (IsReadOnly) return;
             for (int r = 0; r < Rows; r++)
                 for (int c = 0; c < Columns; c++)
                     value[r, c] = DefaultValue[r, c];
@@ -307,6 +326,7 @@ namespace Green.Settings
             get { return value; }
             set
             {
+                if (IsReadOnly) return;
                 if ((int)typeof(T).InvokeMember("CompareTo", BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.Instance, null, value, new object[] { Maximum }) > 0)
                     this.value = Maximum;
                 else if ((int)typeof(T).InvokeMember("CompareTo", BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.Instance, null, value, new object[] { Minimum }) < 0)
@@ -342,6 +362,7 @@ namespace Green.Settings
             }
             set
             {
+                if (IsReadOnly) return;
                 try
                 {
                     Value = (T)typeof(T).InvokeMember("Parse", BindingFlags.InvokeMethod | BindingFlags.Static | BindingFlags.Public, null, null, new object[] { value, Culture });
@@ -357,6 +378,7 @@ namespace Green.Settings
 
         public override void ResetValue()
         {
+            if (IsReadOnly) return;
             Value = DefaultValue;
         }
     }
@@ -371,6 +393,7 @@ namespace Green.Settings
             get { return value; }
             set 
             {
+                if (IsReadOnly) return;
                 if (InvalidChars != null)
                 {
                     string s = "";
@@ -392,7 +415,11 @@ namespace Green.Settings
         public override string StringValue
         {
             get { return value; }
-            set { Value = value; }
+            set 
+            { 
+                if (IsReadOnly) return; 
+                Value = value; 
+            }
         }
 
         public override bool HasDefaultValue
@@ -402,6 +429,7 @@ namespace Green.Settings
 
         public override void ResetValue()
         {
+            if (IsReadOnly) return;
             Value = DefaultValue;
         }
 
@@ -476,9 +504,11 @@ namespace Green.Settings
             get { return width; }
             set
             {
+                if (IsReadOnly) return;
                 if (value < MinWidth) value = MinWidth;
                 if (value > MaxWidth) value = MaxWidth;
                 width = value;
+                OnValueChanged();
                 OnPropertyChanged("Width");
                 OnPropertyChanged("StringValue");
                 OnPropertyChanged("HasDefaultValue");
@@ -489,9 +519,11 @@ namespace Green.Settings
             get { return height; }
             set
             {
+                if (IsReadOnly) return;
                 if (value < MinHeight) value = MinHeight;
                 if (value > MaxHeight) value = MaxHeight;
                 height = value;
+                OnValueChanged();
                 OnPropertyChanged("Height");
                 OnPropertyChanged("StringValue");
                 OnPropertyChanged("HasDefaultValue");
@@ -521,6 +553,7 @@ namespace Green.Settings
             }
             set
             {
+                if (IsReadOnly) return;
                 string[] items = value.Split('x');
                 try
                 {
@@ -538,6 +571,7 @@ namespace Green.Settings
 
         public override void ResetValue()
         {
+            if (IsReadOnly) return;
             Width = DefaultWidth;
             Height = DefaultHeight;
         }
@@ -551,6 +585,7 @@ namespace Green.Settings
             get { return value; }
             set
             {
+                if (IsReadOnly) return;
                 this.value = value;
                 OnValueChanged();
             }
@@ -573,6 +608,7 @@ namespace Green.Settings
             }
             set
             {
+                if (IsReadOnly) return;
                 string[] items = value.Split(';');
                 try
                 {
@@ -595,6 +631,7 @@ namespace Green.Settings
 
         public override void ResetValue()
         {
+            if (IsReadOnly) return;
             DefaultValue = Value;
         }
     }
@@ -607,6 +644,7 @@ namespace Green.Settings
             get { return value; }
             set
             {
+                if (IsReadOnly) return;
                 this.value = value;
                 OnValueChanged();
             }
@@ -625,6 +663,7 @@ namespace Green.Settings
             get { return value.ToString(); }
             set
             {
+                if (IsReadOnly) return;
                 bool newValue;
                 if (Boolean.TryParse(value, out newValue))
                 {
@@ -640,6 +679,7 @@ namespace Green.Settings
 
         public override void ResetValue()
         {
+            if (IsReadOnly) return;
             Value = DefaultValue;
         }
     }
@@ -659,6 +699,7 @@ namespace Green.Settings
             }
             set
             {
+                if (IsReadOnly) return;
                 if (value.Length == StringOptions.Length)
                     friendlyOptions = value;
             }
@@ -680,6 +721,7 @@ namespace Green.Settings
             }
             set
             {
+                if (IsReadOnly) return;
                 if (value > 0 && value < StringOptions.Length)
                     StringValue = StringOptions[value];
             }
@@ -693,6 +735,7 @@ namespace Green.Settings
             }
             set
             {
+                if (IsReadOnly) return;
                 for (int i = 0; i < FriendlyOptions.Length; i++)
                 {
                     if (FriendlyOptions[i] == value)
@@ -717,7 +760,8 @@ namespace Green.Settings
         public T Value 
         {
             get { return value; }
-            set { 
+            set {
+                if (IsReadOnly) return;
                 this.value = value;
                 OnValueChanged();
             }
@@ -729,6 +773,7 @@ namespace Green.Settings
             get { return value.ToString(); }
             set
             {
+                if (IsReadOnly) return;
                 T newValue;
                 if(Enum.TryParse<T>(value, out newValue))
                 {
@@ -752,7 +797,29 @@ namespace Green.Settings
 
         public override void ResetValue()
         {
+            if (IsReadOnly) return;
             Value = DefaultValue;
+        }
+    }
+
+    public class SettingSetter
+    {
+        public List<Setting> Settings { get; private set; }
+        public void SetReadOnly(bool value)
+        {
+            foreach (Setting setting in Settings)
+                setting.IsReadOnly = value;
+        }
+
+        public void SetHidden(bool value)
+        {
+            foreach (Setting setting in Settings)
+                setting.IsHidden = value;
+        }
+
+        public SettingSetter()
+        {
+            Settings = new List<Setting>();
         }
     }
 
@@ -832,7 +899,7 @@ namespace Green.Settings
         public event EventHandler ValueChanged;
         void Setting_ValueChanged(object sender, EventArgs e)
         {
-            if (ValueChanged != null) ValueChanged(this, new EventArgs());
+            if (!SuppressValueChanged && ValueChanged != null) ValueChanged(this, EventArgs.Empty);
         }
 
         void Setting_PropertyChanged(object sender, PropertyChangedEventArgs e)
@@ -875,9 +942,26 @@ namespace Green.Settings
             }
         }
 
+        private bool SuppressValueChanged = false;
+        public void StoreAllValues()
+        {
+            foreach (Setting s in Settings) s.StoreValue();
+        }
+
+        public void RestoreAllValues()
+        {
+            SuppressValueChanged = true;
+            foreach (Setting s in Settings) s.RestoreValue();
+            SuppressValueChanged = false;
+            ValueChanged(this, EventArgs.Empty);
+        }
+
         public void ResetToDefault()
         {
+            SuppressValueChanged = true;
             foreach (Setting s in Settings) s.ResetValue();
+            SuppressValueChanged = false;
+            ValueChanged(this, EventArgs.Empty);
         }
     }
 
@@ -926,23 +1010,27 @@ namespace Green.Settings
             return settings;
         }
 
+        public string ToString(IEnumerable<SettingGroup> settingGroups = null)
+        {
+            string text = "";
+            if (settingGroups == null) settingGroups = SettingGroups;
+            foreach (SettingGroup SG in settingGroups)
+            {
+                text += string.Format("[{0}]\r\n", SG.Name);
+                foreach (Setting S in SG.Settings)
+                {
+                    text += string.Format("{0}={1}\r\n", S.Name, S.StringValue);
+                }
+                text += "\r\n";
+            }
+            return text;
+        }
+
         public bool Save(string path)
         {
             try
             {
-                using (StreamWriter SW = new StreamWriter(path))
-                {
-                    foreach (SettingGroup SG in SettingGroups)
-                    {
-                        SW.WriteLine('[' + SG.Name + ']');
-                        foreach (Setting S in SG.Settings)
-                        {
-                            SW.WriteLine(S.Name + '=' + S.StringValue);
-                        }
-                        SW.WriteLine();
-                    }
-                    SW.Close();
-                }
+                File.WriteAllText(path, ToString());
                 return true;
             }
             catch 
@@ -951,36 +1039,37 @@ namespace Green.Settings
             }
         }
 
+        public void FromString(string text)
+        {
+            string[] lines = text.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+            Dictionary<string, Setting> settings = GetSettingsDictionary();
+            string group = "", setting, value;
+            string[] items;
+            foreach (string line in lines)
+            {
+                if (line.Length == 0) continue;
+                if (line[0] == '[')
+                {
+                    group = line.Substring(1, line.Length - 2);
+                }
+                else
+                {
+                    items = line.Split('=');
+                    setting = group + '.' + items[0];
+                    value = items[1];
+                    if (settings.ContainsKey(setting))
+                    {
+                        settings[setting].StringValue = value;
+                    }
+                }
+            }
+        }
+
         public bool Load(string path)
         {
             try
             {
-                Dictionary<string, Setting> settings = GetSettingsDictionary();
-                string group = "", setting, value;
-                string[] items;
-                using (StreamReader SR = new StreamReader(path))
-                {
-                    while (!SR.EndOfStream)
-                    {       
-                        string line = SR.ReadLine();
-                        if (line.Length == 0) continue;
-                        if (line[0] == '[')
-                        {
-                            group = line.Substring(1, line.Length - 2);
-                        }
-                        else
-                        {
-                            items = line.Split('=');
-                            setting = group+'.'+items[0];
-                            value = items[1];
-                            if (settings.ContainsKey(setting))
-                            {
-                                settings[setting].StringValue = value;
-                            }
-                        }
-                    }
-                    SR.Close();
-                }
+                FromString(File.ReadAllText(path));
                 return true;
             }
             catch

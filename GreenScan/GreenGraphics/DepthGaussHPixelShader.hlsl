@@ -15,11 +15,11 @@ float main(VertexPositionTextureOut v) : SV_TARGET
 
 	for(int i = 0; i < GaussCoeffCount; i++)
 	{
-		pos = center + float2((i - GaussCoeffCount / 2 - 0.5) * DepthStep.x, 0.f);
+		pos = center + float2((i - GaussCoeffCount / 2) * DepthStep.x, 0.f);
 		depth = Texture.Sample(Sampler, pos);
 		if(depth > MinDepth)
 		{
-			coeff = Coeffs.Sample(Sampler, (float)i / GaussCoeffCount);
+			coeff = Coeffs.Sample(Sampler, (float)i / (GaussCoeffCount - 1));
 			sum += depth * coeff;
 			gain += coeff;
 		}

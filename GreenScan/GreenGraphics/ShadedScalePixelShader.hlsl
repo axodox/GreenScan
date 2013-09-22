@@ -2,7 +2,7 @@
 Texture1D ScaleTexture : register(t0);
 SamplerState ScaleSampler : register(s0);
 
-float4 main(VertexPositionTextureDepth v) : SV_TARGET
+float4 main(VertexPositionWorldNormalDepthTexture v) : SV_TARGET
 {
 	float shade = abs(v.Normal.z);
 	if(shade < 0.f || shade > 1.f)

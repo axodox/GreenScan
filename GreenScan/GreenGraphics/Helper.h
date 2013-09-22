@@ -3,9 +3,12 @@
 #include "Stdafx.h"
 #define Throw(p) { if(p) { throw p; } }
 #define SafeDelete(p) { if(p) { delete p; p=nullptr; } }
-#define SafeRelease(p) { if(p) { p->Release(); p=nullptr; } }
+
 #define LPWSTRDelete(str) { if(str) { delete [wcslen(str) + 1] str; str=nullptr; } }
 #define LPSTRDelete(str) { if(str) { delete [strlen(str) + 1] str; str=nullptr; } }
+
+#define SafeRelease(p) { if(p) { p->Release(); p=nullptr; } }
+
 using namespace DirectX;
 using namespace Gdiplus;
 int GetEncoderClsid(const WCHAR* form, CLSID* pClsid)
@@ -34,6 +37,16 @@ int GetEncoderClsid(const WCHAR* form, CLSID* pClsid)
 	return -1;
 }
 
+void Release(IUnknown* object)
+{
+	int count = object->Release();
+	if(count)
+	{
+		char text[10];
+		itoa(count, text, 10);
+		MessageBoxA(0, text, 0, 0);
+	}
+}
 
 void Error(HRESULT hr)
 {
@@ -97,6 +110,15 @@ byte ClampToByte(float x)
 }
 
 typedef void (*Callback)(void* param); 
+
+bool IsIdentity(XMFLOAT4X4 matrix)
+{
+	return 
+		matrix._11 == 1.f && matrix._12 == 0.f && matrix._13 == 0.f && matrix._14 == 0.f && 
+		matrix._21 == 0.f && matrix._22 == 1.f && matrix._23 == 0.f && matrix._24 == 0.f && 
+		matrix._31 == 0.f && matrix._32 == 0.f && matrix._33 == 1.f && matrix._34 == 0.f && 
+		matrix._41 == 0.f && matrix._42 == 0.f && matrix._43 == 0.f && matrix._44 == 1.f;
+}
 
 #pragma managed
 #include <vcclr.h>

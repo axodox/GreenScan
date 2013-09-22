@@ -95,6 +95,12 @@ namespace Green
 			}
 		};
 
+		__interface IVertexDefinition
+		{
+		public:
+			const VertexDefinition* GetVertexDefinition();
+		};
+
 		VertexDefinition* VertexDefinition::VertexPosition = 0;
 		VertexDefinition* VertexDefinition::VertexPositionColor = 0;
 		VertexDefinition* VertexDefinition::VertexPositionTexture = 0;
@@ -106,6 +112,11 @@ namespace Green
 			VertexPosition() {}
 			VertexPosition(XMFLOAT3 position) : Position(position) {}
 			VertexPosition(float x, float y, float z) : Position(XMFLOAT3(x, y, z)) {}
+
+			static const VertexDefinition* GetVertexDefinition()
+			{
+				return VertexDefinition::VertexPosition;
+			}
 		};
 
 		struct VertexPositionColor
@@ -114,6 +125,11 @@ namespace Green
 			XMFLOAT4 Color;
 			VertexPositionColor() {}
 			VertexPositionColor(XMFLOAT3 position, XMFLOAT4 color) : Position(position), Color(color) {}
+
+			static const VertexDefinition* GetVertexDefinition()
+			{
+				return VertexDefinition::VertexPositionColor;
+			}
 		};
 
 		struct VertexPositionTexture
@@ -122,6 +138,11 @@ namespace Green
 			XMFLOAT2 Texture;
 			VertexPositionTexture() {}
 			VertexPositionTexture(XMFLOAT3 position, XMFLOAT2 texture) : Position(position), Texture(texture) {}
+			
+			static const VertexDefinition* GetVertexDefinition()
+			{
+				return VertexDefinition::VertexPositionTexture;
+			}
 		};
 
 		struct VertexPositionNormalTexture
@@ -131,6 +152,11 @@ namespace Green
 			XMFLOAT2 Texture;
 			VertexPositionNormalTexture() {}
 			VertexPositionNormalTexture(XMFLOAT3 position, XMFLOAT3 normal, XMFLOAT2 texture) : Position(position), Normal(normal), Texture(texture) {}
+
+			static const VertexDefinition* GetVertexDefinition()
+			{
+				return VertexDefinition::VertexPositionNormalTexture;
+			}
 		};
 	}
 }

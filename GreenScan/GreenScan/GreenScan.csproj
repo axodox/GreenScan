@@ -348,6 +348,39 @@
       <Localizable>False</Localizable>
     </Resource>
   </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Icons\open16.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Icons\save16.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Icons\close16.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Icons\start16.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Icons\stop16.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Icons\restart16.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Icons\scan16.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Icons\calibrate16.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Icons\processing16.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Icons\stopped16.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Icons\warning16.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

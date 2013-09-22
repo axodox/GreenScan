@@ -5,12 +5,14 @@
         xmlns:g="clr-namespace:Green.Graphics;assembly=GreenGraphics"
         xmlns:p="clr-namespace:GreenScan.Properties"
         xmlns:local="clr-namespace:Green.Scan" x:Name="MW" x:Class="Green.Scan.MainWindow"
-        Closing="Window_Closing" SnapsToDevicePixels="True"
+        Closing="Window_Closing" SnapsToDevicePixels="True" MinWidth="640" MinHeight="480"
         Title="GreenScan" Width="720" Height="480" Icon="icon.ico" MouseWheel="Window_MouseWheel" MouseDown="Window_MouseDown" MouseDoubleClick="Window_MouseDoubleClick" IsEnabled="False" ResizeMode="CanResizeWithGrip">
     <Window.Resources>
-        <local:KinectManagerToDeviceListConverter x:Key="KinectManagerToDeviceListConverter"/>
+        <local:DeviceCountToDeviceListConverter x:Key="DeviceCountToDeviceListConverter"/>
         <local:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         <local:BooleanInverter x:Key="BooleanInverter"/>
+        <local:Int32ToBooleanConverter x:Key="Int32ToBooleanConverter"/>
+        <local:BooleanToProcessingIconConverter x:Key="BooleanToProcessingIconConverter"/>
         <Storyboard x:Key="RemotingIn">
         	<ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.Visibility)" Storyboard.TargetName="BRemoting">
         		<DiscreteObjectKeyFrame KeyTime="0" Value="{x:Static Visibility.Visible}"/>
@@ -57,7 +59,9 @@
         <CommandBinding Command="{x:Static local:GreenScanCommands.Start}" Executed="StartCmdExecuted" CanExecute="StartCmdCanExecute"/>
         <CommandBinding Command="{x:Static local:GreenScanCommands.Stop}" Executed="StopCmdExecuted" CanExecute="StopCmdCanExecute"/>
         <CommandBinding Command="{x:Static local:GreenScanCommands.Calibrate}" Executed="CalibrateCmdExecuted" CanExecute="CalibrateCmdCanExecute"/>
+        <CommandBinding Command="{x:Static local:GreenScanCommands.Import}" Executed="ImportCmdExecuted" CanExecute="ImportCmdCanExecute"/>
         <CommandBinding Command="{x:Static local:GreenScanCommands.Export}" Executed="ExportCmdExecuted" CanExecute="ExportCmdCanExecute"/>
+        <CommandBinding Command="{x:Static local:GreenScanCommands.CloseFile}" Executed="CloseFileCmdExecuted" CanExecute="CloseFileCmdCanExecute"/>
         <CommandBinding Command="{x:Static local:TurntableCommands.Scan}" Executed="TurntableScanCmdExecuted" CanExecute="TurntableScanCmdCanExecute"/>
         <CommandBinding Command="{x:Static local:TurntableCommands.Stop}" Executed="TurntableStopCmdExecuted" CanExecute="TurntableStopCmdCanExecute"/>
         <CommandBinding Command="{x:Static local:TurntableCommands.Calibrate}" Executed="TurntableCalibrateCmdExecuted" CanExecute="TurntableCalibrateCmdCanExecute"/>
@@ -73,6 +77,7 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>        
         <Grid>
             <Grid.ColumnDefinitions>
@@ -89,9 +94,19 @@
                 </Grid.RowDefinitions>
                 <Menu>
                     <MenuItem Header="{x:Static p:Resources.MenuFile}">
-                        <MenuItem Header="{x:Static p:Resources.MenuOpenModel}" Command="{x:Static local:GreenScanCommands.Open}"/>
-                        <MenuItem Header="{x:Static p:Resources.MenuSaveModel}" Command="{x:Static local:GreenScanCommands.Save}"/>
+                        <MenuItem Header="{x:Static p:Resources.MenuOpenModel}" Command="{x:Static local:GreenScanCommands.Open}">
+                            <MenuItem.Icon>
+                                <Image Source="Icons/open16.png"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="{x:Static p:Resources.MenuSaveModel}" Command="{x:Static local:GreenScanCommands.Save}">
+                            <MenuItem.Icon>
+                                <Image Source="Icons/save16.png"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="{x:Static p:Resources.MenuFileCloseFile}" Command="{x:Static local:GreenScanCommands.CloseFile}"/>
                         <Separator/>
+                        <MenuItem Header="{x:Static p:Resources.MenuFileImport}" Command="{x:Static local:GreenScanCommands.Import}"/>
                         <MenuItem x:Name="MIExport" Header="{x:Static p:Resources.MenuExportAs}" IsEnabled="{Binding ProvidesData, Mode=OneWay}">
                             <MenuItem Header="{x:Static p:Resources.MenuExportAsPng}">
                                 <MenuItem Header="{x:Static p:Resources.MenuExportAsPngAsScreenshot}" Command="{x:Static local:GreenScanCommands.Export}" CommandParameter="PNG"/>
@@ -106,10 +121,18 @@
                         </MenuItem>
                         <MenuItem Header="{x:Static p:Resources.MenuFileBrowseSaveDirectory}" Command="{x:Static local:GreenScanCommands.Browse}"/>
                         <Separator/>
-                        <MenuItem Header="{x:Static p:Resources.MenuFileExit}" Command="{x:Static local:GreenScanCommands.Close}"/>
+                        <MenuItem Header="{x:Static p:Resources.MenuFileExit}" Command="{x:Static local:GreenScanCommands.Close}">
+                            <MenuItem.Icon>
+                                <Image Source="Icons/close16.png"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
                     </MenuItem>
                     <MenuItem Header="{x:Static p:Resources.MenuDevice}">
-                        <MenuItem x:Name="MIStart" Header="{x:Static p:Resources.MenuDeviceStart}" ItemsSource="{Binding Converter={StaticResource KinectManagerToDeviceListConverter}}"/>
+                        <MenuItem x:Name="MIStart" Header="{x:Static p:Resources.MenuDeviceStart}" IsEnabled="{Binding DeviceCount, Converter={StaticResource Int32ToBooleanConverter}}" ItemsSource="{Binding DeviceCount, Converter={StaticResource DeviceCountToDeviceListConverter}}">
+                            <MenuItem.Icon>
+                                <Image Source="Icons/start16.png"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
                         <MenuItem Header="{x:Static p:Resources.MenuDeviceStop}" Command="{x:Static local:GreenScanCommands.Stop}"/>
                         <Separator/>
                         <s:EnumMenu x:Name="MIMode" Header="{x:Static p:Resources.MenuDeviceMode}" IsEnabled="{Binding SavingInProgress, Converter={StaticResource BooleanInverter}, ElementName=MW}" />
@@ -117,12 +140,28 @@
                         <MenuItem Header="{x:Static p:Resources.MenuDeviceCalibrate}" Command="{x:Static local:GreenScanCommands.Calibrate}"/>                        
                     </MenuItem>
                     <MenuItem x:Name="MITurntable" Header="{x:Static p:Resources.MenuTurntable}" Visibility="{Binding IsConnected, Converter={StaticResource BooleanToVisibilityConverter}}">
-                        <MenuItem Header="{x:Static p:Resources.MenuTurntableScan}" Command="{x:Static local:TurntableCommands.Scan}"/>
-                        <MenuItem Header="{x:Static p:Resources.MenuTurntableReturnToOrigin}" Command="{x:Static local:TurntableCommands.ToOrigin}"/>
+                        <MenuItem Header="{x:Static p:Resources.MenuTurntableScan}" Command="{x:Static local:TurntableCommands.Scan}">
+                            <MenuItem.Icon>
+                                <Image Source="Icons/scan16.png"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="{x:Static p:Resources.MenuTurntableReturnToOrigin}" Command="{x:Static local:TurntableCommands.ToOrigin}">
+                            <MenuItem.Icon>
+                                <Image Source="Icons/restart16.png"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
                         <MenuItem Header="{x:Static p:Resources.MenuTurntableStop}" Command="{x:Static local:TurntableCommands.Stop}"/>
                         <Separator/>
-                        <MenuItem Header="{x:Static p:Resources.MenuOpenModel}" Command="{x:Static local:TurntableCommands.Open}"/>
-                        <MenuItem Header="{x:Static p:Resources.MenuSaveModel}" Command="{x:Static local:TurntableCommands.Save}"/>
+                        <MenuItem Header="{x:Static p:Resources.MenuOpenModel}" Command="{x:Static local:TurntableCommands.Open}">
+                            <MenuItem.Icon>
+                                <Image Source="Icons/open16.png"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="{x:Static p:Resources.MenuSaveModel}" Command="{x:Static local:TurntableCommands.Save}">
+                            <MenuItem.Icon>
+                                <Image Source="Icons/save16.png"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
                         <MenuItem x:Name="MITurntableExport" Header="{x:Static p:Resources.MenuExportAs}">
                             <MenuItem Header="{x:Static p:Resources.MenuExportAsStl}" Command="{x:Static local:TurntableCommands.Export}" CommandParameter="STL"/>
                             <MenuItem Header="{x:Static p:Resources.MenuExportAsFbx}" Command="{x:Static local:TurntableCommands.Export}" CommandParameter="FBX"/>
@@ -132,13 +171,20 @@
                             <MenuItem Header="{x:Static p:Resources.MenuExportAsFl4}" Command="{x:Static local:TurntableCommands.Export}" CommandParameter="FL4"/>
                         </MenuItem>
                         <Separator/>
-                        <MenuItem Header="{x:Static p:Resources.MenuTurntableCalibrate}" Command="{x:Static local:TurntableCommands.Calibrate}"/>
+                        <MenuItem Header="{x:Static p:Resources.MenuTurntableCalibrate}" Command="{x:Static local:TurntableCommands.Calibrate}">
+                            <MenuItem.Icon>
+                                <Image Source="Icons/calibrate16.png"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
                         <MenuItem Header="{x:Static p:Resources.MenuTurntableCountSteps}" Command="{x:Static local:TurntableCommands.CountSteps}"/>
                     </MenuItem>
                     <MenuItem Header="{x:Static p:Resources.MenuAbout}" Command="{x:Static local:GreenScanCommands.About}"/>
                 </Menu>
                 <g:GraphicsCanvas x:Name="GraphicsCore" Grid.Row="1" />
                 <StatusBar Grid.Row="2">
+                    <StatusBarItem>
+                        <Image x:Name="IStatus" Width="16" Height="16" VerticalAlignment="Bottom" Source="{Binding Processing, Converter={StaticResource BooleanToProcessingIconConverter}}" />
+                    </StatusBarItem>
                     <StatusBarItem x:Name="SBIStatusText" Content="{x:Static p:Resources.StatusReady}"/>
                 </StatusBar>
             </Grid>
@@ -162,6 +208,6 @@
             </Grid>
             
         </Grid>
-        <ProgressBar x:Name="PBStatus" Grid.Row="0" Visibility="Collapsed" Height="3" Maximum="1" VerticalAlignment="Bottom" BorderBrush="{x:Null}" Background="{x:Null}"/>
+        <ProgressBar x:Name="PBStatus" Grid.Row="1" Visibility="Collapsed" Height="5" Maximum="1" VerticalAlignment="Bottom"/>
     </Grid>
 </Window>

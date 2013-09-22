@@ -1273,7 +1273,7 @@ namespace Excalibur
             {
                 this.value = value;
                 OnPropertyChanged("Value");
-                if (ValueChanged != null) ValueChanged(this, new EventArgs());
+                if (ValueChanged != null) ValueChanged(this, EventArgs.Empty);
             }
         }
 

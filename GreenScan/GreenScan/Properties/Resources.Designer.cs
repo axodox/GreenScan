@@ -205,6 +205,24 @@ namespace GreenScan.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Float4 files (*.fl4)|*.fl4|Vector4 files (*.vector4)|*.vector4.
+        /// </summary>
+        public static string ImportFileFilter {
+            get {
+                return ResourceManager.GetString("ImportFileFilter", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Import model.
+        /// </summary>
+        public static string ImportFileTitle {
+            get {
+                return ResourceManager.GetString("ImportFileTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Clear.
         /// </summary>
         public static string KinectCalibrationClear {
@@ -457,11 +475,29 @@ namespace GreenScan.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Close file.
+        /// </summary>
+        public static string MenuFileCloseFile {
+            get {
+                return ResourceManager.GetString("MenuFileCloseFile", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Exit.
         /// </summary>
         public static string MenuFileExit {
             get {
                 return ResourceManager.GetString("MenuFileExit", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Import....
+        /// </summary>
+        public static string MenuFileImport {
+            get {
+                return ResourceManager.GetString("MenuFileImport", resourceCulture);
             }
         }
         
@@ -534,6 +570,24 @@ namespace GreenScan.Properties {
         public static string MenuTurntableStop {
             get {
                 return ResourceManager.GetString("MenuTurntableStop", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The Kinect has been disconnected..
+        /// </summary>
+        public static string MessageKinectDisconnected {
+            get {
+                return ResourceManager.GetString("MessageKinectDisconnected", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The turntable is not calibrated would you like to calibrate it?.
+        /// </summary>
+        public static string MessageTurntableNotCalibrated {
+            get {
+                return ResourceManager.GetString("MessageTurntableNotCalibrated", resourceCulture);
             }
         }
         
@@ -799,6 +853,24 @@ namespace GreenScan.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Axial scanning.
+        /// </summary>
+        public static string SettingGroupTurntableAxial {
+            get {
+                return ResourceManager.GetString("SettingGroupTurntableAxial", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Volumetric scanning.
+        /// </summary>
+        public static string SettingGroupTurntableVolumetric {
+            get {
+                return ResourceManager.GetString("SettingGroupTurntableVolumetric", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to View.
         /// </summary>
         public static string SettingGroupView {
@@ -1060,65 +1132,47 @@ namespace GreenScan.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to View.
-        /// </summary>
-        public static string SettingTurntableAxialView {
-            get {
-                return ResourceManager.GetString("SettingTurntableAxialView", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Clipping height (meters).
         /// </summary>
-        public static string SettingTurntableClippingHeight {
+        public static string SettingTurntableAxialClippingHeight {
             get {
-                return ResourceManager.GetString("SettingTurntableClippingHeight", resourceCulture);
+                return ResourceManager.GetString("SettingTurntableAxialClippingHeight", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to Clipping radius (meters).
         /// </summary>
-        public static string SettingTurntableClippingRadius {
+        public static string SettingTurntableAxialClippingRadius {
             get {
-                return ResourceManager.GetString("SettingTurntableClippingRadius", resourceCulture);
+                return ResourceManager.GetString("SettingTurntableAxialClippingRadius", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to Leg distance (meters).
         /// </summary>
-        public static string SettingTurntableCoreX {
+        public static string SettingTurntableAxialCoreX {
             get {
-                return ResourceManager.GetString("SettingTurntableCoreX", resourceCulture);
+                return ResourceManager.GetString("SettingTurntableAxialCoreX", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to Leg position (meters).
         /// </summary>
-        public static string SettingTurntableCoreY {
+        public static string SettingTurntableAxialCoreY {
             get {
-                return ResourceManager.GetString("SettingTurntableCoreY", resourceCulture);
+                return ResourceManager.GetString("SettingTurntableAxialCoreY", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Cube resolution (voxels).
+        ///   Looks up a localized string similar to View.
         /// </summary>
-        public static string SettingTurntableCubeResolution {
+        public static string SettingTurntableAxialView {
             get {
-                return ResourceManager.GetString("SettingTurntableCubeResolution", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Cube size (centimeters).
-        /// </summary>
-        public static string SettingTurntableCubeSize {
-            get {
-                return ResourceManager.GetString("SettingTurntableCubeSize", resourceCulture);
+                return ResourceManager.GetString("SettingTurntableAxialView", resourceCulture);
             }
         }
         
@@ -1143,36 +1197,18 @@ namespace GreenScan.Properties {
         /// <summary>
         ///   Looks up a localized string similar to Model resolution (vertices/leg).
         /// </summary>
-        public static string SettingTurntableModelResolution {
+        public static string SettingTurntableSaveModelResolution {
             get {
-                return ResourceManager.GetString("SettingTurntableModelResolution", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Current depth (units).
-        /// </summary>
-        public static string SettingTurntableSlice {
-            get {
-                return ResourceManager.GetString("SettingTurntableSlice", resourceCulture);
+                return ResourceManager.GetString("SettingTurntableSaveModelResolution", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to Texture resolution (pixels/leg).
         /// </summary>
-        public static string SettingTurntableTextureResolution {
+        public static string SettingTurntableSaveTextureResolution {
             get {
-                return ResourceManager.GetString("SettingTurntableTextureResolution", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Threshold (units).
-        /// </summary>
-        public static string SettingTurntableThreshold {
-            get {
-                return ResourceManager.GetString("SettingTurntableThreshold", resourceCulture);
+                return ResourceManager.GetString("SettingTurntableSaveTextureResolution", resourceCulture);
             }
         }
         
@@ -1182,6 +1218,51 @@ namespace GreenScan.Properties {
         public static string SettingTurntableTransform {
             get {
                 return ResourceManager.GetString("SettingTurntableTransform", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cube resolution (voxels).
+        /// </summary>
+        public static string SettingTurntableVolumetricCubeResolution {
+            get {
+                return ResourceManager.GetString("SettingTurntableVolumetricCubeResolution", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cube size (centimeters).
+        /// </summary>
+        public static string SettingTurntableVolumetricCubeSize {
+            get {
+                return ResourceManager.GetString("SettingTurntableVolumetricCubeSize", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Gradient limit (units).
+        /// </summary>
+        public static string SettingTurntableVolumetricGradientLimit {
+            get {
+                return ResourceManager.GetString("SettingTurntableVolumetricGradientLimit", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Current depth (units).
+        /// </summary>
+        public static string SettingTurntableVolumetricSlice {
+            get {
+                return ResourceManager.GetString("SettingTurntableVolumetricSlice", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Threshold (units).
+        /// </summary>
+        public static string SettingTurntableVolumetricThreshold {
+            get {
+                return ResourceManager.GetString("SettingTurntableVolumetricThreshold", resourceCulture);
             }
         }
         
@@ -1227,6 +1308,15 @@ namespace GreenScan.Properties {
         public static string StatusDeviceCannotBeOpened {
             get {
                 return ResourceManager.GetString("StatusDeviceCannotBeOpened", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {0} device(s) connected..
+        /// </summary>
+        public static string StatusDevicesConnected {
+            get {
+                return ResourceManager.GetString("StatusDevicesConnected", resourceCulture);
             }
         }
         
@@ -1299,6 +1389,15 @@ namespace GreenScan.Properties {
         public static string StatusStopping {
             get {
                 return ResourceManager.GetString("StatusStopping", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to GreenScan.
+        /// </summary>
+        public static string Title {
+            get {
+                return ResourceManager.GetString("Title", resourceCulture);
             }
         }
         

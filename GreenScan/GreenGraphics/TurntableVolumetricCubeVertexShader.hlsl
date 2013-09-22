@@ -4,7 +4,7 @@ SamplerState Sampler : register(s0);
 
 VertexPositionInstance main(VertexPositionTextureInstance vi)
 {
-	int3 id = int3((int)(vi.Texture.x * CubeRes), vi.Instance, 0);
+	int3 id = int3((int)(vi.Texture.x * (CubeRes - 1)), vi.Instance, 0);
 	float depth = DepthTexture.Load(id);
 
 	float4 worldPos = float4(

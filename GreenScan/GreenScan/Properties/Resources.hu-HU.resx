@@ -165,6 +165,12 @@
   <data name="EnumRotatingScannerVolumetricViews" xml:space="preserve">
     <value>Ellenőrző|Vetítési|Metszet|Modell</value>
   </data>
+  <data name="ImportFileFilter" xml:space="preserve">
+    <value>Float4 fájlok (*.fl4)|*.fl4|Vector4 fájlok (*.vector4)|*.vector4</value>
+  </data>
+  <data name="ImportFileTitle" xml:space="preserve">
+    <value>Modell importálása</value>
+  </data>
   <data name="KinectCalibrationClear" xml:space="preserve">
     <value>Törlés</value>
   </data>
@@ -249,8 +255,14 @@
   <data name="MenuFileBrowseSaveDirectory" xml:space="preserve">
     <value>Mentési könyvtár megnyitása...</value>
   </data>
+  <data name="MenuFileCloseFile" xml:space="preserve">
+    <value>Fájl bezárása</value>
+  </data>
   <data name="MenuFileExit" xml:space="preserve">
     <value>Kilépés</value>
+  </data>
+  <data name="MenuFileImport" xml:space="preserve">
+    <value>Importálás...</value>
   </data>
   <data name="MenuOpenModel" xml:space="preserve">
     <value>Modell megnyitása...</value>
@@ -275,6 +287,12 @@
   </data>
   <data name="MenuTurntableStop" xml:space="preserve">
     <value>Leállítás</value>
+  </data>
+  <data name="MessageKinectDisconnected" xml:space="preserve">
+    <value>A Kinectet leválasztották.</value>
+  </data>
+  <data name="MessageTurntableNotCalibrated" xml:space="preserve">
+    <value>A forgópad nincs kalibrálva, szeretné most kalibrálni?</value>
   </data>
   <data name="OpenFileTitle" xml:space="preserve">
     <value>Fájl megnyitása</value>
@@ -363,6 +381,12 @@
   <data name="SettingGroupTurntable" xml:space="preserve">
     <value>Forgópad</value>
   </data>
+  <data name="SettingGroupTurntableAxial" xml:space="preserve">
+    <value>Axiális szkennelés</value>
+  </data>
+  <data name="SettingGroupTurntableVolumetric" xml:space="preserve">
+    <value>Volumetrikus szkennelés</value>
+  </data>
   <data name="SettingGroupView" xml:space="preserve">
     <value>Nézet</value>
   </data>
@@ -450,26 +474,20 @@
   <data name="SettingTriangleRemoveLimit" xml:space="preserve">
     <value>Háromszög eldobási határ (egységben)</value>
   </data>
-  <data name="SettingTurntableAxialView" xml:space="preserve">
-    <value>Nézet</value>
-  </data>
-  <data name="SettingTurntableClippingHeight" xml:space="preserve">
+  <data name="SettingTurntableAxialClippingHeight" xml:space="preserve">
     <value>Vágási magasság (méterben)</value>
   </data>
-  <data name="SettingTurntableClippingRadius" xml:space="preserve">
+  <data name="SettingTurntableAxialClippingRadius" xml:space="preserve">
     <value>Vágási sugár (méterben)</value>
   </data>
-  <data name="SettingTurntableCoreX" xml:space="preserve">
+  <data name="SettingTurntableAxialCoreX" xml:space="preserve">
     <value>Lábak távolsága (méterben)</value>
   </data>
-  <data name="SettingTurntableCoreY" xml:space="preserve">
+  <data name="SettingTurntableAxialCoreY" xml:space="preserve">
     <value>Lábak pozíciója (méterben)</value>
   </data>
-  <data name="SettingTurntableCubeResolution" xml:space="preserve">
-    <value>Kocka felbontása (voxelben)</value>
-  </data>
-  <data name="SettingTurntableCubeSize" xml:space="preserve">
-    <value>Kocka mérete (centiméterben)</value>
+  <data name="SettingTurntableAxialView" xml:space="preserve">
+    <value>Nézet</value>
   </data>
   <data name="SettingTurntableHasMirror" xml:space="preserve">
     <value>Tükör használata</value>
@@ -477,20 +495,29 @@
   <data name="SettingTurntableMode" xml:space="preserve">
     <value>Modellalkotási mód</value>
   </data>
-  <data name="SettingTurntableModelResolution" xml:space="preserve">
+  <data name="SettingTurntableSaveModelResolution" xml:space="preserve">
     <value>Modell felbontása (vertexek/láb)</value>
   </data>
-  <data name="SettingTurntableSlice" xml:space="preserve">
-    <value>Jelenlegi mélység (egységben)</value>
-  </data>
-  <data name="SettingTurntableTextureResolution" xml:space="preserve">
+  <data name="SettingTurntableSaveTextureResolution" xml:space="preserve">
     <value>Textúra felbontása (pixelek/láb)</value>
-  </data>
-  <data name="SettingTurntableThreshold" xml:space="preserve">
-    <value>Küszöb (egységben)</value>
   </data>
   <data name="SettingTurntableTransform" xml:space="preserve">
     <value>Forgópad mátrix</value>
+  </data>
+  <data name="SettingTurntableVolumetricCubeResolution" xml:space="preserve">
+    <value>Kocka felbontása (voxelben)</value>
+  </data>
+  <data name="SettingTurntableVolumetricCubeSize" xml:space="preserve">
+    <value>Kocka mérete (centiméterben)</value>
+  </data>
+  <data name="SettingTurntableVolumetricGradientLimit" xml:space="preserve">
+    <value>Gradiens küszöb (egységben)</value>
+  </data>
+  <data name="SettingTurntableVolumetricSlice" xml:space="preserve">
+    <value>Jelenlegi mélység (egységben)</value>
+  </data>
+  <data name="SettingTurntableVolumetricThreshold" xml:space="preserve">
+    <value>Küszöb (egységben)</value>
   </data>
   <data name="SettingTurntableVolumetricView" xml:space="preserve">
     <value>Nézet</value>
@@ -506,6 +533,9 @@
   </data>
   <data name="StatusDeviceCannotBeOpened" xml:space="preserve">
     <value>Az eszközt nem sikerült megnyitni. Ellenőrizze, hogy be van-e dugva a tápegysége, elégséges a sávszélesség és jelenleg nincs-e használatban.</value>
+  </data>
+  <data name="StatusDevicesConnected" xml:space="preserve">
+    <value>{0} eszköz csatlakoztatva.</value>
   </data>
   <data name="StatusFileLoadedSuccesfully" xml:space="preserve">
     <value>Fájl sikeresen betöltve.</value>
@@ -530,6 +560,9 @@
   </data>
   <data name="StatusStopping" xml:space="preserve">
     <value>Leállás...</value>
+  </data>
+  <data name="Title" xml:space="preserve">
+    <value>GreenScan</value>
   </data>
   <data name="TitleError" xml:space="preserve">
     <value>Hiba</value>

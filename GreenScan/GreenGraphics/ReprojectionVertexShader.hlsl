@@ -19,7 +19,7 @@ bool CalculateWorldNormal(float2 uv, out float3 posx, out float3 normal)
 	return pow(length(posu - posd) / posx.z, 2) + pow(length(posr - posl) / posx.z, 2) > TriangleLimit;
 }
 
-VertexPositionTextureDepth main(VertexPositionTextureIn vi)
+VertexPositionWorldNormalDepthTexture main(VertexPositionTextureIn vi)
 {
 	int3 id = DepthCoords(vi.Texture);
 	float depth = DepthTexture.Load(id);
@@ -31,15 +31,12 @@ VertexPositionTextureDepth main(VertexPositionTextureIn vi)
 		DepthSize.y * vi.Texture.y * depth, 
 		depth, 
 		1);
-
-	float screenDepth;
+	
 	posTemp = mul(posDepth, ReprojectionTransform);
-	screenDepth = posTemp.z;
 	posTemp.xy = (posTemp.xy / (posTemp.z * DepthSize) * 2.f - 1.f) * AspectScale * float2(1.f, -1.f);
 	posTemp = mul(posTemp, SceneRotation);
 	posTemp.xy = (posTemp.xy + Move) * Scale;
 	posTemp.z /= MaxDepth;
-	//posTemp *= DepthMaximum;	
 	float4 posScreen = posTemp;
 
 	posTemp = mul(posDepth, DepthToColorTransform);
@@ -50,7 +47,7 @@ VertexPositionTextureDepth main(VertexPositionTextureIn vi)
 	float3 posWorld, normal;
 	if(CalculateWorldNormal(vi.Texture, posWorld, normal)) depth = 0.f;
 
-	VertexPositionTextureDepth vo;
+	VertexPositionWorldNormalDepthTexture vo;
 	vo.Position = posScreen;
 	vo.WorldPosition = posWorld;
 	vo.Normal = normalize(mul(normal, NormalTransform));

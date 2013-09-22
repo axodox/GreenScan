@@ -16,7 +16,7 @@ namespace Green
 				Volumetric
 			};
 
-			enum class Views {
+			enum class AxialViews {
 				Overlay,
 				DepthL,
 				DepthR,
@@ -31,9 +31,15 @@ namespace Green
 				Slice,
 				Model
 			};
-			bool Processing;
-		private:
-			GraphicsDevice* Device;
+
+			enum class States
+			{
+				Unknown,
+				Stopped,
+				Processing
+			} State;
+		private:		
+			GraphicsDeviceWithSwapChain* Device;
 			RenderTarget2D **ModelTargets, **TextureTargets, *OrthoTarget, *FilterTarget;
 			RenderTarget3D *CubeTarget;
 			RenderTarget2DGroup *PolarTargetGroup;
@@ -41,13 +47,14 @@ namespace Green
 			ReadableRenderTarget3D *SaveCubeTarget;
 			Mesh<VertexPosition, unsigned>* CubeMesh;
 			int NextModelWidth, NextModelHeight, NextTextureWidth, NextTextureHeight, TargetCount, CubeRes, CubeResExt, NextCubeRes;
-			bool SaveTextureReady, Scanning, ClearNext, StaticInputNext;
+			int ModelWidth, ModelHeight, TextureWidth, TextureHeight;
+			bool SaveTextureReady, Scanning, ClearNext, StaticInputNext, SaveInProgress, Calibrated;
 			Modes NextMode, Mode;
 			struct RenderingParameters
 			{
 				XMFLOAT4X4 DepthIntrinsics, DepthInvIntrinsics, World, TurntableTransform;
 				float Rotation;
-				Views View;
+				AxialViews View;
 				VolumetricViews VolumetricView;
 				float TransX, TransY, TransZ, RotX, RotY, RotZ;
 				int SaveWidth, SaveHeight, SaveTextureWidth, SaveTextureHeight;
@@ -73,8 +80,8 @@ namespace Green
 				float Side;
 				float Threshold;
 				float GradientLimit;
-				int CubeRes;
-				int Slice;
+				float Slice;
+				int CubeRes;				
 			} TurntableOptions;
 
 			ConstantBuffer<TurntableConstants>* Constants;
@@ -90,14 +97,14 @@ namespace Green
 			Line *LMain;
 			Quad *QMain;
 			SamplerState *SLinearClamp, *SPointClamp;
-			HANDLE SaveEvent;
+			HANDLE SaveEvent, SaveCompletedEvent;
 
 			bool CrossChanged, RawSave, RestartOnNextFrame;
 			int CrossVertexCount;
 			static const int CilinderSides = 18;
 			void SetCross()
 			{
-				if (!Processing) return;
+				if (State != States::Processing) return;
 				switch (Mode)
 				{
 				case Modes::OneAxis:
@@ -158,12 +165,12 @@ namespace Green
 
 			void SetOverlay()
 			{
-				DrawsOverlay = (Params.View == Views::Overlay && (Mode == Modes::OneAxis || Mode == Modes::TwoAxis)) || (Params.VolumetricView == VolumetricViews::Overlay && Mode == Modes::Volumetric);
+				DrawsOverlay = (Params.View == AxialViews::Overlay && (Mode == Modes::OneAxis || Mode == Modes::TwoAxis)) || (Params.VolumetricView == VolumetricViews::Overlay && Mode == Modes::Volumetric);
 			}
 
 			void DrawIfNeeded()
 			{
-				if(StaticInput && Processing)
+				if(StaticInput && State == States::Processing)
 				{
 					RequestDraw(Host);
 				}
@@ -171,7 +178,7 @@ namespace Green
 		public:
 			RotatingScannerModule()
 			{
-				Processing = false;
+				State = States::Stopped;
 				Scanning = false;
 				ClearNext = false;
 				DrawsOverlay = true;
@@ -179,12 +186,17 @@ namespace Green
 				StaticInput = false;
 				Device = nullptr;
 				RestartOnNextFrame = false;
-				NextCubeRes = 0;
+				NextCubeRes = CubeRes = 0;
 				CubeMesh = nullptr;
 				Params.Rotation = 0;
+				SaveCompletedEvent = CreateEvent(0, 0, 0, 0);
+				SaveInProgress = false;
+				Calibrated = false;
+				ModelWidth = ModelHeight = TextureWidth = TextureHeight = 0;
+				NextModelWidth = NextModelHeight = NextTextureWidth = NextTextureHeight = 0;
 			}
 
-			virtual void CreateResources(GraphicsDevice* device) override
+			virtual void CreateResources(GraphicsDeviceWithSwapChain* device) override
 			{
 				Device = device;
 				VSOverlay = new VertexShader(Device, L"TurntableOverlayVertexShader.cso");
@@ -272,9 +284,9 @@ namespace Green
 
 			virtual void StartProcessing() override
 			{
-				if (!Device) return;
-				if (Processing) EndProcessing();
-				Processing = true;
+				if (!Device || State == States::Unknown) return;
+				if (State == States::Processing) EndProcessing();
+				State = States::Unknown;
 				StaticInput = StaticInputNext;
 				StaticInputNext = false;
 				TurntableOptions.ModelResolution = XMINT2(NextModelWidth, NextModelHeight);	
@@ -303,6 +315,10 @@ namespace Green
 				case Modes::OneAxis:
 				case Modes::TwoAxis:
 					{
+						ModelWidth = NextModelWidth;
+						ModelHeight = NextModelHeight;
+						TextureWidth = NextTextureWidth;
+						TextureHeight = NextTextureHeight;
 						CrossVertexCount = 2 * CilinderSides + 10;
 						TargetCount = (Mode == Modes::OneAxis ? 1 : 2);
 						ModelTargets = new RenderTarget2D*[TargetCount];
@@ -310,9 +326,9 @@ namespace Green
 						RenderTarget2D** targets = new RenderTarget2D*[TargetCount * 2];
 						for(int i = 0; i < TargetCount; i++)
 						{
-							ModelTargets[i] = new RenderTarget2D(Device, NextModelWidth, NextModelHeight, DXGI_FORMAT_R32G32_FLOAT);
+							ModelTargets[i] = new RenderTarget2D(Device, ModelWidth, ModelHeight, DXGI_FORMAT_R32G32_FLOAT);
 							targets[2 * i] = ModelTargets[i];
-							TextureTargets[i] = new RenderTarget2D(Device, NextTextureWidth, NextTextureHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);
+							TextureTargets[i] = new RenderTarget2D(Device, TextureWidth, TextureHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);
 							targets[2 * i + 1] = TextureTargets[i];
 						}
 						PolarTargetGroup = new RenderTarget2DGroup(Device, TargetCount * 2, targets);
@@ -327,7 +343,7 @@ namespace Green
 					FilterTarget = new RenderTarget2D(Device, CubeRes, CubeRes, DXGI_FORMAT_R32_FLOAT);
 					CubeTarget = new RenderTarget3D(Device, CubeRes, CubeRes, CubeRes, DXGI_FORMAT_R8_UNORM);
 					LMain = new Line(Device, CubeRes);
-					TurntableOptions.CubeRes = CubeRes - 1;
+					TurntableOptions.CubeRes = CubeRes;
 					break;
 				}
 
@@ -339,14 +355,17 @@ namespace Green
 				CrossVertices[4] = VertexPositionColor(XMFLOAT3(0.f, 0.f, -0.1f), XMFLOAT4(0.f, 0.f, 1.f, 1.f));
 				CrossVertices[5] = VertexPositionColor(XMFLOAT3(0.f, 0.f, 0.1f), XMFLOAT4(0.f, 0.f, 1.f, 1.f));
 				
-				Cross = new VertexBuffer<VertexPositionColor>(Device, CrossVertexCount, VertexDefinition::VertexPositionColor);
-				SetCross();				
+				Cross = new VertexBuffer<VertexPositionColor>(Device, CrossVertexCount);				
+				State = States::Processing;
+				SetCross();	
 			}
 
 			virtual void EndProcessing() override
 			{
-				if (!Processing) return;
-				Processing = false;
+				if (State != States::Processing) return;
+				State = States::Unknown;
+				if(SaveInProgress) 
+					WaitForSingleObject(SaveCompletedEvent, INFINITE);
 				switch (Mode)
 				{
 				case Modes::OneAxis:
@@ -380,6 +399,7 @@ namespace Green
 				delete QMain;
 				delete SLinearClamp;
 				delete SPointClamp;
+				State = States::Stopped;
 			}
 
 			void Scan()
@@ -401,12 +421,12 @@ namespace Green
 			void Stop()
 			{
 				Scanning = false;
-				if(Processing && Mode == Modes::Volumetric) CalculateCubeMesh();
+				if(State == States::Processing && Mode == Modes::Volumetric) CalculateCubeMesh();
 			}
 
 			virtual void ProcessFrame(RenderTargetPair* depth, Texture2D* color) override
 			{
-				if (!Processing || !Scanning) return;
+				if (State != States::Processing || !Scanning) return;
 				Constants->Update(&TurntableOptions);
 				Constants->SetForVS(2);
 				Constants->SetForGS(2);
@@ -493,7 +513,7 @@ namespace Green
 			}
 
 			static const int SaveVersion = 0;
-			bool OpenRaw(LPWSTR path)
+			bool OpenRaw(LPWSTR path, LPWSTR &metadata)
 			{
 				if(Scanning) return false;
 				bool ok = false;
@@ -560,6 +580,11 @@ namespace Green
 							break;
 						}						
 						
+						unsigned metalen;
+						fread(&metalen, 4, 1, file);
+						metadata = new WCHAR[metalen];
+						fread(metadata, 2, metalen, file);
+
 						ok = true;
 						DrawIfNeeded();
 					}
@@ -568,9 +593,9 @@ namespace Green
 				return ok;
 			}
 
-			bool SaveRaw(LPWSTR path)
+			bool SaveRaw(LPWSTR path, LPWSTR metadata)
 			{
-				if (!Processing) return false;
+				if (State != States::Processing) return false;
 				RawSave = true;
 				SaveEvent = CreateEvent(0, 0, 0, 0);
 
@@ -615,9 +640,9 @@ namespace Green
 						case Modes::OneAxis:
 						case Modes::TwoAxis:
 							{
-								fwrite(&Params.SaveWidth, 4, 1, file);
-								fwrite(&Params.SaveHeight, 4, 1, file);
-								int modelLen = Params.SaveWidth * Params.SaveHeight;
+								fwrite(&ModelWidth, 4, 1, file);
+								fwrite(&ModelHeight, 4, 1, file);
+								int modelLen = ModelWidth * ModelHeight;
 								XMFLOAT2* modelData = new XMFLOAT2[modelLen];
 
 								for(int i = 0; i < TargetCount; i++)
@@ -627,9 +652,9 @@ namespace Green
 								}
 								delete [modelLen] modelData;
 
-								fwrite(&Params.SaveTextureWidth, 4, 1, file);
-								fwrite(&Params.SaveTextureHeight, 4, 1, file);
-								int texLen = Params.SaveTextureWidth * Params.SaveTextureHeight;
+								fwrite(&TextureWidth, 4, 1, file);
+								fwrite(&TextureHeight, 4, 1, file);
+								int texLen = TextureWidth * TextureHeight;
 								XMFLOAT4* textureData = new XMFLOAT4[texLen];
 
 								for(int i = 0; i < TargetCount; i++)
@@ -652,7 +677,10 @@ namespace Green
 							}
 							break;
 						}
-						
+
+						unsigned metalen = wcslen(metadata) + 1;
+						fwrite(&metalen, 4, 1, file);
+						fwrite((char*)metadata, 2, metalen, file);						
 						fclose(file);
 					}
 				}
@@ -680,107 +708,115 @@ namespace Green
 
 			bool SaveModel(LPWSTR path, ModelFormats format)
 			{
-				if(!Processing) return false;
-				if(Mode == Modes::Volumetric) return SaveCube(path, format);
-				RawSave = false;
-				SaveEvent = CreateEvent(0, 0, 0, 0);
-
-				SaveModelTargets = new ReadableRenderTarget2D*[TargetCount];
-				SaveTextureTargets = new ReadableRenderTarget2D*[TargetCount];
-				for(int i = 0; i < TargetCount; i++)
-				{
-					SaveModelTargets[i] = new ReadableRenderTarget2D(Device, Params.SaveWidth, Params.SaveHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);
-					SaveTextureTargets[i] = new ReadableRenderTarget2D(Device, Params.SaveTextureWidth, Params.SaveTextureHeight, DXGI_FORMAT_R8G8B8A8_UNORM);
-				}
-				SaveTextureReady = false;
-
+				if(State != States::Processing) return false;
+				ResetEvent(SaveCompletedEvent);
+				SaveInProgress = true;
 				bool ok = false;
-				if(StaticInput)
+				if(Mode == Modes::Volumetric)
 				{
-					Draw();
-					ok = true;
+					ok = SaveCube(path, format);
 				}
 				else
-					ok = WaitForSingleObject(SaveEvent, 1000) == WAIT_OBJECT_0;
-
-				if(ok)
 				{
-					WCHAR** textureFilenames = new WCHAR*[TargetCount];
-					WCHAR** filenames = new WCHAR*[TargetCount];
+					RawSave = false;
+					SaveEvent = CreateEvent(0, 0, 0, 0);
+
+					SaveModelTargets = new ReadableRenderTarget2D*[TargetCount];
+					SaveTextureTargets = new ReadableRenderTarget2D*[TargetCount];
 					for(int i = 0; i < TargetCount; i++)
 					{
-						textureFilenames[i] = new WCHAR[MAX_PATH];
-						filenames[i] = new WCHAR[MAX_PATH];
-						wcscpy(textureFilenames[i], path);
-						wcscpy(filenames[i], path);
+						SaveModelTargets[i] = new ReadableRenderTarget2D(Device, Params.SaveWidth, Params.SaveHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);
+						SaveTextureTargets[i] = new ReadableRenderTarget2D(Device, Params.SaveTextureWidth, Params.SaveTextureHeight, DXGI_FORMAT_R8G8B8A8_UNORM);
 					}
+					SaveTextureReady = false;
 
-					switch (Mode)
+					if(StaticInput)
 					{
-					case Modes::OneAxis:
-						wcscat(textureFilenames[0], L".png");
-						break;
-					case Modes::TwoAxis:
-						wcscat(textureFilenames[0], L"_l.png");
-						wcscat(textureFilenames[1], L"_r.png");
-						wcscat(filenames[0], L"_l");
-						wcscat(filenames[1], L"_r");
-						break;
+						Draw();
+						ok = true;
 					}
+					else
+						ok = WaitForSingleObject(SaveEvent, 1000) == WAIT_OBJECT_0;
 
-					int dataLen = (Params.SaveWidth + 1) * Params.SaveHeight;
-					for(int i = 0; i < TargetCount; i++)
-					{					
-						XMFLOAT4* data = new XMFLOAT4[dataLen];
-						GetPolarData(SaveModelTargets[i], data);
-						switch (format)
+					if(ok)
+					{
+						WCHAR** textureFilenames = new WCHAR*[TargetCount];
+						WCHAR** filenames = new WCHAR*[TargetCount];
+						for(int i = 0; i < TargetCount; i++)
 						{
-						case ModelFormats::STL:
-							ok &= STLSave(filenames[i], data, Params.SaveWidth + 1, Params.SaveHeight);
+							textureFilenames[i] = new WCHAR[MAX_PATH];
+							filenames[i] = new WCHAR[MAX_PATH];
+							wcscpy(textureFilenames[i], path);
+							wcscpy(filenames[i], path);
+						}
+
+						switch (Mode)
+						{
+						case Modes::OneAxis:
+							wcscat(textureFilenames[0], L".png");
 							break;
-						case ModelFormats::FBX:
-							ok &= FBXSave(filenames[i], data, Params.SaveWidth + 1, Params.SaveHeight, wcsrchr(textureFilenames[i], L'\\') + 1, L"fbx");
-							break;
-						case ModelFormats::DXF:
-							ok &= FBXSave(filenames[i], data, Params.SaveWidth + 1, Params.SaveHeight, wcsrchr(textureFilenames[i], L'\\') + 1, L"dxf");
-							break;
-						case ModelFormats::DAE:
-							ok &= FBXSave(filenames[i], data, Params.SaveWidth + 1, Params.SaveHeight, wcsrchr(textureFilenames[i], L'\\') + 1, L"dae");
-							break;
-						case ModelFormats::OBJ:
-							ok &= FBXSave(filenames[i], data, Params.SaveWidth + 1, Params.SaveHeight, wcsrchr(textureFilenames[i], L'\\') + 1, L"obj");
-							break;
-						case ModelFormats::FL4:
-							ok &= FL4Save(filenames[i], data, Params.SaveWidth + 1, Params.SaveHeight);
-							break;
-						default:
-							ok = false;
+						case Modes::TwoAxis:
+							wcscat(textureFilenames[0], L"_l.png");
+							wcscat(textureFilenames[1], L"_r.png");
+							wcscat(filenames[0], L"_l");
+							wcscat(filenames[1], L"_r");
 							break;
 						}
-						delete [dataLen] data;
 
-						ok &= PNGSave(textureFilenames[i], SaveTextureTargets[i]->GetStagingTexture());
-						
+						int dataLen = (Params.SaveWidth + 1) * Params.SaveHeight;
+						for(int i = 0; i < TargetCount; i++)
+						{					
+							XMFLOAT4* data = new XMFLOAT4[dataLen];
+							GetPolarData(SaveModelTargets[i], data);
+							switch (format)
+							{
+							case ModelFormats::STL:
+								ok &= STLSave(filenames[i], data, Params.SaveWidth + 1, Params.SaveHeight);
+								break;
+							case ModelFormats::FBX:
+								ok &= FBXSave(filenames[i], data, Params.SaveWidth + 1, Params.SaveHeight, wcsrchr(textureFilenames[i], L'\\') + 1, L"fbx");
+								break;
+							case ModelFormats::DXF:
+								ok &= FBXSave(filenames[i], data, Params.SaveWidth + 1, Params.SaveHeight, wcsrchr(textureFilenames[i], L'\\') + 1, L"dxf");
+								break;
+							case ModelFormats::DAE:
+								ok &= FBXSave(filenames[i], data, Params.SaveWidth + 1, Params.SaveHeight, wcsrchr(textureFilenames[i], L'\\') + 1, L"dae");
+								break;
+							case ModelFormats::OBJ:
+								ok &= FBXSave(filenames[i], data, Params.SaveWidth + 1, Params.SaveHeight, wcsrchr(textureFilenames[i], L'\\') + 1, L"obj");
+								break;
+							case ModelFormats::FL4:
+								ok &= FL4Save(filenames[i], data, Params.SaveWidth + 1, Params.SaveHeight);
+								break;
+							default:
+								ok = false;
+								break;
+							}
+							delete [dataLen] data;
+
+							ok &= PNGSave(textureFilenames[i], SaveTextureTargets[i]->GetStagingTexture());						
+						}					
+
+						for(int i = 0; i < TargetCount; i++)
+						{
+							delete [MAX_PATH] filenames[i];
+							delete [MAX_PATH] textureFilenames[i];
+						}
+						delete [TargetCount] filenames;
+						delete [TargetCount] textureFilenames;
 					}
-					
 
 					for(int i = 0; i < TargetCount; i++)
 					{
-						delete [MAX_PATH] filenames[i];
-						delete [MAX_PATH] textureFilenames[i];
+						SafeDelete(SaveModelTargets[i]);
+						SafeDelete(SaveTextureTargets[i]);
 					}
-					delete [TargetCount] filenames;
-					delete [TargetCount] textureFilenames;
+					delete [TargetCount] SaveModelTargets;
+					delete [TargetCount] SaveTextureTargets;
+					CloseHandle(SaveEvent);
 				}
-
-				for(int i = 0; i < TargetCount; i++)
-				{
-					SafeDelete(SaveModelTargets[i]);
-					SafeDelete(SaveTextureTargets[i]);
-				}
-				delete [TargetCount] SaveModelTargets;
-				delete [TargetCount] SaveTextureTargets;
-				CloseHandle(SaveEvent);
+				SetEvent(SaveCompletedEvent);
+				SaveInProgress = false;
 				return ok;
 			}
 		private:
@@ -831,7 +867,7 @@ namespace Green
 				{
 					int modelLen = pow(CubeRes, 3);
 					byte* modelData = new byte[modelLen], *pModelData, *eModelData = modelData + modelLen;
-					SaveCubeTarget->GetData(modelData);
+					SaveCubeTarget->GetData<byte>(modelData);
 					
 					//Thresholding
 					byte threshold = TurntableOptions.Threshold * 255;
@@ -1069,7 +1105,7 @@ namespace Green
 				if(!ok) return false;
 				
 				SafeDelete(CubeMesh);
-				if(vertexCount > 0) CubeMesh = new Mesh<VertexPosition, unsigned>(Device, vertices, vertexCount, VertexDefinition::VertexPosition, indicies, indexCount, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+				if(vertexCount > 0) CubeMesh = new Mesh<VertexPosition, unsigned>(Device, vertices, vertexCount, indicies, indexCount, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 				delete [vertexCount] vertices;
 				delete [indexCount] indicies;
@@ -1077,7 +1113,7 @@ namespace Green
 		public:
 			bool SaveCube(LPWSTR path, ModelFormats format)
 			{
-				if(!Processing || Mode != Modes::Volumetric) return false;
+				if(State != States::Processing || Mode != Modes::Volumetric) return false;
 
 				VertexPosition* vertices = nullptr;
 				unsigned* indicies = nullptr;
@@ -1117,7 +1153,7 @@ namespace Green
 					RestartOnNextFrame = false;
 					StartProcessing();
 				}
-				if (!Processing) return;
+				if (State != States::Processing) return;
 
 				Device->SetAsRenderTarget();
 				Constants->Update(&TurntableOptions);
@@ -1177,8 +1213,8 @@ namespace Green
 						Device->SetAsRenderTarget();
 						switch (Params.View)
 						{
-						case Views::DepthL:
-						case Views::DepthR:
+						case AxialViews::DepthL:
+						case AxialViews::DepthR:
 							RDefault->Set();
 							BAlpha->Apply();
 							Device->SetShaders(VSSimple, PSPolarDepth);
@@ -1188,7 +1224,7 @@ namespace Green
 								ModelTargets[0]->SetForPS();
 								break;
 							case Modes::TwoAxis:
-								if(Params.View == Views::DepthL)
+								if(Params.View == AxialViews::DepthL)
 									ModelTargets[0]->SetForPS();
 								else
 									ModelTargets[1]->SetForPS();
@@ -1197,8 +1233,8 @@ namespace Green
 							SLinearClamp->SetForPS();
 							QMain->Draw();
 							break;
-						case Views::TextureL:
-						case Views::TextureR:
+						case AxialViews::TextureL:
+						case AxialViews::TextureR:
 							RDefault->Set();
 							BAlpha->Apply();
 							Device->SetShaders(VSSimple, PSPolarTexture);
@@ -1208,7 +1244,7 @@ namespace Green
 								TextureTargets[0]->SetForPS();
 								break;
 							case Modes::TwoAxis:
-								if(Params.View == Views::TextureL)
+								if(Params.View == AxialViews::TextureL)
 									TextureTargets[0]->SetForPS();
 								else
 									TextureTargets[1]->SetForPS();
@@ -1217,7 +1253,7 @@ namespace Green
 							SLinearClamp->SetForPS();
 							QMain->Draw();
 							break;
-						case Views::Model:
+						case AxialViews::Model:
 							RCullNone->Set();
 							BOpaque->Apply();
 							Device->SetShaders(VSModel, PSModel, GSModel);
@@ -1282,7 +1318,7 @@ namespace Green
 					break;
 				}
 				
-				if(drawCross)
+				if(drawCross && Calibrated)
 				{
 					RDefault->Set();
 					BOpaque->Apply();
@@ -1298,24 +1334,51 @@ namespace Green
 				}
 			}
 
-			void SetPerformance(int modelWidth, int modelHeight, int textureWidth, int textureHeight)
+			void SetTurntable(float* turntableTransform)
 			{
+				Params.TurntableTransform = XMFLOAT4X4(turntableTransform);
+				Calibrated = !IsIdentity(Params.TurntableTransform);
+				SetTurntableOptions();
+				DrawIfNeeded();
+			}
+
+			void SetAxial(AxialViews view, float height, float radius, float coreX, float coreY, int modelWidth, int modelHeight, int textureWidth, int textureHeight)
+			{
+				TurntableOptions.CorePosition = XMFLOAT2(coreX, coreY);
+				TurntableOptions.ClipLimit = XMFLOAT2(radius, height);
+				Params.View = view;
 				NextModelWidth = modelWidth;
 				NextModelHeight = modelHeight;
 				NextTextureWidth = textureWidth;
 				NextTextureHeight = textureHeight;
+				SetOverlay();
+				SetCross();
+				if(!Scanning && State == States::Processing && (
+					NextModelWidth != ModelWidth ||
+					NextModelHeight != ModelHeight ||
+					NextTextureWidth != TextureWidth ||
+					NextTextureHeight != TextureHeight
+					))
+				{
+					RestartOnNextFrame = true;
+				}
+				DrawIfNeeded();
 			}
 
-			void SetCalibration(
-				float* turntableTransform,
-				float height, float radius, 
-				float coreX, float coreY)
+			void SetVolumetric(VolumetricViews view, float cubeSize, int cubeRes, float depth, float threshold, float gradientLimit)
 			{
-				Params.TurntableTransform = XMFLOAT4X4(turntableTransform);
-				TurntableOptions.CorePosition = XMFLOAT2(coreX, coreY);
-				TurntableOptions.ClipLimit = XMFLOAT2(radius, height);
-				SetTurntableOptions();
-				if(Processing) SetCross();
+				TurntableOptions.CubeSize = XMFLOAT2(cubeSize, sqrt(2.f) * cubeSize);
+				TurntableOptions.Slice = depth;
+				TurntableOptions.Threshold = threshold;
+				TurntableOptions.GradientLimit = gradientLimit;
+				Params.VolumetricView = view;
+				NextCubeRes = cubeRes;
+				SetOverlay();
+				SetCross();
+				if(!Scanning && NextCubeRes != CubeRes && State == States::Processing)
+				{
+					RestartOnNextFrame = true;
+				}
 				DrawIfNeeded();
 			}
 
@@ -1343,13 +1406,6 @@ namespace Green
 				DrawIfNeeded();
 			}
 
-			void SetShading(Views view)
-			{
-				Params.View = view;
-				SetOverlay();
-				DrawIfNeeded();
-			}
-
 			void SetTurntablePosition(float angle)
 			{
 				Params.Rotation = angle;
@@ -1359,7 +1415,7 @@ namespace Green
 			void SetMode(Modes mode)
 			{
 				NextMode = mode;
-				if(!Scanning && NextMode != Mode && Processing)
+				if(!Scanning && NextMode != Mode && State == States::Processing)
 				{
 					RestartOnNextFrame = true;
 				}
@@ -1368,20 +1424,7 @@ namespace Green
 			Modes GetMode()
 			{
 				return Mode;
-			}
-
-			void SetVolumetric(float cubeSize, int cubeRes, VolumetricViews view, float depth, float threshold, float gradientLimit)
-			{
-				TurntableOptions.CubeSize = XMFLOAT2(cubeSize, sqrt(2.f) * cubeSize);
-				TurntableOptions.Slice = (CubeRes - 1) * depth;
-				TurntableOptions.Threshold = threshold;
-				TurntableOptions.GradientLimit = gradientLimit;
-				Params.VolumetricView = view;
-				NextCubeRes = cubeRes;
-				SetOverlay();
-				SetCross();
-				DrawIfNeeded();
-			}
+			}			
 
 			void SetTurntableOptions()
 			{

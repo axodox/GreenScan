@@ -25,6 +25,7 @@ namespace Green.Scan
         KinectManager DeviceManager;
         DispatcherTimer MainDispatcher;
         RemotingServer Remote;
+        DispatcherSynchronizationContext SyncContext;
         
         public MainWindow()
         {
@@ -37,13 +38,14 @@ namespace Green.Scan
             SecurityWorker.RunWorkerAsync();
             
             Settings = new ScanSettings();
-            DeviceManager = new KinectManager();
+            InitKinect();
             GraphicsCore.Loaded += GraphicsCore_Loaded;
             InitGUI();
             InitSettings();
             InitRemoting();
         }
 
+        #region Security
         void SecurityWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             if ((bool)e.Result == true)
@@ -53,7 +55,7 @@ namespace Green.Scan
                 IsEnabled = true;
             }
             else
-                Close();            
+                Close();
         }
 
         void SecurityWorker_DoWork(object sender, DoWorkEventArgs e)
@@ -61,20 +63,25 @@ namespace Green.Scan
             SecurityClient SC = new SecurityClient();
             e.Result = SC.HasPermissionToRun;
         }
+        #endregion
 
+        #region User interface
         void InitGUI()
         {
+            SyncContext = new DispatcherSynchronizationContext();
+            DeviceManager.DeviceCountChanged += (object o, EventArgs e) => { ShowStatusAsync(string.Format(GreenResources.StatusDevicesConnected, DeviceManager.DeviceCount)); };
             MIStart.DataContext = DeviceManager;
             MIMode.DataContext = Settings.KinectMode;
             MITurntable.DataContext = TurntableScanner;
             MIExport.DataContext = DeviceManager;
             SMC.DataContext = Settings;
+            IStatus.DataContext = DeviceManager;
 
             MainDispatcher = new DispatcherTimer(DispatcherPriority.Send);
             MainDispatcher.Interval = new TimeSpan(0, 0, 0, 0, 30);
             MainDispatcher.Tick += DT_Tick;
             MainDispatcher.IsEnabled = true;
-        }        
+        }
 
         void KinectMode_ValueChanged(object sender, System.EventArgs e)
         {
@@ -82,11 +89,6 @@ namespace Green.Scan
             {
                 DeviceManager.StartKinect(Settings.KinectMode.Value);
             }
-        }
-
-        private void Stop_Click(object sender, RoutedEventArgs e)
-        {
-            DeviceManager.StopKinect();
         }
 
         void GraphicsCore_Loaded(object sender, RoutedEventArgs e)
@@ -103,48 +105,42 @@ namespace Green.Scan
             InitRotatingScanner();
         }
 
-        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        struct ShowStatusArgs
         {
-            Remote.Dispose();
-            if (TurntableScanner != null) TurntableScanner.Dispose();
-            DeviceManager.CloseKinect();
-            DeviceManager.Dispose();
-            Settings.Save("Settings.ini");
-        }
-
-        void SetKinectToDepthAndColorMode(Action completedCallback)
-        {
-            ShowStatus(GreenResources.StatusPreparingKinect, true);
-            BackgroundWorker StartUpWorker = new BackgroundWorker();
-            if (DeviceManager.Mode != KinectManager.Modes.DepthAndColor)
-                Settings.KinectMode.Value = KinectManager.Modes.DepthAndColor;
-            StartUpWorker.DoWork += StartUpWorker_DoWork;
-            StartUpWorker.RunWorkerCompleted += StartUpWorker_RunWorkerCompleted;
-            StartUpWorker.RunWorkerAsync(completedCallback);
-        }
-
-        void StartUpWorker_DoWork(object sender, DoWorkEventArgs e)
-        {
-            e.Result = e.Argument;
-            if (DeviceManager.DeviceCount == 0) return;
-            if (!DeviceManager.DeviceOpened)
-                if (!DeviceManager.OpenKinect(0)) return;            
-            if(!DeviceManager.Processing)
-                DeviceManager.StartKinect(KinectManager.Modes.DepthAndColor);
-        }
-
-        void StartUpWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
-        {
-            (sender as BackgroundWorker).Dispose();
-            if (DeviceManager.Processing && DeviceManager.Mode == KinectManager.Modes.DepthAndColor)
+            public string Text;
+            public bool ShowProgress;
+            public double Progress;
+            public ShowStatusArgs(string text, bool showProgress, double progress)
             {
-                ShowStatus(GreenResources.StatusReady);
-                (e.Result as Action)();
+                Text = text;
+                ShowProgress = showProgress;
+                Progress = progress;
             }
-            else
-                ShowStatus(GreenResources.StatusCannotConnectToKinect);
         }
 
+        void ShowStatusAsync(string text, bool showProgress = false, double progress = double.NaN)
+        {
+            SyncContext.Post(ShowStatusCallback, new ShowStatusArgs(text, showProgress, progress));
+        }
+
+        void ShowStatusCallback(object o)
+        {
+            ShowStatusArgs ssa = (ShowStatusArgs)o;
+            ShowStatus(ssa.Text, ssa.ShowProgress, ssa.Progress);
+        }
+
+        void ShowStatus(string text, bool showProgress = false, double progress = double.NaN)
+        {
+            SBIStatusText.Content = text;
+            Visibility newVisibility = showProgress ? Visibility.Visible : Visibility.Collapsed;
+            if (PBStatus.Visibility != newVisibility) PBStatus.Visibility = newVisibility;
+            bool newIndeterminity = double.IsNaN(progress);
+            if (PBStatus.IsIndeterminate != newIndeterminity) PBStatus.IsIndeterminate = newIndeterminity;
+            PBStatus.IsIndeterminate = double.IsNaN(progress);
+            if (PBStatus.Value != progress && !PBStatus.IsIndeterminate) PBStatus.Value = progress;
+        }
+        #endregion
+        
         #region Settings
 
         void InitSettings()
@@ -159,12 +155,17 @@ namespace Green.Scan
             Settings.PerformanceProperties.ValueChanged += (object sender, EventArgs e) => { SetPerformance(); };
             Settings.SaveProperties.ValueChanged += (object sender, EventArgs e) => { SetSave(); };
             Settings.TurntableProperties.ValueChanged += (object sender, EventArgs e) => { SetTurntable(); };
+            Settings.TurntableMode.ValueChanged += (object sender, EventArgs e) => { SetTurntableMode(); };
+            Settings.TurntableAxialProperties.ValueChanged += (object sender, EventArgs e) => { SetTurntableAxial(); };
+            Settings.TurntableVolumetricProperties.ValueChanged += (object sender, EventArgs e) => { SetTurntableVolumetric(); };
         }
 
         void InitRemoting()
         {
             RoutedUICommand[] commands = {
                 GreenScanCommands.Close, 
+                GreenScanCommands.CloseFile,
+                GreenScanCommands.Import,
                 GreenScanCommands.Export, 
                 GreenScanCommands.Open, 
                 GreenScanCommands.Save, 
@@ -280,35 +281,45 @@ namespace Green.Scan
                 Settings.SaveTextureResolution.Height,
                 (float)Math.Pow(10d, Settings.SaveScalingPower.Value));
         }
-
+        
         void SetTurntable()
         {
-            TurntableScanner.SetPerformance(
-                Settings.TurntableModelResolution.Width,
-                Settings.TurntableModelResolution.Height,
-                Settings.TurntableTextureResolution.Width,
-                Settings.TurntableTextureResolution.Height);
-            TurntableScanner.SetCalibration(
+            TurntableScanner.SetTurntable(
                 Settings.TurntableTransform.Value,
-                Settings.TurntableClippingHeight.Value,
-                Settings.TurntableClippingRadius.Value,
-                Settings.TurntableCoreX.Value,
-                Settings.TurntableCoreY.Value,
                 Settings.TurntablePiSteps.Value,
                 Settings.TurntableHasMirror.Value);
-            TurntableScanner.SetShading(
-                Settings.TurntableAxialView.Value);
-            TurntableScanner.SetMode(
-                Settings.TurntableMode.Value);
-            TurntableScanner.SetVolumetric(
-                Settings.TurntableCubeSize.Value / 100,
-                Settings.TurntableCubeResolution.Value,
-                Settings.TurntableVolumetricView.Value,
-                Settings.TurntableSlice.Value,
-                Settings.TurntableThreshold.Value,
-                Settings.TurntableGradientLimit.Value);
         }
 
+        void SetTurntableMode()
+        {
+            TurntableScanner.SetMode(
+                Settings.TurntableMode.Value);
+        }
+
+        void SetTurntableAxial()
+        {
+            TurntableScanner.SetAxial(
+                Settings.TurntableAxialView.Value,
+                Settings.TurntableAxialClippingHeight.Value,
+                Settings.TurntableAxialClippingRadius.Value,
+                Settings.TurntableAxialCoreX.Value,
+                Settings.TurntableAxialCoreY.Value,
+                Settings.TurntableAxialModelResolution.Width,
+                Settings.TurntableAxialModelResolution.Height,
+                Settings.TurntableAxialTextureResolution.Width,
+                Settings.TurntableAxialTextureResolution.Height);
+        }
+
+        void SetTurntableVolumetric()
+        {
+            TurntableScanner.SetVolumetric(
+                Settings.TurntableVolumetricView.Value,
+                Settings.TurntableVolumetricCubeSize.Value / 100f,
+                Settings.TurntableVolumetricCubeResolution.Value,
+                Settings.TurntableVolumetricSlice.Value,
+                Settings.TurntableVolumetricThreshold.Value,
+                Settings.TurntableVolumetricGradientLimit.Value);
+        }
         #endregion
 
         #region View manipulation
@@ -400,7 +411,7 @@ namespace Green.Scan
 
         private void SaveRaw()
         {
-            SaveDialog(DeviceManager.SaveRaw(GenerateFilename(".gsr")));
+            SaveDialog(DeviceManager.SaveRaw(GenerateFilename(".gsr"), Settings.GetRawMetadata()));
         }
 
         private void SaveImage()
@@ -438,6 +449,7 @@ namespace Green.Scan
         }
 
         public bool SavingInProgress { get; private set; }
+        private bool StopKinectOnSaveCompletition = false;
         private void SaveModel(IModelSaver modelSaver, SaveFormats format)
         {
             if (SavingInProgress) return;
@@ -447,7 +459,7 @@ namespace Green.Scan
             SaveWorker.DoWork += SaveWorker_DoWork;
             SaveWorker.RunWorkerCompleted += SaveWorker_RunWorkerCompleted;
             SaveWorker.RunWorkerAsync(new SaveTask(modelSaver, GenerateFilename(), format));
-            ShowStatus(GreenResources.StatusSaveInProgress, true, double.NaN);
+            ShowStatus(GreenResources.StatusSaveInProgress, true);
         }
 
         void SaveWorker_DoWork(object sender, DoWorkEventArgs e)
@@ -462,6 +474,7 @@ namespace Green.Scan
             (sender as BackgroundWorker).Dispose();
             SavingInProgress = false;
             NotifyPropertyChanged("SavingInProgress");
+            if (StopKinectOnSaveCompletition) StopKinect();
         }
 
         private void OpenRaw(string path = null)
@@ -481,8 +494,33 @@ namespace Green.Scan
             if (path != null)
             {
                 DeviceManager.StopKinect();
-                OpenDialog(DeviceManager.OpenRaw(path));
+                string metadata = null;
+                OpenDialog(DeviceManager.OpenRaw(path, ref metadata));
+                if(metadata != null) Settings.LoadRawMetadata(metadata);
                 Settings.KinectMode.Value = DeviceManager.Mode;
+            }
+        }
+
+        private void Import(string path = null)
+        {
+            if (path == null)
+            {
+                OpenFileDialog OFD = new OpenFileDialog();
+                OFD.Filter = GreenResources.ImportFileFilter;
+                OFD.InitialDirectory = Settings.SaveDirectory.AbsolutePath;
+                OFD.Title = GreenResources.ImportFileTitle;
+                if (OFD.ShowDialog(this) == true)
+                {
+                    path = OFD.FileName;
+                }
+            }
+
+            if (path != null)
+            {
+                DeviceManager.StopKinect();
+                Settings.LoadImportMetadata();
+                OpenDialog(DeviceManager.Import(path.ToLower(), Settings.InfraredIntrinsics.Value));
+                Settings.KinectMode.Value = KinectManager.Modes.DepthAndColor;
             }
         }
 
@@ -517,11 +555,21 @@ namespace Green.Scan
             switch (e.PropertyName)
             {
                 case "IsConnected":
-                    Settings.TurntableProperties.IsHidden = !TurntableScanner.IsConnected;
+                    Settings.TurntableProperties.IsHidden = Settings.TurntableAxialProperties.IsHidden = Settings.TurntableVolumetricProperties.IsHidden = !TurntableScanner.IsConnected;
                     if (TurntableScanner.IsConnected)
                     {
                         SetTurntable();
+                        SetTurntableMode();
+                        SetTurntableAxial();
+                        SetTurntableVolumetric();
                     }
+                    else
+                    {
+                        TurntableScanner.Stop();
+                    }
+                    break;
+                case "IsScanning":
+                    Settings.TurntableScanningSetter.SetReadOnly(TurntableScanner.IsScanning);
                     break;
             }
         }
@@ -547,25 +595,115 @@ namespace Green.Scan
         }
         #endregion
 
-        void ShowStatus(string text, bool showProgress = false, double progress = double.NaN)
+        #region Kinect
+        void InitKinect()
         {
-            SBIStatusText.Content = text;
-            Visibility newVisibility = showProgress ? Visibility.Visible : Visibility.Collapsed;
-            if (PBStatus.Visibility != newVisibility) PBStatus.Visibility = newVisibility;
-            bool newIndeterminity = double.IsNaN(progress);
-            if (PBStatus.IsIndeterminate != newIndeterminity) PBStatus.IsIndeterminate = newIndeterminity;
-            PBStatus.IsIndeterminate = double.IsNaN(progress);
-            if (PBStatus.Value != progress && !PBStatus.IsIndeterminate) PBStatus.Value = progress;
-        }
-
-        private void TurntableScan_Click(object sender, RoutedEventArgs e)
-        {
-            if (TurntableScanner.IsConnected)
+            DeviceManager = new KinectManager();
+            DeviceManager.DeviceDisconnected += (object o, EventArgs e) =>
             {
-                TurntableScanner.Scan();
-            }
+                if (!DeviceManager.Processing) return;
+                if (SavingInProgress)
+                {
+                    StopKinectOnSaveCompletition = true;
+                    ShowStatusAsync(GreenResources.StatusSaveInProgress, true);
+                }
+                else
+                    DoIsAsync(() => { StopKinect(); });
+                MessageBox.Show(GreenResources.MessageKinectDisconnected);
+            };
+            DeviceManager.DeviceStarting += (object o, EventArgs e) =>
+            {
+                Settings.RestoreMetadata();
+            };
         }
 
+        void SetKinectToDepthAndColorMode(Action completedCallback)
+        {
+            ShowStatus(GreenResources.StatusPreparingKinect, true);
+            BackgroundWorker StartUpWorker = new BackgroundWorker();
+            if (DeviceManager.Mode != KinectManager.Modes.DepthAndColor)
+                Settings.KinectMode.Value = KinectManager.Modes.DepthAndColor;
+            StartUpWorker.DoWork += StartUpWorker_DoWork;
+            StartUpWorker.RunWorkerCompleted += StartUpWorker_RunWorkerCompleted;
+            StartUpWorker.RunWorkerAsync(completedCallback);
+        }
+
+        void StartUpWorker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            e.Result = e.Argument;
+            if (DeviceManager.DeviceCount == 0) return;
+            if (!DeviceManager.DeviceOpened)
+                if (!DeviceManager.OpenKinect(0)) return;
+            if (!DeviceManager.Processing)
+                DeviceManager.StartKinect(KinectManager.Modes.DepthAndColor);
+        }
+
+        void StartUpWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            (sender as BackgroundWorker).Dispose();
+            if (DeviceManager.Processing && DeviceManager.Mode == KinectManager.Modes.DepthAndColor)
+            {
+                ShowStatus(GreenResources.StatusReady);
+                (e.Result as Action)();
+            }
+            else
+                ShowStatus(GreenResources.StatusCannotConnectToKinect);
+        }
+
+        public void StartKinect(KinectManager.Modes mode)
+        {
+            if (DeviceManager.Mode != mode) Settings.KinectMode.Value = mode;
+            if (!DeviceManager.Processing) StartKinect(0);
+        }
+
+        public void StartKinect(int index)
+        {
+            ShowStatus(GreenResources.StatusStarting, true);
+            BackgroundWorker StartWorker = new BackgroundWorker();
+            StartWorker.DoWork += StartWorker_DoWork;
+            StartWorker.RunWorkerCompleted += StartWorker_RunWorkerCompleted;
+            StartWorker.RunWorkerAsync(index);
+        }
+
+        void StartWorker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            DeviceManager.OpenKinect((int)e.Argument);
+            e.Result = DeviceManager.StartKinect(Settings.KinectMode.Value);
+        }
+
+        void StartWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            (sender as BackgroundWorker).Dispose();
+            if ((bool)e.Result)
+                ShowStatus(GreenResources.StatusReady);
+            else
+                ShowStatus(GreenResources.StatusDeviceCannotBeOpened);
+        }
+
+        public void StopKinect()
+        {
+            if (CalibrationWindow != null) CalibrationWindow.Close();
+            ShowStatus(GreenResources.StatusStopping, true);
+            BackgroundWorker StopWorker = new BackgroundWorker();
+            StopWorker.DoWork += StopWorker_DoWork;
+            StopWorker.RunWorkerCompleted += StopWorker_RunWorkerCompleted;
+            StopWorker.RunWorkerAsync();            
+        }
+
+        void StopWorker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            DeviceManager.StopKinect();
+        }
+
+        void StopWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            (sender as BackgroundWorker).Dispose();
+            ShowStatus(GreenResources.StatusReady);
+            
+            TurntableScanner.Stop();
+        }
+        #endregion
+        
         #region Commanding
         void ProcessingCmdCanExecute(object sender, CanExecuteRoutedEventArgs e)
         {
@@ -589,37 +727,7 @@ namespace Green.Scan
             {
                 StartKinect(index);           
             }
-        }
-
-        public void StartKinect(KinectManager.Modes mode)
-        {
-            if (DeviceManager.Mode != mode) Settings.KinectMode.Value = mode;
-            if (!DeviceManager.Processing) StartKinect(0);
-        }
-
-        public void StartKinect(int index)
-        {
-            ShowStatus(GreenResources.StatusStarting, true);
-            BackgroundWorker StartWorker = new BackgroundWorker();
-            StartWorker.DoWork += StartWorker_DoWork;
-            StartWorker.RunWorkerCompleted += StartWorker_RunWorkerCompleted;
-            StartWorker.RunWorkerAsync(index);     
-        }
-
-        void StartWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
-        {
-            (sender as BackgroundWorker).Dispose();
-            if((bool)e.Result)
-                ShowStatus(GreenResources.StatusReady);
-            else
-                ShowStatus(GreenResources.StatusDeviceCannotBeOpened);
-        }
-
-        void StartWorker_DoWork(object sender, DoWorkEventArgs e)
-        {
-            DeviceManager.OpenKinect((int)e.Argument);
-            e.Result = DeviceManager.StartKinect(Settings.KinectMode.Value);
-        }
+        }       
 
         void OpenCmdCanExecute(object target, CanExecuteRoutedEventArgs e)
         {
@@ -649,6 +757,30 @@ namespace Green.Scan
         {
             try { Process.Start(Settings.SaveDirectory.AbsolutePath); }
             catch { }
+        }
+
+        void ImportCmdCanExecute(object target, CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = !SavingInProgress;
+            if (e.Parameter != null && e.Parameter is String)
+            {
+                e.CanExecute &= (e.Parameter as String).ToLower().EndsWith(".fl4") && File.Exists((string)e.Parameter);
+            }
+        }
+
+        void ImportCmdExecuted(object target, ExecutedRoutedEventArgs e)
+        {
+            Import((string)e.Parameter);
+        }
+
+        void CloseFileCmdCanExecute(object target, CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = DeviceManager.FileOpened;
+        }
+
+        void CloseFileCmdExecuted(object target, ExecutedRoutedEventArgs e)
+        {
+            DeviceManager.CloseFile();
         }
 
         void ExportCmdExecuted(object target, ExecutedRoutedEventArgs e)
@@ -690,33 +822,20 @@ namespace Green.Scan
 
         void StopCmdExecuted(object target, ExecutedRoutedEventArgs e)
         {
-            ShowStatus(GreenResources.StatusStopping, true);
-            BackgroundWorker StopWorker = new BackgroundWorker();
-            StopWorker.DoWork += StopWorker_DoWork;
-            StopWorker.RunWorkerCompleted += StopWorker_RunWorkerCompleted;
-            StopWorker.RunWorkerAsync();            
-        }
-
-        void StopWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
-        {
-            (sender as BackgroundWorker).Dispose();
-            ShowStatus(GreenResources.StatusReady);
-        }
-
-        void StopWorker_DoWork(object sender, DoWorkEventArgs e)
-        {
-            DeviceManager.StopKinect();
-        }
+            StopKinect();    
+        }        
 
         void CalibrateCmdCanExecute(object target, CanExecuteRoutedEventArgs e)
         {
             e.CanExecute = DeviceManager.DeviceCount > 0;
         }
 
+        KinectCalibrationWindow CalibrationWindow = null;
         void CalibrateCmdExecuted(object target, ExecutedRoutedEventArgs e)
         {
-            KinectCalibrationWindow KCW = new KinectCalibrationWindow(Remote);
-            KCW.ShowDialog();
+            CalibrationWindow = new KinectCalibrationWindow(Remote);
+            CalibrationWindow.ShowDialog();
+            CalibrationWindow = null;
         }
 
         void CloseCmdExecuted(object target, ExecutedRoutedEventArgs e)
@@ -737,7 +856,15 @@ namespace Green.Scan
 
         void TurntableScanCmdExecuted(object target, ExecutedRoutedEventArgs e)
         {
-            SetKinectToDepthAndColorMode(() => { TurntableScanner.Scan(); });            
+            if (Settings.TurntableTransform.HasDefaultValue)
+            {
+                if (MessageBox.Show(GreenResources.MessageTurntableNotCalibrated, GreenResources.Title, MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+                {
+                    CalibrateTurntable();
+                }
+            }
+            else
+                SetKinectToDepthAndColorMode(() => { TurntableScanner.Scan(); });         
         }
 
         void TurntableStopCmdCanExecute(object target, CanExecuteRoutedEventArgs e)
@@ -791,7 +918,7 @@ namespace Green.Scan
 
         void TurntableSaveCmdExecuted(object target, ExecutedRoutedEventArgs e)
         {
-            SaveDialog(TurntableScanner.SaveRaw(GenerateFilename(".gtr")));
+            SaveDialog(TurntableScanner.SaveRaw(GenerateFilename(".gtr"), Settings.GetTurntableMetadata()));
         }
 
         void TurntableOpenCmdCanExecute(object target, CanExecuteRoutedEventArgs e)
@@ -821,14 +948,20 @@ namespace Green.Scan
             if (path != null)
             {
                 DeviceManager.StopKinect();
-                OpenDialog(TurntableScanner.OpenRaw(path));
-                Settings.TurntableMode.Value = TurntableScanner.GetMode();
+                string metaData = null;
+                bool ok = false;
+                OpenDialog(ok = TurntableScanner.OpenRaw(path, ref metaData));
+                if (ok)
+                {
+                    Settings.LoadTurntableMetadata(metaData);
+                    Settings.TurntableMode.Value = TurntableScanner.GetMode();
+                }
             }
         }
 
         void TurntableCalibrateCmdCanExecute(object target, CanExecuteRoutedEventArgs e)
         {
-            e.CanExecute = DeviceManager.Processing || DeviceManager.DeviceCount > 0;
+            e.CanExecute = DeviceManager.DeviceCount > 0;
         }
 
         void TurntableCalibrateCmdExecuted(object target, ExecutedRoutedEventArgs e)
@@ -847,11 +980,33 @@ namespace Green.Scan
         }
         #endregion
 
+        public void DoIsAsync(Action action)
+        {
+            SyncContext.Post(DoItAsyncCallback, action);
+        }
+
+        void DoItAsyncCallback(object o)
+        {
+            (o as Action)();
+        }
+        
         public event PropertyChangedEventHandler PropertyChanged;
         void NotifyPropertyChanged(string name)
         {
             if (PropertyChanged != null) PropertyChanged(this, new PropertyChangedEventArgs(name));
         }
+
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            Hide();
+            Remote.Dispose();
+            if (TurntableScanner != null) TurntableScanner.Dispose();
+            DeviceManager.CloseKinect();
+            DeviceManager.Dispose();
+            Settings.RestoreMetadata();
+            Settings.Save("Settings.ini");
+        }
+
     }
 
     public static class GreenScanCommands
@@ -859,7 +1014,9 @@ namespace Green.Scan
         public static RoutedUICommand Open = new RoutedUICommand("Opens the specified model file.", "Open", typeof(MainWindow), new InputGestureCollection() { new KeyGesture(Key.O, ModifierKeys.Control) });
         public static RoutedUICommand Browse = new RoutedUICommand("Browses save directory.", "Browse", typeof(MainWindow));
         public static RoutedUICommand Save = new RoutedUICommand("Saves the current model.", "Save", typeof(MainWindow), new InputGestureCollection() { new KeyGesture(Key.S, ModifierKeys.Control) });
+        public static RoutedUICommand CloseFile = new RoutedUICommand("Closes the opened file.", "CloseFile", typeof(MainWindow));
         public static RoutedUICommand Close = new RoutedUICommand("Closes the application.", "Close", typeof(MainWindow), new InputGestureCollection() { new KeyGesture(Key.Escape) });
+        public static RoutedUICommand Import = new RoutedUICommand("Imports the specified file. Supported formats: FL4, Vector4", "Import", typeof(MainWindow));
         public static RoutedUICommand Export = new RoutedUICommand("Exports the current scene to the specified format. Supported formats: PNG, PNG/raw, STL, FBX, DAE, DXF, OBJ, FL4.", "Export", typeof(MainWindow));
         public static RoutedUICommand Start = new RoutedUICommand("Start the Kinect with the specified index.", "Start", typeof(MainWindow));
         public static RoutedUICommand Stop = new RoutedUICommand("Stops the Kinect.", "Stop", typeof(MainWindow));

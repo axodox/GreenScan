@@ -165,6 +165,12 @@
   <data name="EnumRotatingScannerVolumetricViews" xml:space="preserve">
     <value>Overlay|Projection|Slice|Model</value>
   </data>
+  <data name="ImportFileFilter" xml:space="preserve">
+    <value>Float4 files (*.fl4)|*.fl4|Vector4 files (*.vector4)|*.vector4</value>
+  </data>
+  <data name="ImportFileTitle" xml:space="preserve">
+    <value>Import model</value>
+  </data>
   <data name="KinectCalibrationClear" xml:space="preserve">
     <value>Clear</value>
   </data>
@@ -249,8 +255,14 @@
   <data name="MenuFileBrowseSaveDirectory" xml:space="preserve">
     <value>Browse save directory</value>
   </data>
+  <data name="MenuFileCloseFile" xml:space="preserve">
+    <value>Close file</value>
+  </data>
   <data name="MenuFileExit" xml:space="preserve">
     <value>Exit</value>
+  </data>
+  <data name="MenuFileImport" xml:space="preserve">
+    <value>Import...</value>
   </data>
   <data name="MenuOpenModel" xml:space="preserve">
     <value>Open model...</value>
@@ -275,6 +287,12 @@
   </data>
   <data name="MenuTurntableStop" xml:space="preserve">
     <value>Stop</value>
+  </data>
+  <data name="MessageKinectDisconnected" xml:space="preserve">
+    <value>The Kinect has been disconnected.</value>
+  </data>
+  <data name="MessageTurntableNotCalibrated" xml:space="preserve">
+    <value>The turntable is not calibrated would you like to calibrate it?</value>
   </data>
   <data name="OpenFileTitle" xml:space="preserve">
     <value>Open file</value>
@@ -363,6 +381,12 @@
   <data name="SettingGroupTurntable" xml:space="preserve">
     <value>Turntable</value>
   </data>
+  <data name="SettingGroupTurntableAxial" xml:space="preserve">
+    <value>Axial scanning</value>
+  </data>
+  <data name="SettingGroupTurntableVolumetric" xml:space="preserve">
+    <value>Volumetric scanning</value>
+  </data>
   <data name="SettingGroupView" xml:space="preserve">
     <value>View</value>
   </data>
@@ -450,26 +474,20 @@
   <data name="SettingTriangleRemoveLimit" xml:space="preserve">
     <value>Triangle remove limit (units)</value>
   </data>
-  <data name="SettingTurntableAxialView" xml:space="preserve">
-    <value>View</value>
-  </data>
-  <data name="SettingTurntableClippingHeight" xml:space="preserve">
+  <data name="SettingTurntableAxialClippingHeight" xml:space="preserve">
     <value>Clipping height (meters)</value>
   </data>
-  <data name="SettingTurntableClippingRadius" xml:space="preserve">
+  <data name="SettingTurntableAxialClippingRadius" xml:space="preserve">
     <value>Clipping radius (meters)</value>
   </data>
-  <data name="SettingTurntableCoreX" xml:space="preserve">
+  <data name="SettingTurntableAxialCoreX" xml:space="preserve">
     <value>Leg distance (meters)</value>
   </data>
-  <data name="SettingTurntableCoreY" xml:space="preserve">
+  <data name="SettingTurntableAxialCoreY" xml:space="preserve">
     <value>Leg position (meters)</value>
   </data>
-  <data name="SettingTurntableCubeResolution" xml:space="preserve">
-    <value>Cube resolution (voxels)</value>
-  </data>
-  <data name="SettingTurntableCubeSize" xml:space="preserve">
-    <value>Cube size (centimeters)</value>
+  <data name="SettingTurntableAxialView" xml:space="preserve">
+    <value>View</value>
   </data>
   <data name="SettingTurntableHasMirror" xml:space="preserve">
     <value>Uses mirror</value>
@@ -477,20 +495,29 @@
   <data name="SettingTurntableMode" xml:space="preserve">
     <value>Mode</value>
   </data>
-  <data name="SettingTurntableModelResolution" xml:space="preserve">
+  <data name="SettingTurntableSaveModelResolution" xml:space="preserve">
     <value>Model resolution (vertices/leg)</value>
   </data>
-  <data name="SettingTurntableSlice" xml:space="preserve">
-    <value>Current depth (units)</value>
-  </data>
-  <data name="SettingTurntableTextureResolution" xml:space="preserve">
+  <data name="SettingTurntableSaveTextureResolution" xml:space="preserve">
     <value>Texture resolution (pixels/leg)</value>
-  </data>
-  <data name="SettingTurntableThreshold" xml:space="preserve">
-    <value>Threshold (units)</value>
   </data>
   <data name="SettingTurntableTransform" xml:space="preserve">
     <value>Turntable matrix</value>
+  </data>
+  <data name="SettingTurntableVolumetricCubeResolution" xml:space="preserve">
+    <value>Cube resolution (voxels)</value>
+  </data>
+  <data name="SettingTurntableVolumetricCubeSize" xml:space="preserve">
+    <value>Cube size (centimeters)</value>
+  </data>
+  <data name="SettingTurntableVolumetricGradientLimit" xml:space="preserve">
+    <value>Gradient limit (units)</value>
+  </data>
+  <data name="SettingTurntableVolumetricSlice" xml:space="preserve">
+    <value>Current depth (units)</value>
+  </data>
+  <data name="SettingTurntableVolumetricThreshold" xml:space="preserve">
+    <value>Threshold (units)</value>
   </data>
   <data name="SettingTurntableVolumetricView" xml:space="preserve">
     <value>View</value>
@@ -506,6 +533,9 @@
   </data>
   <data name="StatusDeviceCannotBeOpened" xml:space="preserve">
     <value>The device can not be opened. May be on low power, brandwith or may be already in use.</value>
+  </data>
+  <data name="StatusDevicesConnected" xml:space="preserve">
+    <value>{0} device(s) connected.</value>
   </data>
   <data name="StatusFileLoadedSuccesfully" xml:space="preserve">
     <value>File loaded successfully.</value>
@@ -530,6 +560,9 @@
   </data>
   <data name="StatusStopping" xml:space="preserve">
     <value>Stopping...</value>
+  </data>
+  <data name="Title" xml:space="preserve">
+    <value>GreenScan</value>
   </data>
   <data name="TitleError" xml:space="preserve">
     <value>Error</value>

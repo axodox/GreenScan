@@ -69,7 +69,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	void* remote = CreateRemote(5656);
 	SetRemoteConnectionCallbacks(remote, &OnRemoteConnected, &OnRemoteDisconnected);
 	SetRemoteMessageReceivedCallbacks(remote, &OnSettingValueReceived, &OnCommandDescriptionReceived);
-	char text[256];
+	char text[4096];
 	while (true)
 	{
 		gets(text);
@@ -83,6 +83,11 @@ int _tmain(int argc, _TCHAR* argv[])
 		case 'c':
 			{
 				char* sepa = strchr(text, '=');
+				if(!sepa)
+				{
+					strcat(text, "=");
+					sepa = strchr(text, '=');
+				}
 				int namelen = sepa - text - 2;
 				char* name = new char[namelen + 1];
 				memcpy(name, text + 2, namelen);

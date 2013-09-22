@@ -4,7 +4,7 @@ SamplerState Sampler : register(s0);
 
 float4 main(VertexPositionTextureOut v) : SV_TARGET
 {
-	float c = Texture.Sample(Sampler, float3(v.Texture, Slice / (CubeRes - 1.f))).x;
+	float c = Texture.Sample(Sampler, float3(v.Texture, Slice)).x;
 	if (c < Threshold)
 		return 1.f;
 	else

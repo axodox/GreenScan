@@ -3,7 +3,7 @@ static const float2 LightProperty = float2(1.f, 0.5f);
 static const float Ambient = 0.1f, SpecularPower = 40.f;
 static const float3 DiffuseColor = 0.5f, SpecularColor = 1.f;
 static const float3 CameraPos = 0.f,  LightPos = 0.f;
-float4 main(VertexPositionTextureDepth input) : SV_TARGET
+float4 main(VertexPositionWorldNormalDepthTexture input) : SV_TARGET
 {
 	float4 color = 1.f;
 	float3 specular = 0.f, diffuse = 0.f, normal = input.Normal/sign(input.Normal.z);

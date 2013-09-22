@@ -63,9 +63,11 @@ namespace Turntables
                 }
                 catch (UnauthorizedAccessException) { }
                 catch (IOException) { }
+                catch (TimeoutException) { }
                 finally
                 {
-                    if (SP.IsOpen) SP.Close();
+                    try { if (SP.IsOpen) SP.Close(); }
+                    catch { }
                 }
             }
             SP.Dispose();
@@ -217,13 +219,13 @@ namespace Turntables
         public event EventHandler MotorStopped;
         private void MotorStoppedCallback(object o)
         {
-            if (MotorStopped != null) MotorStopped(this, null);
+            if (MotorStopped != null) MotorStopped(this, EventArgs.Empty);
         }
 
         public event EventHandler TurnComplete;
         private void TurnCompleteCallback(object o)
         {
-            if (TurnComplete != null) TurnComplete(this, null);
+            if (TurnComplete != null) TurnComplete(this, EventArgs.Empty);
         }
 
         //Other
@@ -249,7 +251,7 @@ namespace Turntables
         {
             PiSteps = 10989;
             Port = new SerialPort();
-            Port.PortName = portName;
+            Port.PortName = portName;            
             InitPort(Port);
             Port.Open();
             OpenedDevices++;
@@ -271,7 +273,7 @@ namespace Turntables
         {
             Message message;
             string command, answer;
-            bool rotating;
+            bool rotating, crash = false;
             States statusWord;
             Commands executingCommand = Commands.About;
             int targetStep = 0, origin = 0;
@@ -291,6 +293,9 @@ namespace Turntables
                                 Port.Write(CommandChars[(int)Commands.ClearCounter].ToString());
                                 Port.ReadLine();
                                 break;
+                            case Commands.ToOrigin:
+                                Port.ReadTimeout = Timeout.Infinite;
+                                break;
                         }
                         executingCommand = message.Command;
                         Port.Write(message.ToString());
@@ -309,6 +314,7 @@ namespace Turntables
                         }
 
                         Port.ReadLine();
+                        Port.ReadTimeout = 500;
                         origin = PositionInSteps;
                         switch (message.Command)
                         {
@@ -359,7 +365,7 @@ namespace Turntables
                     lastPositionInSteps = PositionInSteps;
                     PositionInSteps = steps;
 
-                    if (PositionChanged != null && lastPositionInSteps != PositionInSteps) PositionChanged(this, null);
+                    if (PositionChanged != null && lastPositionInSteps != PositionInSteps) PositionChanged(this, EventArgs.Empty);
                     if (!MagneticSwitch && StopAtMagneticSwitch)
                     {
                         SendCommandAsync(Commands.Stop);
@@ -380,12 +386,23 @@ namespace Turntables
                 Port.Write(CommandChars[(int)Commands.Stop].ToString());
                 Port.Write(CommandChars[(int)Commands.TurnOff].ToString());
             }
-            catch
+            catch 
             {
+                crash = true;
             }
-            Port.Dispose();
+            try { Port.Dispose(); } catch {}
             Port = null;
             OpenedDevices--;
+            DeviceCount--;
+            if(crash)
+                SyncContext.Post(CrashCallback, null);
+        }
+
+        void CrashCallback(object o)
+        {
+            IsDisposed = true;
+            CommunicationThreadOn = false;
+            DeviceDisconnected(this, EventArgs.Empty);
         }
 
         bool IsDisposed = false;

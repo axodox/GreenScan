@@ -69,31 +69,112 @@ namespace Green.Scan
         public NumericSetting<int> SaveScalingPower { get; set; }
 
         public SettingGroup TurntableProperties { get; private set; }
-        public RectangleSetting TurntableEllipse { get; private set; }
-        public RectangleSetting TurntableRectangle { get; private set; }
         public EnumSetting<RotatingScanner.Modes> TurntableMode { get; private set; }
         public MatrixSetting TurntableTransform { get; private set; }
-        public NumericSetting<float> TurntableClippingHeight { get; private set; }
-        public NumericSetting<float> TurntableClippingRadius { get; private set; }
-        public NumericSetting<float> TurntableCoreX { get; private set; }
-        public NumericSetting<float> TurntableCoreY { get; private set; }
-        public SizeSetting TurntableModelResolution { get; private set; }
-        public SizeSetting TurntableTextureResolution { get; private set; }
-        public EnumSetting<RotatingScanner.Views> TurntableAxialView { get; private set; }
         public NumericSetting<int> TurntablePiSteps { get; private set; }
-        public NumericSetting<float> TurntableCubeSize { get; private set; }
-        public NumericSetting<int> TurntableCubeResolution { get; private set; }
-        public EnumSetting<RotatingScanner.VolumetricViews> TurntableVolumetricView { get; private set; }
-        public NumericSetting<float> TurntableSlice { get; private set; }
-        public NumericSetting<float> TurntableThreshold { get; private set; }
-        public NumericSetting<float> TurntableGradientLimit { get; private set; }
         public BooleanSetting TurntableHasMirror { get; private set; }
+        public RectangleSetting TurntableEllipse { get; private set; }
+        public RectangleSetting TurntableRectangle { get; private set; }
+
+        public SettingGroup TurntableAxialProperties { get; private set; }
+        public EnumSetting<RotatingScanner.AxialViews> TurntableAxialView { get; private set; }
+        public NumericSetting<float> TurntableAxialClippingHeight { get; private set; }
+        public NumericSetting<float> TurntableAxialClippingRadius { get; private set; }
+        public NumericSetting<float> TurntableAxialCoreX { get; private set; }
+        public NumericSetting<float> TurntableAxialCoreY { get; private set; }
+        public SizeSetting TurntableAxialModelResolution { get; private set; }
+        public SizeSetting TurntableAxialTextureResolution { get; private set; }   
+
+        public SettingGroup TurntableVolumetricProperties { get; private set; }
+        public NumericSetting<float> TurntableVolumetricCubeSize { get; private set; }
+        public NumericSetting<int> TurntableVolumetricCubeResolution { get; private set; }
+        public EnumSetting<RotatingScanner.VolumetricViews> TurntableVolumetricView { get; private set; }
+        public NumericSetting<float> TurntableVolumetricSlice { get; private set; }
+        public NumericSetting<float> TurntableVolumetricThreshold { get; private set; }
+        public NumericSetting<float> TurntableVolumetricGradientLimit { get; private set; }
+
+        public SettingSetter TurntableScanningSetter { get; private set; }
+
+        public string GetRawMetadata()
+        {
+            return ToString(new SettingGroup[] { CameraProperties });
+        }
+
+        public string GetTurntableMetadata()
+        {
+            switch(TurntableMode.Value)
+            {
+                case RotatingScanner.Modes.OneAxis:
+                case RotatingScanner.Modes.TwoAxis:
+                    return ToString(new SettingGroup[] { TurntableAxialProperties });
+                case RotatingScanner.Modes.Volumetric:
+                    return ToString(new SettingGroup[] { TurntableVolumetricProperties });
+                default:
+                    return "";
+            }
+        }
+
+        bool RawMetadataLoaded;
+        public void LoadRawMetadata(string metadata)
+        {
+            if (!RawMetadataLoaded)
+            {
+                CameraProperties.StoreAllValues();
+                RawMetadataLoaded = true;
+            }
+            FromString(metadata);            
+        }
+
+        bool TurntableMetadataLoaded;
+        public void LoadTurntableMetadata(string metadata)
+        {
+            if (!TurntableMetadataLoaded)
+            {
+                TurntableAxialProperties.StoreAllValues();
+                TurntableVolumetricProperties.StoreAllValues();
+                TurntableMetadataLoaded = true;
+            }
+            FromString(metadata);
+        }
+
+        bool ImportMetadataLoaded;
+        public void LoadImportMetadata()
+        {
+            if (!ImportMetadataLoaded)
+            {
+                CameraProperties.StoreAllValues();
+                CameraProperties.ResetToDefault();
+                ImportMetadataLoaded = true;
+            }
+        }
+
+        public void RestoreMetadata()
+        {
+            if (RawMetadataLoaded)
+            {
+                CameraProperties.RestoreAllValues();
+                RawMetadataLoaded = false;
+            }
+            if (TurntableMetadataLoaded)
+            {
+                TurntableAxialProperties.RestoreAllValues();
+                TurntableVolumetricProperties.RestoreAllValues();
+                TurntableMetadataLoaded = false;
+            }
+            if (ImportMetadataLoaded)
+            {
+                CameraProperties.RestoreAllValues();
+                ImportMetadataLoaded = false;
+            }
+        }
 
         public ScanSettings()
             : base()
         {
+            TurntableScanningSetter = new SettingSetter();
+
             //Kinect
-            KinectProperties = new SettingGroup("Kinect") { FriendlyName = GreenResources.SettingGroupKinect, Footer = GreenResources.SettingGroupKinectFooter };
+            KinectProperties = new SettingGroup("Kinect") { FriendlyName = GreenResources.SettingGroupKinect, Footer = GreenResources.SettingGroupKinectFooter, IsHidden = true };
             SettingGroups.Add(KinectProperties);
 
             KinectMode = new EnumSetting<KinectManager.Modes>("Mode", KinectManager.Modes.DepthAndColor) { FriendlyName = GreenResources.SettingKinectMode, FriendlyOptions = GreenResources.EnumKinectManagerModes.Split('|') };
@@ -105,6 +186,8 @@ namespace Green.Scan
             EmitterEnabled = new BooleanSetting("EmitterEnabled", true) { FriendlyName = GreenResources.SettingKinectEmitterEnabled, AvailabilityProvider = kinectModeWithDepth };
             KinectProperties.Settings.Add(NearModeEnabled);
             KinectProperties.Settings.Add(EmitterEnabled);
+
+            TurntableScanningSetter.Settings.AddRange(KinectProperties.Settings);
 
             //Preprocessing
             PreprocessingProperties = new SettingGroup("Preprocessing") { FriendlyName = GreenResources.SettingGroupPreprocessing };
@@ -121,14 +204,14 @@ namespace Green.Scan
             CameraProperties = new SettingGroup("Camera") { FriendlyName = GreenResources.SettingGroupCamera };
             SettingGroups.Add(CameraProperties);
 
-            InfraredIntrinsics = new MatrixSetting("InfraredIntrinsics", new float[,] { { 1161.96f, 0f, 639.8654f }, { 0f, 1169.649f, 521.4605f }, { 0f, 0f, 1f } }) { FriendlyName = GreenResources.SettingInfraredIntrinsics, AvailabilityProvider = kinectModeIsDepthAndColor };
-            InfraredDistortion = new MatrixSetting("InfraredDistortion", new float[,] { { 0.143542f, -0.244779f }, { 0.003839f, -0.000318f } }) { FriendlyName = GreenResources.SettingInfraredDistortion, AvailabilityProvider = kinectModeIsDepthAndColor };
+            InfraredIntrinsics = new MatrixSetting("InfraredIntrinsics", new float[,] { { 582.0813f, 0f, 309.8195f }, { 0f, 582.865f, 234.2108f }, { 0f, 0f, 1f } }) { FriendlyName = GreenResources.SettingInfraredIntrinsics, AvailabilityProvider = kinectModeIsDepthAndColor };
+            InfraredDistortion = new MatrixSetting("InfraredDistortion", new float[,] { { 0f, 0f }, { 0f, 0f } }) { FriendlyName = GreenResources.SettingInfraredDistortion, AvailabilityProvider = kinectModeIsDepthAndColor };
             InfraredDistortionCorrectionEnabled = new BooleanSetting("InfraredDistortionCorrectionEnabled", false) { FriendlyName = GreenResources.SettingInfraredDistortionCorrectionEnabled, AvailabilityProvider = kinectModeIsDepthAndColor };
-            DepthToIRMapping = new MatrixSetting("DepthToIRMapping", new float[,] { { 2f, 0f, 16f }, { 0f, 2f, 17f }, { 0f, 0f, 1f } }) { FriendlyName = GreenResources.SettingDepthToIRMapping, AvailabilityProvider = kinectModeIsDepthAndColor };
+            DepthToIRMapping = new MatrixSetting("DepthToIRMapping", new float[,] { { 1f, 0f, 0f }, { 0f, 1f, 0f }, { 0f, 0f, 1f } }) { FriendlyName = GreenResources.SettingDepthToIRMapping, AvailabilityProvider = kinectModeIsDepthAndColor };
             DepthCoeffs = new MatrixSetting("DepthCoeffs", new float[,] { { 0.125e-3f, 0f } }) { FriendlyName = GreenResources.SettingDepthCoeffs, AvailabilityProvider = kinectModeIsDepthAndColor };
-            ColorIntrinsics = new MatrixSetting("ColorIntrinsics", new float[,] { { 1051.45f, 0f, 641.1544f }, { 0f, 1053.781f, 521.7905f }, { 0f, 0f, 1f } }) { FriendlyName = GreenResources.SettingColorIntrinsics, AvailabilityProvider = kinectModeIsDepthAndColor };
-            ColorRemapping = new MatrixSetting("ColorRemapping", new float[,] { { 2f, 0f, 2f }, { 0f, 2f, 0f }, { 0f, 0f, 1f } }) { FriendlyName = GreenResources.SettingColorRemapping, AvailabilityProvider = kinectModeIsDepthAndColor };
-            ColorExtrinsics = new MatrixSetting("ColorExtrinsics", new float[,] { { 0.999946f, -0.006657f, 0.00794f, -0.025955f }, { 0.006679f, 0.999974f, -0.002686f, -0.000035f }, { -0.007922f, 0.002739f, 0.999965f, 0.005283f }, { 0f, 0f, 0f, 1f } }) { FriendlyName = GreenResources.SettingColorExtrinsics, AvailabilityProvider = kinectModeIsDepthAndColor };
+            ColorIntrinsics = new MatrixSetting("ColorIntrinsics", new float[,] { { 523.279f, 0f, 303.9468f }, { 0f, 523.1638f, 239.1431f }, { 0f, 0f, 1f } }) { FriendlyName = GreenResources.SettingColorIntrinsics, AvailabilityProvider = kinectModeIsDepthAndColor };
+            ColorRemapping = new MatrixSetting("ColorRemapping", new float[,] { { 1f, 0f, 0f }, { 0f, 1f, 0f }, { 0f, 0f, 1f } }) { FriendlyName = GreenResources.SettingColorRemapping, AvailabilityProvider = kinectModeIsDepthAndColor };
+            ColorExtrinsics = new MatrixSetting("ColorExtrinsics", new float[,] { { 0.999967f, 0.003969562f, 0.00709248f, 0.02473051f }, { -0.003896888f, 0.9999401f, -0.01023114f, -0.000453843f }, { -0.007132668f, 0.01020316f, 0.9999225f, 0.003119022f }, { 0f, 0f, 0f, 1f } }) { FriendlyName = GreenResources.SettingColorExtrinsics, AvailabilityProvider = kinectModeIsDepthAndColor };
             CameraProperties.Settings.Add(InfraredIntrinsics);
             CameraProperties.Settings.Add(InfraredDistortion);
             CameraProperties.Settings.Add(InfraredDistortionCorrectionEnabled);
@@ -138,14 +221,16 @@ namespace Green.Scan
             CameraProperties.Settings.Add(ColorRemapping);
             CameraProperties.Settings.Add(ColorExtrinsics);
 
-            ColorDispositionX = new NumericSetting<int>("ColorDispositionX", -8, -32, 32) { FriendlyName = GreenResources.SettingColorDispositionX, AvailabilityProvider = kinectModeIsDepthAndColor };
-            ColorDispositionY = new NumericSetting<int>("ColorDispositionY", 8, -32, 32) { FriendlyName = GreenResources.SettingColorDispositionY, AvailabilityProvider = kinectModeIsDepthAndColor };
-            ColorScaleX = new NumericSetting<float>("ColorScaleX", 1.01f, 0.8f, 1.2f, 2) { FriendlyName = GreenResources.SettingColorScaleX, AvailabilityProvider = kinectModeIsDepthAndColor };
+            ColorDispositionX = new NumericSetting<int>("ColorDispositionX", 0, -32, 32) { FriendlyName = GreenResources.SettingColorDispositionX, AvailabilityProvider = kinectModeIsDepthAndColor };
+            ColorDispositionY = new NumericSetting<int>("ColorDispositionY", 0, -32, 32) { FriendlyName = GreenResources.SettingColorDispositionY, AvailabilityProvider = kinectModeIsDepthAndColor };
+            ColorScaleX = new NumericSetting<float>("ColorScaleX", 1f, 0.8f, 1.2f, 2) { FriendlyName = GreenResources.SettingColorScaleX, AvailabilityProvider = kinectModeIsDepthAndColor };
             ColorScaleY = new NumericSetting<float>("ColorScaleY", 1f, 0.8f, 1.2f, 2) { FriendlyName = GreenResources.SettingColorScaleY, AvailabilityProvider = kinectModeIsDepthAndColor };
             CameraProperties.Settings.Add(ColorDispositionX);
             CameraProperties.Settings.Add(ColorDispositionY);
             CameraProperties.Settings.Add(ColorScaleX);
             CameraProperties.Settings.Add(ColorScaleY);
+
+            TurntableScanningSetter.Settings.AddRange(CameraProperties.Settings);
 
             //View
             ViewProperties = new SettingGroup("View") { FriendlyName = GreenResources.SettingGroupView };
@@ -209,10 +294,10 @@ namespace Green.Scan
             SaveDirectory = new PathSetting("Directory", "") { FriendlyName = GreenResources.SettingSaveDirectory };
             SaveLabel = new StringSetting("Label", "", Path.GetInvalidFileNameChars()) { FriendlyName = GreenResources.SettingSaveLabel };
             SaveNoTimestamp = new BooleanSetting("NoTimestamp", false) { FriendlyName = GreenResources.SettingSaveNoTimestamp };
-            SaveModelResolution = new SizeSetting("ModelResolution", 640, 480, 8, 8, 640, 480) { FriendlyName = GreenResources.SettingSaveModelResolution };
-            SaveTextureResolution = new SizeSetting("TextureResolution", 640, 480, 8, 8, 1024, 1024) { FriendlyName = GreenResources.SettingSaveTextureResolution };
+            SaveModelResolution = new SizeSetting("ModelResolution", 640, 480, 8, 8, 640, 480) { FriendlyName = GreenResources.SettingSaveModelResolution, AvailabilityProvider = kinectModeIsDepthAndColor };
+            SaveTextureResolution = new SizeSetting("TextureResolution", 640, 480, 8, 8, 1024, 1024) { FriendlyName = GreenResources.SettingSaveTextureResolution, AvailabilityProvider = kinectModeIsDepthAndColor };
             SaveCalibrationDirectory = new PathSetting("CalibrationDirectory", "") { FriendlyName = GreenResources.SettingSaveCalibrationDirectory, IsHidden = true };
-            SaveScalingPower = new NumericSetting<int>("ScalingPower", 0, -3, 6) { FriendlyName = GreenResources.SettingSaveScalingPower };
+            SaveScalingPower = new NumericSetting<int>("ScalingPower", 0, -3, 6) { FriendlyName = GreenResources.SettingSaveScalingPower, AvailabilityProvider = kinectModeIsDepthAndColor };
             SaveProperties.Settings.Add(SaveDirectory);
             SaveProperties.Settings.Add(SaveLabel);
             SaveProperties.Settings.Add(SaveNoTimestamp);
@@ -229,51 +314,59 @@ namespace Green.Scan
             DependentAvailability turntableModeIsVolumetric = new DependentAvailability(TurntableMode, "Volumetric");
             DependentAvailability turntableModeIsAxial = new DependentAvailability(TurntableMode, "OneAxis|TwoAxis");
             TurntableProperties.Settings.Add(TurntableMode);
-
-            TurntableVolumetricView = new EnumSetting<RotatingScanner.VolumetricViews>("VolumetricView", RotatingScanner.VolumetricViews.Overlay) { FriendlyName = GreenResources.SettingTurntableVolumetricView, AvailabilityProvider = turntableModeIsVolumetric, FriendlyOptions = GreenResources.EnumRotatingScannerVolumetricViews.Split('|') };
-            DependentAvailability turntableVolumetricSliceView = new DependentAvailability(new Setting[] { TurntableMode, TurntableVolumetricView }, new string[] { "Volumetric", "Slice" });
-            TurntableSlice = new NumericSetting<float>("Slice", 0, 0, 1, 2) { FriendlyName = GreenResources.SettingTurntableSlice, AvailabilityProvider = turntableVolumetricSliceView };
-            TurntableThreshold = new NumericSetting<float>("Threshold", 0, 0, 1, 2) { FriendlyName = GreenResources.SettingTurntableThreshold, AvailabilityProvider = turntableModeIsVolumetric };
-            TurntableCubeSize = new NumericSetting<float>("CubeSize", 30, 10, 50) { FriendlyName = GreenResources.SettingTurntableCubeSize, AvailabilityProvider = turntableModeIsVolumetric };
-            TurntableCubeResolution = new NumericSetting<int>("CubeResolution", 128, 16, 512) { FriendlyName = GreenResources.SettingTurntableCubeResolution, AvailabilityProvider = turntableModeIsVolumetric };
-            TurntableProperties.Settings.Add(TurntableVolumetricView);
-            TurntableProperties.Settings.Add(TurntableSlice);
-            TurntableProperties.Settings.Add(TurntableThreshold);
-            TurntableProperties.Settings.Add(TurntableCubeSize);
-            TurntableProperties.Settings.Add(TurntableCubeResolution);
-
-            TurntableAxialView = new EnumSetting<RotatingScanner.Views>("AxialView", RotatingScanner.Views.Overlay) { FriendlyName = GreenResources.SettingTurntableAxialView, AvailabilityProvider = turntableModeIsAxial, FriendlyOptions = GreenResources.EnumRotatingScannerViews.Split('|') };
-            TurntableProperties.Settings.Add(TurntableAxialView);
-
-            TurntableCoreX = new NumericSetting<float>("CoreX", 0.11f, 0f, 0.5f, 3) { FriendlyName = GreenResources.SettingTurntableCoreX, AvailabilityProvider = turntableModeIsAxial };
-            TurntableCoreY = new NumericSetting<float>("CoreY", -0.11f, -0.5f, 0.5f, 3) { FriendlyName = GreenResources.SettingTurntableCoreY, AvailabilityProvider = turntableModeIsAxial };
-            TurntableProperties.Settings.Add(TurntableCoreX);
-            TurntableProperties.Settings.Add(TurntableCoreY);
-
-            TurntableClippingHeight = new NumericSetting<float>("ClippingHeight", 0.5f, 0f, 2f, 3) { FriendlyName = GreenResources.SettingTurntableClippingHeight, AvailabilityProvider = turntableModeIsAxial };
-            TurntableClippingRadius = new NumericSetting<float>("ClippingRadius", 0.3f, 0f, 2f, 3) { FriendlyName = GreenResources.SettingTurntableClippingRadius, AvailabilityProvider = turntableModeIsAxial };
-            TurntableProperties.Settings.Add(TurntableClippingHeight);
-            TurntableProperties.Settings.Add(TurntableClippingRadius);
-
-            TurntableModelResolution = new SizeSetting("ModelResolution", 640, 480, 64, 64, 1024, 1024) { FriendlyName = GreenResources.SettingTurntableModelResolution, AvailabilityProvider = turntableModeIsAxial };
-            TurntableTextureResolution = new SizeSetting("TextureResolution", 640, 480, 64, 64, 1024, 1024) { FriendlyName = GreenResources.SettingTurntableTextureResolution, AvailabilityProvider = turntableModeIsAxial };
-            TurntableProperties.Settings.Add(TurntableModelResolution);
-            TurntableProperties.Settings.Add(TurntableTextureResolution);
-
-            TurntableGradientLimit = new NumericSetting<float>("GradientLimit", 0.05f, 0f, 0.2f, 4);
-            TurntableHasMirror = new BooleanSetting("HasMirror", true) { FriendlyName = GreenResources.SettingTurntableHasMirror };
-            TurntableProperties.Settings.Add(TurntableHasMirror);
-            TurntableProperties.Settings.Add(TurntableGradientLimit);
-
             TurntableTransform = new MatrixSetting("TurntableTransform", new float[,] { { 1f, 0f, 0f, 0f }, { 0f, 1f, 0f, 0f }, { 0f, 0f, 1f, 0f }, { 0f, 0f, 0f, 1f } }) { FriendlyName = GreenResources.SettingTurntableTransform, IsHidden = true };
             TurntableProperties.Settings.Add(TurntableTransform);
-
+            TurntablePiSteps = new NumericSetting<int>("PiSteps", 10989, 360, 1000000) { IsHidden = true };
+            TurntableProperties.Settings.Add(TurntablePiSteps);
+            TurntableHasMirror = new BooleanSetting("HasMirror", true) { FriendlyName = GreenResources.SettingTurntableHasMirror };
+            TurntableProperties.Settings.Add(TurntableHasMirror);
             TurntableEllipse = new RectangleSetting("SelectionEllipse", new Rect(0d, 0d, 0d, 0d)) { IsHidden = true };
             TurntableRectangle = new RectangleSetting("SelectionRectangle", new Rect(0d, 0d, 0d, 0d)) { IsHidden = true };
-            TurntablePiSteps = new NumericSetting<int>("PiSteps", 10989, 360, 1000000) { IsHidden = true };
             TurntableProperties.Settings.Add(TurntableEllipse);
             TurntableProperties.Settings.Add(TurntableRectangle);
-            TurntableProperties.Settings.Add(TurntablePiSteps);
+
+            TurntableScanningSetter.Settings.AddRange(new Setting[] { TurntableMode, TurntableHasMirror });
+
+            //Turntable - Axial
+            TurntableAxialProperties = new SettingGroup("TurntableAxial") { FriendlyName = GreenResources.SettingGroupTurntableAxial, IsHidden = true };
+            SettingGroups.Add(TurntableAxialProperties);
+
+            TurntableAxialView = new EnumSetting<RotatingScanner.AxialViews>("AxialView", RotatingScanner.AxialViews.Overlay) { FriendlyName = GreenResources.SettingTurntableAxialView, AvailabilityProvider = turntableModeIsAxial, FriendlyOptions = GreenResources.EnumRotatingScannerViews.Split('|') };
+            TurntableAxialProperties.Settings.Add(TurntableAxialView);
+            TurntableAxialClippingHeight = new NumericSetting<float>("ClippingHeight", 0.5f, 0f, 2f, 3) { FriendlyName = GreenResources.SettingTurntableAxialClippingHeight, AvailabilityProvider = turntableModeIsAxial };
+            TurntableAxialClippingRadius = new NumericSetting<float>("ClippingRadius", 0.3f, 0f, 2f, 3) { FriendlyName = GreenResources.SettingTurntableAxialClippingRadius, AvailabilityProvider = turntableModeIsAxial };
+            TurntableAxialProperties.Settings.Add(TurntableAxialClippingHeight);
+            TurntableAxialProperties.Settings.Add(TurntableAxialClippingRadius);
+            TurntableAxialCoreX = new NumericSetting<float>("CoreX", 0.11f, 0f, 0.5f, 3) { FriendlyName = GreenResources.SettingTurntableAxialCoreX, AvailabilityProvider = turntableModeIsAxial };
+            TurntableAxialCoreY = new NumericSetting<float>("CoreY", -0.11f, -0.5f, 0.5f, 3) { FriendlyName = GreenResources.SettingTurntableAxialCoreY, AvailabilityProvider = turntableModeIsAxial };
+            TurntableAxialProperties.Settings.Add(TurntableAxialCoreX);
+            TurntableAxialProperties.Settings.Add(TurntableAxialCoreY);
+            TurntableAxialModelResolution = new SizeSetting("ModelResolution", 640, 480, 64, 64, 1024, 1024) { FriendlyName = GreenResources.SettingTurntableSaveModelResolution, AvailabilityProvider = turntableModeIsAxial };
+            TurntableAxialTextureResolution = new SizeSetting("TextureResolution", 640, 480, 64, 64, 1024, 1024) { FriendlyName = GreenResources.SettingTurntableSaveTextureResolution, AvailabilityProvider = turntableModeIsAxial };
+            TurntableAxialProperties.Settings.Add(TurntableAxialModelResolution);
+            TurntableAxialProperties.Settings.Add(TurntableAxialTextureResolution);
+
+            TurntableScanningSetter.Settings.AddRange(new Setting[] { TurntableAxialClippingHeight, TurntableAxialClippingRadius, TurntableAxialCoreX, TurntableAxialCoreY, TurntableAxialModelResolution, TurntableAxialTextureResolution });
+
+            //Turntable - Volumetric
+            TurntableVolumetricProperties = new SettingGroup("TurntableVolumetric") { FriendlyName = GreenResources.SettingGroupTurntableVolumetric, IsHidden = true };
+            SettingGroups.Add(TurntableVolumetricProperties);
+
+            TurntableVolumetricCubeSize = new NumericSetting<float>("CubeSize", 30, 10, 50) { FriendlyName = GreenResources.SettingTurntableVolumetricCubeSize, AvailabilityProvider = turntableModeIsVolumetric };
+            TurntableVolumetricCubeResolution = new NumericSetting<int>("CubeResolution", 128, 16, 512) { FriendlyName = GreenResources.SettingTurntableVolumetricCubeResolution, AvailabilityProvider = turntableModeIsVolumetric };
+            TurntableVolumetricProperties.Settings.Add(TurntableVolumetricCubeSize);
+            TurntableVolumetricProperties.Settings.Add(TurntableVolumetricCubeResolution);
+            TurntableVolumetricView = new EnumSetting<RotatingScanner.VolumetricViews>("VolumetricView", RotatingScanner.VolumetricViews.Overlay) { FriendlyName = GreenResources.SettingTurntableVolumetricView, AvailabilityProvider = turntableModeIsVolumetric, FriendlyOptions = GreenResources.EnumRotatingScannerVolumetricViews.Split('|') };
+            DependentAvailability turntableVolumetricSliceView = new DependentAvailability(new Setting[] { TurntableMode, TurntableVolumetricView }, new string[] { "Volumetric", "Slice" });
+            TurntableVolumetricProperties.Settings.Add(TurntableVolumetricView);
+            TurntableVolumetricSlice = new NumericSetting<float>("Slice", 0, 0, 1, 2) { FriendlyName = GreenResources.SettingTurntableVolumetricSlice, AvailabilityProvider = turntableVolumetricSliceView };
+            TurntableVolumetricThreshold = new NumericSetting<float>("Threshold", 0.1f, 0, 1, 2) { FriendlyName = GreenResources.SettingTurntableVolumetricThreshold, AvailabilityProvider = turntableModeIsVolumetric };
+            TurntableVolumetricProperties.Settings.Add(TurntableVolumetricSlice);
+            TurntableVolumetricProperties.Settings.Add(TurntableVolumetricThreshold);
+            TurntableVolumetricGradientLimit = new NumericSetting<float>("GradientLimit", 0.05f, 0f, 0.2f, 4) { FriendlyName = GreenResources.SettingTurntableVolumetricGradientLimit, AvailabilityProvider = turntableModeIsVolumetric };
+            TurntableVolumetricProperties.Settings.Add(TurntableVolumetricGradientLimit);
+
+            TurntableScanningSetter.Settings.AddRange(new Setting[] { TurntableVolumetricCubeSize, TurntableVolumetricCubeResolution });
         }
     }
 }

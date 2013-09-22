@@ -39,13 +39,12 @@ bool PNGSave(LPWSTR path, ID3D11Texture2D* texture)
 		}
 	}
 	deviceContext->Unmap(texture, 0);
+	bitmap.UnlockBits(&bitmapData);
+	deviceContext->Release();
+	device->Release();
 
 	CLSID pngClsid;
 	GetEncoderClsid(L"image/png", &pngClsid);
-	bitmap.UnlockBits(&bitmapData);
-
-	deviceContext->Release();
-	device->Release();
 	return bitmap.Save(path, &pngClsid, NULL) == Ok;
 }
 

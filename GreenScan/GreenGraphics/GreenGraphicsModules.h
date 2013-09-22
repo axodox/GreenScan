@@ -21,7 +21,7 @@ namespace Green
 			void* Host;
 			Callback RequestDraw;	
 			bool DrawsOverlay, StaticInput;
-			virtual void CreateResources(GraphicsDevice* device) = 0;
+			virtual void CreateResources(GraphicsDeviceWithSwapChain* device) = 0;
 			virtual void DestroyResources() = 0;
 			virtual void StartProcessing() = 0;
 			virtual void EndProcessing() = 0;
