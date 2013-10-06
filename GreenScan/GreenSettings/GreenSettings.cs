@@ -100,11 +100,7 @@ namespace Green.Settings
             OnPropertyChanged("IsAvailable");
         }
 
-        public static CultureInfo Culture;
-        static Setting()
-        {
-            Culture = new CultureInfo("en-US");
-        }
+        public static readonly CultureInfo Culture = new CultureInfo("en-US");
 
         public Setting(string name)
         {
@@ -953,7 +949,7 @@ namespace Green.Settings
             SuppressValueChanged = true;
             foreach (Setting s in Settings) s.RestoreValue();
             SuppressValueChanged = false;
-            ValueChanged(this, EventArgs.Empty);
+            if (ValueChanged != null) ValueChanged(this, EventArgs.Empty);
         }
 
         public void ResetToDefault()
@@ -961,7 +957,7 @@ namespace Green.Settings
             SuppressValueChanged = true;
             foreach (Setting s in Settings) s.ResetValue();
             SuppressValueChanged = false;
-            ValueChanged(this, EventArgs.Empty);
+            if (ValueChanged != null) ValueChanged(this, EventArgs.Empty);
         }
     }
 
@@ -1078,4 +1074,248 @@ namespace Green.Settings
             }
         }
     }
+
+    #region Other settings
+    public class DenavitHartenbergSetting : Setting
+    {
+        public class Joint : INotifyPropertyChanged
+        {
+            public float Maximum
+            {
+                get
+                {
+                    switch (parameter)
+                    {
+                        case Parameters.Q:
+                        case Parameters.Alpha:
+                            return (float)Math.PI;
+                        case Parameters.D:
+                        case Parameters.A:
+                            return 1;
+                        default:
+                            return 0;
+                    }
+                }
+            }
+            public float Minimum
+            {
+                get
+                {
+                    switch (parameter)
+                    {
+                        case Parameters.Q:
+                        case Parameters.Alpha:
+                            return -(float)Math.PI;
+                        case Parameters.D:
+                        case Parameters.A:
+                            return -1;
+                        default:
+                            return 0;
+                    }
+                }
+            }
+
+            public string[] StringParameterValues
+            {
+                get
+                {
+                    return new string[] { "Q", "D", "A", "Alpha" };
+                }
+            }
+            public string StringParameter
+            {
+                get
+                {
+                    return Parameter.ToString();
+                }
+                set
+                {
+                    Parameters parameter;
+                    if (Enum.TryParse<Parameters>(value, out parameter))
+                        Parameter = parameter;
+                }
+            }
+            private int number;
+            public int Number { get { return number; } set { number = value; OnPropertyChanged("Number"); } }
+            public enum Parameters : byte { Q, D, A, Alpha };
+            private Parameters parameter;
+            public Parameters Parameter 
+            { 
+                get 
+                { 
+                    return parameter; 
+                } 
+                set 
+                { 
+                    parameter = value; 
+                    OnPropertyChanged("Parameter"); 
+                    OnPropertyChanged("StringParameter"); 
+                    OnPropertyChanged("X"); 
+                    OnPropertyChanged("Minimum"); 
+                    OnPropertyChanged("Maximum");
+                    if (ValueChanged != null) ValueChanged(this, EventArgs.Empty);
+                } 
+            }
+            private float q, d, a, alpha;
+            public float Q { get { return q; } set { q = value; OnParameterChanged(Parameters.Q); } }
+            public float D { get { return d; } set { d = value; OnParameterChanged(Parameters.D); } }
+            public float A { get { return a; } set { a = value; OnParameterChanged(Parameters.A); } }
+            public float Alpha { get { return alpha; } set { alpha = value; OnParameterChanged(Parameters.Alpha); } }
+            public float X 
+            { 
+                get 
+                {
+                    switch (parameter)
+                    {
+                        case Parameters.Q:
+                            return Q;
+                        case Parameters.D:
+                            return D;
+                        case Parameters.A:
+                            return A;
+                        case Parameters.Alpha:
+                            return Alpha;
+                        default:
+                            return 0;
+                    }
+                }
+                set
+                {
+                    switch (parameter)
+                    {
+                        case Parameters.Q:
+                            Q = value;
+                            break;
+                        case Parameters.D:
+                            D = value;
+                            break;
+                        case Parameters.A:
+                            A = value;
+                            break;
+                        case Parameters.Alpha:
+                            Alpha = value;
+                            break;
+                    }
+                }
+            }
+            public event EventHandler ValueChanged;
+            public event PropertyChangedEventHandler PropertyChanged;
+
+            private void OnParameterChanged(Parameters parameter)
+            {
+                if (ValueChanged != null) ValueChanged(this, EventArgs.Empty);
+                if (PropertyChanged != null)
+                {
+                    OnPropertyChanged(parameter.ToString());
+                    if (Parameter == parameter) OnPropertyChanged("X");
+                }
+            }
+
+            private void OnPropertyChanged(string name)
+            {
+                if (PropertyChanged != null) PropertyChanged(this, new PropertyChangedEventArgs(name));
+            }
+
+            public static Joint Parse(string s)
+            {
+                string[] items = s.Split(';');
+                return new Joint()
+                {
+                    Q = float.Parse(items[0], Culture),
+                    D = float.Parse(items[1], Culture),
+                    A = float.Parse(items[2], Culture),
+                    Alpha = float.Parse(items[3], Culture)
+                };
+            }
+
+            public override string ToString()
+            {
+                return string.Format(Culture, "{0};{1};{2};{3}", Q, D, A, Alpha);
+            }
+        }
+
+        public int JointCount
+        {
+            get
+            {
+                return Items.Count;
+            }
+        }
+
+        public float[] ToJointArray()
+        {
+            float[] values = new float[Items.Count * 4];
+            int id;
+            for (int i = 0; i < Items.Count; i++)
+            {
+                id = i * 4;
+                values[id] = Items[i].Q;
+                values[id + 1] = Items[i].D;
+                values[id + 2] = Items[i].A;
+                values[id + 3] = Items[i].Alpha;
+            }
+            return values;
+        }
+
+        public byte[] ToParameterArray()
+        {
+            byte[] values = new byte[Items.Count * 4];
+            for (int i = 0; i < Items.Count; i++)
+            {
+                values[i] = (byte)Items[i].Parameter;
+            }
+            return values;
+        }
+
+        public ObservableCollection<Joint> Items { get; private set; }
+        public DenavitHartenbergSetting(string name)
+            : base(name)
+        {
+            Items = new ObservableCollection<Joint>();
+            Items.CollectionChanged += Items_CollectionChanged;
+        }
+
+        void Items_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            if (e.NewItems != null)
+                foreach (Joint item in e.NewItems)
+                {
+                    item.ValueChanged += (object o, EventArgs ea) => { OnValueChanged(); };
+                }
+            int i = 0;
+            foreach(Joint joint in Items)
+            {
+                joint.Number = i++;
+            }
+            OnValueChanged();
+        }
+
+        public override string StringValue
+        {
+            get
+            {
+                return string.Join<Joint>("|", Items);
+            }
+            set
+            {
+                try
+                {
+                    string[] items = value.Split('|');
+                    foreach (string item in items) Items.Add(Joint.Parse(item));
+                }
+                catch { }
+            }
+        }
+
+        public override bool HasDefaultValue
+        {
+            get { return Items.Count == 0; }
+        }
+
+        public override void ResetValue()
+        {
+            Items.Clear();
+        }
+    }
+    #endregion
 }

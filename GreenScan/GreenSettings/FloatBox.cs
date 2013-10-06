@@ -9,7 +9,7 @@ namespace Green.Settings.UI
     {
         int oldCaretPos;
         string oldText;
-        bool skipNext;
+        //bool skipNext;
 
         public FloatBox()
             : base()
@@ -23,7 +23,7 @@ namespace Green.Settings.UI
             if (TempValue > Maximum) TempValue = Maximum;
             if (TempValue < Minimum) TempValue = Minimum;
             Value = TempValue;
-            skipNext = true;
+            //skipNext = true;
             Text = TempValue.ToString();
             OnValueChanged();
         }
@@ -37,11 +37,11 @@ namespace Green.Settings.UI
 
         protected override void OnTextChanged(TextChangedEventArgs e)
         {
-            if (skipNext)
-            {
-                skipNext = false;
-                return;
-            }
+            //if (skipNext)
+            //{
+            //    skipNext = false;
+            //    return;
+            //}
             float val;
             if (Text == "" || Text == "-" || float.TryParse(Text, out val))
             {
@@ -50,7 +50,7 @@ namespace Green.Settings.UI
             }
             else
             {
-                skipNext = true;
+                //skipNext = true;
                 Text = oldText;
                 CaretIndex = oldCaretPos;
             }
@@ -60,7 +60,8 @@ namespace Green.Settings.UI
             {
                 TempValue = val;
             }
-        }
+            
+        }        
 
         float TempValue;
         public float Value
@@ -95,7 +96,7 @@ namespace Green.Settings.UI
     "Minimum", typeof(float), typeof(FloatBox), new PropertyMetadata(float.NegativeInfinity));
 
         void OnValueChanged()
-        {
+        {            
             if (ValueChanged != null)
                 ValueChanged(this, EventArgs.Empty);
         }

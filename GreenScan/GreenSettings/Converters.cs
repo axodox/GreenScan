@@ -36,6 +36,8 @@ namespace Green.Settings.UI
                 return new PathControl();
             if (value is StringSetting)
                 return new StringControl();
+            if (value is DenavitHartenbergSetting)
+                return new DenavitHartembergControl();
             return null;
         }
 
@@ -46,7 +48,7 @@ namespace Green.Settings.UI
     }
 
     [ValueConversion(typeof(bool), typeof(bool))]
-    class BooleanInverter : IValueConverter
+    public class BooleanInverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         {
@@ -95,7 +97,7 @@ namespace Green.Settings.UI
     }
 
     [ValueConversion(typeof(bool), typeof(Visibility))]
-    class InverseBooleanToVisibilityConverter : IValueConverter
+    public class InverseBooleanToVisibilityConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         {
@@ -108,7 +110,8 @@ namespace Green.Settings.UI
         }
     }
 
-    class BooleanToVisibilityConverter : IValueConverter
+    [ValueConversion(typeof(bool), typeof(Visibility))]
+    public class BooleanToVisibilityConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         {
@@ -122,7 +125,7 @@ namespace Green.Settings.UI
     }
 
     [ValueConversion(typeof(object), typeof(Visibility))]
-    class ReferenceValueToVisibilityConverter : IValueConverter
+    public class ReferenceValueToVisibilityConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         {
