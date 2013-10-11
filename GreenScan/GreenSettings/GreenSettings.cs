@@ -1043,21 +1043,32 @@ namespace Green.Settings
             string[] items;
             foreach (string line in lines)
             {
-                if (line.Length == 0) continue;
-                if (line[0] == '[')
+                try
                 {
-                    group = line.Substring(1, line.Length - 2);
-                }
-                else
-                {
-                    items = line.Split('=');
-                    setting = group + '.' + items[0];
-                    value = items[1];
-                    if (settings.ContainsKey(setting))
+                    if (line.Length == 0) continue;
+                    if (line[0] == '[')
                     {
-                        settings[setting].StringValue = value;
+                        group = line.Substring(1, line.Length - 2);
+                    }
+                    else
+                    {
+                        items = line.Split('=');
+                        setting = group + '.' + items[0];
+                        value = items[1];
+                        if (settings.ContainsKey(setting))
+                        {
+                            try
+                            {
+                                settings[setting].StringValue = value;
+                            }
+                            catch
+                            {
+                                settings[setting].ResetValue();
+                            }
+                        }
                     }
                 }
+                catch { }
             }
         }
 
@@ -1078,6 +1089,25 @@ namespace Green.Settings
     #region Other settings
     public class DenavitHartenbergSetting : Setting
     {
+        public event EventHandler ActiveJointChanged;
+        private Joint activeJoint;
+        public Joint ActiveJoint
+        {
+            get
+            {
+                return activeJoint;
+            }
+            set
+            {
+                if (Joints.Contains(value) || value == null)
+                {
+                    activeJoint = value;
+                    OnPropertyChanged("ActiveJoint");
+                    if (ActiveJointChanged != null) ActiveJointChanged(this, EventArgs.Empty);
+                }
+            }
+        }
+
         public class Joint : INotifyPropertyChanged
         {
             public float Maximum
@@ -1224,13 +1254,14 @@ namespace Green.Settings
                     Q = float.Parse(items[0], Culture),
                     D = float.Parse(items[1], Culture),
                     A = float.Parse(items[2], Culture),
-                    Alpha = float.Parse(items[3], Culture)
+                    Alpha = float.Parse(items[3], Culture),
+                    Parameter = (Parameters)Enum.Parse(typeof(Parameters), items[4])                    
                 };
             }
 
             public override string ToString()
             {
-                return string.Format(Culture, "{0};{1};{2};{3}", Q, D, A, Alpha);
+                return string.Format(Culture, "{0};{1};{2};{3};{4}", Q, D, A, Alpha, Parameter);
             }
         }
 
@@ -1238,41 +1269,41 @@ namespace Green.Settings
         {
             get
             {
-                return Items.Count;
+                return Joints.Count;
             }
         }
 
         public float[] ToJointArray()
         {
-            float[] values = new float[Items.Count * 4];
+            float[] values = new float[Joints.Count * 4];
             int id;
-            for (int i = 0; i < Items.Count; i++)
+            for (int i = 0; i < Joints.Count; i++)
             {
                 id = i * 4;
-                values[id] = Items[i].Q;
-                values[id + 1] = Items[i].D;
-                values[id + 2] = Items[i].A;
-                values[id + 3] = Items[i].Alpha;
+                values[id] = Joints[i].Q;
+                values[id + 1] = Joints[i].D;
+                values[id + 2] = Joints[i].A;
+                values[id + 3] = Joints[i].Alpha;
             }
             return values;
         }
 
         public byte[] ToParameterArray()
         {
-            byte[] values = new byte[Items.Count * 4];
-            for (int i = 0; i < Items.Count; i++)
+            byte[] values = new byte[Joints.Count * 4];
+            for (int i = 0; i < Joints.Count; i++)
             {
-                values[i] = (byte)Items[i].Parameter;
+                values[i] = (byte)Joints[i].Parameter;
             }
             return values;
         }
 
-        public ObservableCollection<Joint> Items { get; private set; }
+        public ObservableCollection<Joint> Joints { get; private set; }
         public DenavitHartenbergSetting(string name)
             : base(name)
         {
-            Items = new ObservableCollection<Joint>();
-            Items.CollectionChanged += Items_CollectionChanged;
+            Joints = new ObservableCollection<Joint>();
+            Joints.CollectionChanged += Items_CollectionChanged;
         }
 
         void Items_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
@@ -1282,8 +1313,15 @@ namespace Green.Settings
                 {
                     item.ValueChanged += (object o, EventArgs ea) => { OnValueChanged(); };
                 }
+            if (e.OldItems != null)
+            {
+                foreach (Joint item in e.OldItems)
+                {
+                    if (item == ActiveJoint) ActiveJoint = null;
+                }
+            }
             int i = 0;
-            foreach(Joint joint in Items)
+            foreach(Joint joint in Joints)
             {
                 joint.Number = i++;
             }
@@ -1294,14 +1332,15 @@ namespace Green.Settings
         {
             get
             {
-                return string.Join<Joint>("|", Items);
+                return string.Join<Joint>("|", Joints);
             }
             set
             {
                 try
                 {
+                    Joints.Clear();
                     string[] items = value.Split('|');
-                    foreach (string item in items) Items.Add(Joint.Parse(item));
+                    foreach (string item in items) Joints.Add(Joint.Parse(item));
                 }
                 catch { }
             }
@@ -1309,12 +1348,12 @@ namespace Green.Settings
 
         public override bool HasDefaultValue
         {
-            get { return Items.Count == 0; }
+            get { return Joints.Count == 0; }
         }
 
         public override void ResetValue()
         {
-            Items.Clear();
+            Joints.Clear();
         }
     }
     #endregion

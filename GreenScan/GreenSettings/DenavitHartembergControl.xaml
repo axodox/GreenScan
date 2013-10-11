@@ -35,10 +35,10 @@
                 <Button Grid.Column="5" Content="+" Margin="3" Padding="3" Click="AddTransformation_Click" Width="20"/>
             </Grid>
             <StackPanel Grid.Row="2">
-                <ItemsControl ItemsSource="{Binding Items}">
+                <ItemsControl ItemsSource="{Binding Joints}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Grid>
+                            <Grid MouseEnter="Grid_MouseEnter" MouseLeave="Grid_MouseLeave" Tag="{Binding}" Background="Transparent">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="30"/>
                                     <ColumnDefinition/>
@@ -59,11 +59,12 @@
                 </ItemsControl>
             </StackPanel>
             <StackPanel Grid.Row="3">
-                <ItemsControl ItemsSource="{Binding Items}">
+                <ItemsControl ItemsSource="{Binding Joints}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Grid Margin="3">
+                            <Grid Margin="3" Background="Transparent" MouseEnter="Grid_MouseEnter" MouseLeave="Grid_MouseLeave" Tag="{Binding}">
                                 <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
@@ -79,6 +80,20 @@
                                 <TextBlock Grid.Column="1" Text="{Binding X}" VerticalAlignment="Center" Margin="0,0,6,0"/>
                                 <ComboBox Margin="{StaticResource ContentMargin}" Style="{StaticResource ComboBox}" Grid.Column="2" ItemsSource="{Binding StringParameterValues}" SelectedItem="{Binding StringParameter, Mode=TwoWay}" VerticalAlignment="Center"/>
                                 <Slider Grid.ColumnSpan="3" Grid.Row="1" Maximum="{Binding Maximum}" Minimum="{Binding Minimum}" Value="{Binding Path=X, Mode=TwoWay}" Margin="{StaticResource ContentMargin}"/>
+                                <Grid Grid.Row="2" Grid.ColumnSpan="3" Visibility="{Binding IsMouseOver, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Grid}}}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition/>
+                                        <ColumnDefinition/>
+                                        <ColumnDefinition/>
+                                        <ColumnDefinition/>
+                                        <ColumnDefinition/>
+                                    </Grid.ColumnDefinitions>
+                                    <Button Grid.Column="0" Content="-90°" Style="{StaticResource Button}" Margin="0,6,3,0" Tag="{Binding}" Click="Minus90Degrees_Click"/>
+                                    <Button Grid.Column="1" Content="+90°" Style="{StaticResource Button}" Margin="0,6,3,0" Tag="{Binding}" Click="Plus90Degrees_Click"/>
+                                    <Button Grid.Column="2" Content="0" Style="{StaticResource Button}" Margin="0,6,3,0" Tag="{Binding}" Click="Zero_Click"/>
+                                    <Button Grid.Column="3" Content="-0.5" Style="{StaticResource Button}" Margin="0,6,3,0" Tag="{Binding}" Click="MinusHalf_Click"/>
+                                    <Button Grid.Column="4" Content="+0.5" Style="{StaticResource Button}" Margin="0,6,0,0" Tag="{Binding}" Click="PlusHalf_Click"/>                                    
+                                </Grid>
                             </Grid>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
