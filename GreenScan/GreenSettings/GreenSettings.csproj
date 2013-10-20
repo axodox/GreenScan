@@ -130,6 +130,7 @@
     <Reference Include="PresentationFramework" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xaml" />
     <Reference Include="System.Xml.Linq" />
@@ -142,6 +143,9 @@
   <ItemGroup>
     <Compile Include="BooleanControl.xaml.cs">
       <DependentUpon>BooleanControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="ColorControl.xaml.cs">
+      <DependentUpon>ColorControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="Converters.cs" />
     <Compile Include="DenavitHartembergControl.xaml.cs">
@@ -190,6 +194,10 @@
   </ItemGroup>
   <ItemGroup>
     <Page Include="BooleanControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ColorControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

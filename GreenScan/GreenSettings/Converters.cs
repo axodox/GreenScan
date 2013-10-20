@@ -22,6 +22,8 @@ namespace Green.Settings.UI
         {
             if (value is Setting && (value as Setting).IsHidden) 
                 return null;
+            if (value is ColorSetting)
+                return new ColorControl();
             if (value is SizeSetting)
                 return new SizeControl();
             if (value is NumericSetting)

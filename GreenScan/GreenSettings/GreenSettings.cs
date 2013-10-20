@@ -205,6 +205,120 @@ namespace Green.Settings
             }
         }
     }
+    public class ColorSetting : Setting
+    {
+        public ColorSetting(string name, float r, float g, float b, float a)
+            : base(name)
+        {
+            Value = DefaultValue = new Color(r, g, b, a);
+        }
+
+        public struct Color
+        {
+            public float R, G, B, A;
+            public byte bR
+            {
+                get { return (byte)(R * 255); }
+                set { R = value / 255f; }
+            }
+            public byte bG
+            {
+                get { return (byte)(G * 255); }
+                set { G = value / 255f; }
+            }
+            public byte bB
+            {
+                get { return (byte)(B * 255); }
+                set { B = value / 255f; }
+            }
+            public byte bA
+            {
+                get { return (byte)(A * 255); }
+                set { A = value / 255f; }
+            }
+
+            public Color(float a, float r, float g, float b)
+            {
+                R = r;
+                G = g;
+                B = b;
+                A = a;
+            }
+            public Color(byte a, byte r, byte g, byte b)
+            {
+                R = r / 255f;
+                G = g / 255f;
+                B = b / 255f;
+                A = a / 255f;
+            }
+
+            public static bool operator ==(Color a, Color b)
+            {
+                return a.R == b.R && a.G == b.G && a.B == b.B && a.A == b.A;
+            }
+
+            public static bool operator !=(Color a, Color b)
+            {
+                return !(a == b);
+            }
+
+            public override string ToString()
+            {
+                return string.Format("#{0:X2}{1:X2}{2:X2}{3:X2}", bA, bR, bG, bB);
+            }
+
+            public static Color Parse(string text)
+            {
+                return new Color(
+                    byte.Parse(text.Substring(1, 2), NumberStyles.HexNumber),
+                    byte.Parse(text.Substring(3, 2), NumberStyles.HexNumber),
+                    byte.Parse(text.Substring(5, 2), NumberStyles.HexNumber),
+                    byte.Parse(text.Substring(7, 2), NumberStyles.HexNumber));
+            }
+
+            public float[] ToArray()
+            {
+                return new float[] { R, G, B, A };
+            }
+        }
+
+        public Color DefaultValue { get; private set; }
+        private Color value;
+        public Color Value
+        {
+            get
+            {
+                return value;
+            }
+            set
+            {
+                this.value = value;
+                OnValueChanged();
+            }
+        }
+
+        public override string StringValue
+        {
+            get
+            {
+                return Value.ToString();
+            }
+            set
+            {
+                Value = Color.Parse(value);
+            }
+        }
+
+        public override bool HasDefaultValue
+        {
+            get { return DefaultValue == Value; }
+        }
+
+        public override void ResetValue()
+        {
+            Value = DefaultValue;
+        }
+    }
 
     public class MatrixSetting : Setting
     {
