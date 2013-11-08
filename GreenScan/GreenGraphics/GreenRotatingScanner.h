@@ -45,7 +45,7 @@ namespace Green
 			RenderTarget2DGroup *PolarTargetGroup;
 			ReadableRenderTarget2D **SaveModelTargets, **SaveTextureTargets;
 			ReadableRenderTarget3D *SaveCubeTarget;
-			Mesh<VertexPosition, unsigned>* CubeMesh;
+			Mesh<VertexPositionNormal, unsigned>* CubeMesh;
 			int NextModelWidth, NextModelHeight, NextTextureWidth, NextTextureHeight, TargetCount, CubeRes, CubeResExt, NextCubeRes;
 			int ModelWidth, ModelHeight, TextureWidth, TextureHeight;
 			bool SaveTextureReady, Scanning, ClearNext, StaticInputNext, SaveInProgress, Calibrated;
@@ -88,7 +88,7 @@ namespace Green
 			VertexPositionColor* CrossVertices;
 			VertexBuffer<VertexPositionColor>* Cross;
 			VertexShader *VSOverlay, *VSTwoAxisPolar, *VSOneAxisPolar, *VSVolumetricOrtho, *VSVolumetricCube, *VSCommon, *VSModel, *VSVolumetricModel, *VSSimple;
-			GeometryShader *GSTwoAxisPolar, *GSOneAxisPolar, *GSVolumetricOrtho, *GSVolumetricCube, *GSModel, *GSVolumetricModel;
+			GeometryShader *GSTwoAxisPolar, *GSOneAxisPolar, *GSVolumetricOrtho, *GSVolumetricCube, *GSModel;
 			PixelShader *PSOverlay, *PSTwoAxisPolar, *PSOneAxisPolar, *PSVolumetricOrtho, *PSVolumetricOrthoFilter, *PSVolumetricCube, *PSPolarDepth, *PSVolumetricDepth, *PSVolumetricSlice, *PSPolarTexture, *PSTest, *PSModel, *PSVolumetricModel, *PSModelOutput, *PSTextureOutput, *PSSimple;
 			BlendState *BOpaque, *BAdditive, *BAlpha;
 			RasterizerState *RDefault, *RCullNone, *RWireFrame;
@@ -214,7 +214,7 @@ namespace Green
 				VSModel = new VertexShader(Device, L"TurntableModelVertexShader.cso");
 				VSModel->SetInputLayout(VertexDefinition::VertexPositionTexture);
 				VSVolumetricModel = new VertexShader(Device, L"VolumetricModelVertexShader.cso");
-				VSVolumetricModel->SetInputLayout(VertexDefinition::VertexPosition);
+				VSVolumetricModel->SetInputLayout(VertexDefinition::VertexPositionNormal);
 				VSSimple = new VertexShader(Device, L"SimpleVertexShader.cso");
 				VSSimple->SetInputLayout(VertexDefinition::VertexPositionTexture);
 
@@ -223,7 +223,6 @@ namespace Green
 				GSVolumetricOrtho = new GeometryShader(Device, L"TurntableVolumetricOrthoGeometryShader.cso");
 				GSVolumetricCube = new GeometryShader(Device, L"TurntableVolumetricCubeGeometryShader.cso");
 				GSModel = new GeometryShader(Device, L"TurntableModelGeometryShader.cso");
-				GSVolumetricModel = new GeometryShader(Device, L"VolumetricModelGeometryShader.cso");
 				
 				PSOverlay = new PixelShader(Device, L"TurntableOverlayPixelShader.cso");
 				PSTwoAxisPolar = new PixelShader(Device, L"TurntableTwoAxisPolarPixelShader.cso");
@@ -262,7 +261,6 @@ namespace Green
 				delete GSVolumetricOrtho;
 				delete GSVolumetricCube;
 				delete GSModel;
-				delete GSVolumetricModel;
 				delete PSOverlay;
 				delete PSTwoAxisPolar;
 				delete PSOneAxisPolar;
@@ -1092,7 +1090,7 @@ namespace Green
 					delete [modelLenExt] indexCube;	
 
 					//Smooth
-					SmoothCube(vertices, vertexCount, indicies, indexCount);
+					SmoothMesh(vertices, vertexCount, indicies, indexCount);
 				}
 				SafeDelete(SaveCubeTarget);
 				CloseHandle(SaveEvent);
@@ -1118,7 +1116,7 @@ namespace Green
 				throw 0;
 			}
 
-			void SmoothCube(VertexPosition* vertices, unsigned vertexCount, const unsigned* indicies, unsigned indexCount)
+			void SmoothMesh(VertexPosition* vertices, unsigned vertexCount, const unsigned* const indicies, unsigned indexCount)
 			{
 				//Build map
 				int mapLength = vertexCount * SmoothingMaxConnections;
@@ -1174,6 +1172,50 @@ namespace Green
 				delete [vertexCount] tempVertices;
 				delete [mapLength] map;
 			}
+			
+			VertexPositionNormal* GenerateSmoothNormalsForMesh(const VertexPosition* const vertices, unsigned vertexCount, const unsigned* const indicies, unsigned indexCount)
+			{
+				VertexPositionNormal *verticesWithNormals = new VertexPositionNormal[vertexCount], *pVerticesWithNormals = verticesWithNormals;
+				const VertexPosition *pVertices = vertices;
+				for(int i = 0; i < vertexCount; i++)
+				{
+					pVerticesWithNormals->Position = pVertices->Position;
+					pVerticesWithNormals->Normal = XMFLOAT3();
+					pVerticesWithNormals++;
+					pVertices++;
+				}
+
+				int triangleCount = indexCount / 3;				
+				XMVECTOR A, B, C, N, sumNa, sumNb, sumNc;
+				unsigned indexA, indexB, indexC;
+				const unsigned* pIndicies = indicies;
+				for(int i = 0; i < triangleCount; i++)
+				{
+					indexA = *pIndicies++;
+					indexB = *pIndicies++;
+					indexC = *pIndicies++;
+					A = XMLoadFloat3(&verticesWithNormals[indexA].Position);
+					B = XMLoadFloat3(&verticesWithNormals[indexB].Position);
+					C = XMLoadFloat3(&verticesWithNormals[indexC].Position);
+					sumNa = XMLoadFloat3(&verticesWithNormals[indexA].Normal);
+					sumNb = XMLoadFloat3(&verticesWithNormals[indexB].Normal);
+					sumNc = XMLoadFloat3(&verticesWithNormals[indexC].Normal);
+					N = XMVector3Normalize(XMVector3Cross(A - B, A - C));
+					XMStoreFloat3(&verticesWithNormals[indexA].Normal, N + sumNa);
+					XMStoreFloat3(&verticesWithNormals[indexB].Normal, N + sumNb);
+					XMStoreFloat3(&verticesWithNormals[indexC].Normal, N + sumNc);
+				}
+
+				pVerticesWithNormals = verticesWithNormals;
+				for(int i = 0; i < vertexCount; i++)
+				{
+					N = XMLoadFloat3(&pVerticesWithNormals->Normal);
+					XMStoreFloat3(&pVerticesWithNormals->Normal, XMVector3Normalize(N));
+					pVerticesWithNormals++;
+				}
+
+				return verticesWithNormals;
+			}
 
 			bool CalculateCubeMesh()
 			{
@@ -1183,11 +1225,14 @@ namespace Green
 
 				bool ok = GetCube(vertices, vertexCount, indicies, indexCount);
 				if(!ok) return false;
-				
-				SafeDelete(CubeMesh);
-				if(vertexCount > 0) CubeMesh = new Mesh<VertexPosition, unsigned>(Device, vertices, vertexCount, indicies, indexCount, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
+				VertexPositionNormal* verticesWithNormals = GenerateSmoothNormalsForMesh(vertices, vertexCount, indicies, indexCount);
 				delete [vertexCount] vertices;
+
+				SafeDelete(CubeMesh);
+				if(vertexCount > 0) CubeMesh = new Mesh<VertexPositionNormal, unsigned>(Device, verticesWithNormals, vertexCount, indicies, indexCount, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+				delete [vertexCount] verticesWithNormals;
 				delete [indexCount] indicies;
 			}
 		public:
@@ -1201,27 +1246,30 @@ namespace Green
 
 				bool ok = GetCube(vertices, vertexCount, indicies, indexCount);
 				if(!ok) return false;
+
+				VertexPositionNormal* verticesWithNormals = GenerateSmoothNormalsForMesh(vertices, vertexCount, indicies, indexCount);
+				delete [vertexCount] vertices;
 				
 				switch (format)
 				{
 				case ModelFormats::FBX:
-					ok = FBXMeshSave(path, (XMFLOAT3*)vertices, vertexCount, indicies, indexCount, L"fbx");
+					ok = FBXMeshSave(path, verticesWithNormals, vertexCount, indicies, indexCount, L"fbx");
 					break;
 				case ModelFormats::DXF:
-					ok = FBXMeshSave(path, (XMFLOAT3*)vertices, vertexCount, indicies, indexCount, L"dxf");
+					ok = FBXMeshSave(path, verticesWithNormals, vertexCount, indicies, indexCount, L"dxf");
 					break;
 				case ModelFormats::DAE:
-					ok = FBXMeshSave(path, (XMFLOAT3*)vertices, vertexCount, indicies, indexCount, L"dae");
+					ok = FBXMeshSave(path, verticesWithNormals, vertexCount, indicies, indexCount, L"dae");
 					break;
 				case ModelFormats::OBJ:
-					ok = FBXMeshSave(path, (XMFLOAT3*)vertices, vertexCount, indicies, indexCount, L"obj");
+					ok = FBXMeshSave(path, verticesWithNormals, vertexCount, indicies, indexCount, L"obj");
 					break;
 				default:
 					ok = false;
 					break;
-				}			
-
-				delete [vertexCount] vertices;
+				}		
+				
+				delete [vertexCount] verticesWithNormals;
 				delete [indexCount] indicies;
 				return ok;
 			}
@@ -1387,7 +1435,7 @@ namespace Green
 
 							RDefault->Set();
 							BOpaque->Apply();
-							Device->SetShaders(VSVolumetricModel, PSVolumetricModel, GSVolumetricModel);
+							Device->SetShaders(VSVolumetricModel, PSVolumetricModel);
 							CubeMesh->Draw();
 							break;
 						default:

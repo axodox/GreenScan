@@ -242,9 +242,6 @@
     <FxCompile Include="VolumetricModelVertexShader.hlsl">
       <Filter>Source Files\TurntableShaders</Filter>
     </FxCompile>
-    <FxCompile Include="VolumetricModelGeometryShader.hlsl">
-      <Filter>Source Files\TurntableShaders</Filter>
-    </FxCompile>
     <FxCompile Include="VolumetricModelPixelShader.hlsl">
       <Filter>Source Files\TurntableShaders</Filter>
     </FxCompile>

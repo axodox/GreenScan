@@ -44,7 +44,7 @@ cbuffer TurntableConstants : register(b2)
 	float4x4 ModelToScreenTransform;
 	float4x4 DepthToWorldTransform;
 	float4x4 WorldToTurntableTransform;
-	float4 CameraPosition;
+	float3 CameraPosition;
 	float2 CorePosition;
 	float2 ClipLimit;
 	float2 TextureMove;

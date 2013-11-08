@@ -4,6 +4,12 @@ struct VertexPositionWorld
 	float3 World : TEXCOORD0;
 };
 
+struct VertexPositionNormal
+{
+	float3 Position : POSITION0;
+	float3 Normal : NORMAL0;
+};
+
 struct VertexPositionWorldNormal
 {
 	float4 Position : SV_POSITION;

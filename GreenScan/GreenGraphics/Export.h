@@ -1,6 +1,7 @@
 #pragma once
 #pragma unmanaged
 #include "Stdafx.h"
+#include "GreenGraphicsVertexDefinitions.h"
 #include <fbxsdk.h>
 #define SaveBufferSize 128
 using namespace std;
@@ -48,7 +49,7 @@ bool PNGSave(LPWSTR path, ID3D11Texture2D* texture)
 	return bitmap.Save(path, &pngClsid, NULL) == Ok;
 }
 
-int STLCheckAndWriteTriangle(XMFLOAT4* a, XMFLOAT4* b, XMFLOAT4* c, byte* &p)
+int STLCheckAndWriteTriangle(const XMFLOAT4* a, const XMFLOAT4* b, const XMFLOAT4* c, byte* &p)
 {
 	XMFLOAT3* pVector = (XMFLOAT3*)p;
 	XMVECTOR A, B, C, N;
@@ -72,7 +73,7 @@ int STLCheckAndWriteTriangle(XMFLOAT4* a, XMFLOAT4* b, XMFLOAT4* c, byte* &p)
 	}
 }
 
-bool STLSave(LPWSTR path, XMFLOAT4* const sVertices, int width, int height)
+bool STLSave(LPWSTR path, const XMFLOAT4* const sVertices, int width, int height)
 {
 	WCHAR filename[MAX_PATH];
 	wcscpy_s(filename, path);
@@ -90,11 +91,11 @@ bool STLSave(LPWSTR path, XMFLOAT4* const sVertices, int width, int height)
     long lenPos;
     byte* sBuffer = new byte[bufferLength];
 
-	XMFLOAT4
+	const XMFLOAT4
 		*pVertices = sVertices, 
 		*lVertices = sVertices + width - 1, 
 		*eVertices = sVertices + (height - 1) * width;
-	XMFLOAT4 *A, *B, *C;
+	const XMFLOAT4 *A, *B, *C;
     byte* pBuffer = sBuffer;
     byte* eBuffer = sBuffer + bufferLength - 50;
 
@@ -132,7 +133,7 @@ bool STLSave(LPWSTR path, XMFLOAT4* const sVertices, int width, int height)
 	return true;
 }
 
-bool FL4Save(LPWSTR path, XMFLOAT4* const sVertices, int width, int height)
+bool FL4Save(LPWSTR path, const XMFLOAT4* const sVertices, int width, int height)
 {
 	WCHAR filename[MAX_PATH];
 	wcscpy_s(filename, path);
@@ -149,9 +150,9 @@ bool FL4Save(LPWSTR path, XMFLOAT4* const sVertices, int width, int height)
 	return true;
 }
 
-int FBXCheckAndCalculateTriangle(XMFLOAT4* const pVertices, XMFLOAT3* const pNormals, byte* const pCounts, int a, int b, int c, int &triangleCount)
+int FBXCheckAndCalculateTriangle(const XMFLOAT4* const pVertices, XMFLOAT3* const pNormals, byte* const pCounts, int a, int b, int c, int &triangleCount)
 {
-	XMFLOAT4 *vA = pVertices + a, *vB = pVertices + b, *vC = pVertices + c;
+	const XMFLOAT4 *vA = pVertices + a, *vB = pVertices + b, *vC = pVertices + c;
 	XMFLOAT3 *nA = pNormals + a, *nB = pNormals + b, *nC = pNormals + c;
 	byte *cA = pCounts + a, *cB = pCounts + b, *cC = pCounts + c;
 
@@ -410,7 +411,7 @@ bool FBXSave(LPWSTR path, XMFLOAT4* const sVertices, int width, int height, LPWS
 	return ok;
 }
 
-bool FBXMeshSave(LPWSTR path, XMFLOAT3* const vertices, unsigned vertexCount, unsigned* indicies, unsigned indexCount, LPWSTR wFormat)
+bool FBXMeshSave(LPWSTR path, const VertexPositionNormal* const vertices, unsigned vertexCount, unsigned* indicies, unsigned indexCount, LPWSTR wFormat)
 {
 	WCHAR wfilename[MAX_PATH];
 	wcscpy_s(wfilename, path);
@@ -433,11 +434,18 @@ bool FBXMeshSave(LPWSTR path, XMFLOAT3* const vertices, unsigned vertexCount, un
 	
 	fbxMesh->InitControlPoints(vertexCount);
 	FbxVector4* fbxVectors = fbxMesh->GetControlPoints();
-	XMFLOAT3* pVectors = vertices;
+	const VertexPositionNormal* pVectors = vertices;
+
+	FbxGeometryElementNormal* fbxGeometryElementNormal = fbxMesh->CreateElementNormal();
+	fbxGeometryElementNormal->SetMappingMode(FbxGeometryElement::eByControlPoint);
+	fbxGeometryElementNormal->SetReferenceMode(FbxGeometryElement::eDirect);
+	FbxLayerElementArrayTemplate<FbxVector4>* fbxNormals = &fbxGeometryElementNormal->GetDirectArray();
+	fbxNormals->SetCount(vertexCount);
 
 	for(int i = 0; i < vertexCount; i++)
 	{
-		*fbxVectors++ = FbxVector4(pVectors->x, pVectors->y, pVectors->z);
+		*fbxVectors++ = FbxVector4(pVectors->Position.x, pVectors->Position.y, pVectors->Position.z);
+		fbxNormals->SetAt(i, FbxVector4(pVectors->Normal.x, pVectors->Normal.y, pVectors->Normal.z));
 		pVectors++;
 	}
 	fbxNode->SetNodeAttribute(fbxMesh);
