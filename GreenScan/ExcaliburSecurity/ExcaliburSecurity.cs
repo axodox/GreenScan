@@ -8,6 +8,7 @@ using System.Security.Cryptography;
 using System.Net;
 using ExcaliburSecurity.Properties;
 using System.Windows.Forms;
+using Microsoft.Win32;
 
 namespace ExcaliburSecurity
 {
@@ -22,9 +23,19 @@ namespace ExcaliburSecurity
         }
         private string SecurityServer;
         private string HardwareHash;
+        private string ApplicationName;
         public int GracePeriod { get; private set; }
-        public SecurityClient(string securityServer = "http://delta.inflab.bme.hu/~axodox/kinectactivation.php", int reactivationPeriod = 90)
+        public SecurityClient(string applicationName = "GreenScan", string securityServer = "http://delta.inflab.bme.hu/~axodox/kinectactivation.php", int reactivationPeriod = 15)
         {
+            ApplicationName = applicationName;
+            try
+            {
+                RegistryKey rootKey = Registry.CurrentUser.OpenSubKey("ExcaliburSecurity");
+                if (rootKey != null) Settings.Default.Serial = (string)rootKey.GetValue(ApplicationName + "Serial", Settings.Default.Serial);
+            }
+            catch { }
+            //ResetActivation();
+            
             Modules = new Dictionary<string, string>();
             SecurityServer = securityServer;
             HardwareHash = GetHardwareHash();
@@ -56,6 +67,8 @@ namespace ExcaliburSecurity
                 IsCheating = !IsActivated;
             }
             if (!IsCheating) Settings.Default.LastStart = DateTime.Now;
+            if (!string.IsNullOrEmpty(Settings.Default.Serial))
+                Activate(Settings.Default.Serial);
             InitModules();
             Settings.Default.HardwareHash = HardwareHash;
             Settings.Default.Save();
@@ -98,13 +111,7 @@ namespace ExcaliburSecurity
             Settings.Default.Reset();
             Settings.Default.Save();
         }
-
-        public void Exit()
-        {
-            if (!IsCheating) Settings.Default.LastStart = DateTime.Now;
-            Settings.Default.Save();
-        }
-
+        
         public bool Activate(string serial)
         {
             try
@@ -120,6 +127,7 @@ namespace ExcaliburSecurity
                     string[] codes = text.Split('|');
                     if (codes[0] == Hash(serial + '+' + HardwareHash))
                     {
+                        Settings.Default.FirstStart = DateTime.Now;
                         Settings.Default.ActivationCode = codes[0];
                         Settings.Default.ModuleCodes = text;
                         InitModules();
@@ -127,6 +135,12 @@ namespace ExcaliburSecurity
                         Settings.Default.HardwareHash = HardwareHash;
                         Settings.Default.Save();
                         IsActivated = true;
+                        try
+                        {
+                            RegistryKey rootKey = Registry.CurrentUser.CreateSubKey("ExcaliburSecurity");
+                            rootKey.SetValue(ApplicationName + "Serial", Settings.Default.Serial);
+                        }
+                        catch { }
                     }
                 }
                 return IsActivated;

@@ -46,6 +46,7 @@ namespace Green.Scan
         }
 
         #region Security
+        bool TurntableActivated;
         void SecurityWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             if ((bool)e.Result == true)
@@ -53,6 +54,7 @@ namespace Green.Scan
                 ShowStatus(GreenResources.StatusReady);
                 Remote.IsEnabled = true;
                 IsEnabled = true;
+                if (TurntableActivated) InitRotatingScanner();
             }
             else
                 Close();
@@ -62,6 +64,7 @@ namespace Green.Scan
         {
             SecurityClient SC = new SecurityClient();
             e.Result = SC.HasPermissionToRun;
+            TurntableActivated = SC.IsModuleActivated("RotatingScanner");
         }
         #endregion
 
@@ -72,7 +75,6 @@ namespace Green.Scan
             DeviceManager.DeviceCountChanged += (object o, EventArgs e) => { ShowStatusAsync(string.Format(GreenResources.StatusDevicesConnected, DeviceManager.DeviceCount)); };
             MIStart.DataContext = DeviceManager;
             MIMode.DataContext = Settings.KinectMode;
-            MITurntable.DataContext = TurntableScanner;
             MIExport.DataContext = DeviceManager;
             SMC.DataContext = Settings;
             IStatus.DataContext = DeviceManager;
@@ -102,7 +104,7 @@ namespace Green.Scan
             SetPerformance();
             SetSave();
 
-            InitRotatingScanner();
+            if (TurntableActivated) InitRotatingScanner();
         }
 
         struct ShowStatusArgs
@@ -539,6 +541,7 @@ namespace Green.Scan
         RotatingScanner TurntableScanner;
         void InitRotatingScanner()
         {
+            if (TurntableScanner != null) return;
             TurntableScanner = new RotatingScanner(DeviceManager, GraphicsCore);
             MITurntable.DataContext = TurntableScanner;
             TurntableScanner.PropertyChanged += TurntableScanner_PropertyChanged;

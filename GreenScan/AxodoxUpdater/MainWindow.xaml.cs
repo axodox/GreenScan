@@ -13,6 +13,7 @@ using System.Windows.Threading;
 using System.Linq;
 using System.ComponentModel;
 using System.Diagnostics;
+using UpdaterResources = AxodoxUpdater.Properties.Resources;
 
 namespace AxodoxUpdater
 {
@@ -26,6 +27,10 @@ namespace AxodoxUpdater
         public MainWindow()
         {
             InitializeComponent();
+            Title = "Axodox " + UpdaterResources.Title;
+            RUpdater.Text = UpdaterResources.Title;
+            TBProgress.Text = UpdaterResources.Connecting;
+            
             AnimColors = new Color[] { 
                 Colors.White,
                 Color.FromRgb(255, 221, 0),
@@ -60,11 +65,15 @@ namespace AxodoxUpdater
 
             if (Server == null || Application == null || PostSetupAction == null)
             {
-                ToErrorState("Updater.ini missing or corrupt!");
+                ToErrorState(UpdaterResources.UpdaterIniMissingOrCorrupt);
                 return;
             }
-            ProtectedFiles.Add("AxodoxUpdater.exe");
+            ProtectedFiles.Add("AxodoxUpdater.application");
+            ProtectedFiles.Add("AxodoxUpdater.exe");            
+            ProtectedFiles.Add("AxodoxUpdater.exe.config");
+            ProtectedFiles.Add("AxodoxUpdater.exe.manifest");
             ProtectedFiles.Add("Updater.ini");
+            ProtectedFiles.Add("hu-HU//AxodoxUpdater.resources.dll");
             Success = false;
             WC = new WebClient();
             WC.DownloadStringCompleted += WC_DownloadStringCompleted;
@@ -75,8 +84,7 @@ namespace AxodoxUpdater
             rootLength = Root.Length;
             WC.DownloadStringAsync(new Uri(Server + "update.php?app=" + Application, UriKind.Absolute));
             WC.DownloadFileCompleted += WC_DownloadFileCompleted;
-            WC.DownloadProgressChanged += WC_DownloadProgressChanged;
-            
+            WC.DownloadProgressChanged += WC_DownloadProgressChanged;            
         }
 
         Color GetColor(int index)
@@ -100,7 +108,7 @@ namespace AxodoxUpdater
 
         enum UpdateStates { Connecting, ComparingFiles, FetchingFiles, InstallingUpdates, Done }
         List<string> ProtectedFiles = new List<string>();
-        string[] ProtectedFolders = new string[] { "" };
+        string[] ProtectedFolders = new string[] { "hu-HU" };
         UpdateStates UpdateState;
         string Server;
         string Application;
@@ -117,19 +125,17 @@ namespace AxodoxUpdater
         {
             if (WC != null) WC.Dispose();
             ExitTimer.Stop();
-            if (Success)
+            try
             {
-                try
-                {
-                    Process.Start(PostSetupAction);
-                }
-                catch { }
+                Process.Start(PostSetupAction);
             }
+            catch { }
             Close();
         }
 
-        void ToErrorState(string errorText = "The connection to the update servers has been lost.")
+        void ToErrorState(string errorText = null)
         {
+            if (errorText == null) errorText = UpdaterResources.ConnectionLost;
             PBProgress.Value = 0;
             PBProgress.IsIndeterminate = false;
             PBProgress.Visibility = System.Windows.Visibility.Collapsed;
@@ -150,12 +156,12 @@ namespace AxodoxUpdater
                     try
                     {
                         ProcessReleaseManifest(e.Result);
-                        TBProgress.Text = string.Format("Updating to {0}, released at: {1}...", UpdateName, DeployDate);
+                        TBProgress.Text = string.Format(UpdaterResources.UpdatingTo, UpdateName, DeployDate);
                         UpdateState = UpdateStates.ComparingFiles;
                         Thread T = new Thread(BuildDownloadList);
                         T.Start();
                     }
-                    catch { ToErrorState("No updates could be found this time."); }
+                    catch { ToErrorState(UpdaterResources.NoUpdatesFound); }
                     break;
             }
         }
@@ -267,7 +273,7 @@ namespace AxodoxUpdater
             if (DownloadTasks.Count > 0)
             {
                 DownloadTask DT = DownloadTasks.Dequeue();
-                TBProgress.Text = "Downloading file " + FileNum + "/" + FileCount + ": " + DT.Name + "...";
+                TBProgress.Text = string.Format(UpdaterResources.DownloadingFile, FileNum, FileCount, DT.Name);
                 WC.DownloadFileAsync(
                     new Uri(DT.Source, UriKind.Absolute),
                     DT.TempFile, DT);
@@ -275,7 +281,7 @@ namespace AxodoxUpdater
             else
             {
                 UpdateState = UpdateStates.InstallingUpdates;
-                TBProgress.Text = "Installing update...";
+                TBProgress.Text = UpdaterResources.InstallingUpdate;
                 PBProgress.IsIndeterminate = true;
                 new Thread(InstallUpdate).Start();    
             }
@@ -318,7 +324,7 @@ namespace AxodoxUpdater
         {
             PBProgress.Value = 100;
             PBProgress.IsIndeterminate = false;
-            TBProgress.Text = "Done.";
+            TBProgress.Text = UpdaterResources.Done;
             Success = true;
             ExitTimer.Start();
         }
@@ -329,7 +335,7 @@ namespace AxodoxUpdater
             {
                 DownloadTask DT = (DownloadTask)e.UserState;
                 PBProgress.Value = (int)((DownloadedSize * 100 + DT.Size * e.ProgressPercentage) / AllDownloadSize);
-                TBProgress.Text = "Downloading file " + FileNum + "/" + FileCount + ": " + DT.Name + "... " + e.ProgressPercentage + "%";
+                TBProgress.Text = string.Format(UpdaterResources.DownloadingFileWithPercentage, new object[] { FileNum, FileCount, DT.Name, e.ProgressPercentage });
             }
         }
 

@@ -58,9 +58,9 @@
         </Grid>
         <TextBlock Grid.Row="1" FontSize="48" HorizontalAlignment="Center" VerticalAlignment="Center" FontFamily="Century Gothic">
             <Run Foreground="#FF7F7F7F">axodox</Run>
-            <Run FontWeight="Bold">updater</Run>
+            <Run x:Name="RUpdater" FontWeight="Bold">updater</Run>
         </TextBlock>
-        <TextBlock x:Name="TBProgress" Grid.Row="1" HorizontalAlignment="Center" Margin="0,0,0,12" VerticalAlignment="Bottom">Connecting to update servers...</TextBlock>
-        <ProgressBar x:Name="PBProgress" IsIndeterminate="True" VerticalAlignment="Bottom" Height="6" Background="{x:Null}" BorderBrush="{x:Null}"/>
+        <TextBlock x:Name="TBProgress" Grid.Row="1" HorizontalAlignment="Center" Margin="0,0,0,12" VerticalAlignment="Bottom">...</TextBlock>
+        <ProgressBar x:Name="PBProgress" IsIndeterminate="True" VerticalAlignment="Bottom" Height="5"/>
     </Grid>
 </Window>

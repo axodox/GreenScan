@@ -118,33 +118,33 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="Connecting" xml:space="preserve">
-    <value>Connecting to update servers...</value>
+    <value>Kapcsolódás a frissítési szerverekhez...</value>
   </data>
   <data name="ConnectionLost" xml:space="preserve">
-    <value>The connection to the update servers has been lost.</value>
+    <value>A kapcsolat a frissítési szerverekkel elveszett.</value>
   </data>
   <data name="Done" xml:space="preserve">
-    <value>Done updating.</value>
+    <value>Frissítés kész.</value>
   </data>
   <data name="DownloadingFile" xml:space="preserve">
-    <value>Downloading files: {0}/{1}: {2}...</value>
+    <value>Fájlok letöltése folyamatban: {0}/{1}: {2}...</value>
   </data>
   <data name="DownloadingFileWithPercentage" xml:space="preserve">
-    <value>Downloading files: {0}/{1}: {2}... {3}%</value>
+    <value>Fájlok letöltése folyamatban: {0}/{1}: {2}... {3}%</value>
   </data>
   <data name="InstallingUpdate" xml:space="preserve">
-    <value>Installing update...</value>
+    <value>Frissítés telepítése...</value>
   </data>
   <data name="NoUpdatesFound" xml:space="preserve">
-    <value>No updates could be found this time.</value>
+    <value>Nincsenek elérhető frissítések.</value>
   </data>
   <data name="Title" xml:space="preserve">
-    <value>updater</value>
+    <value>frissítéskezelő</value>
   </data>
   <data name="UpdaterIniMissingOrCorrupt" xml:space="preserve">
-    <value>Updater.ini missing or corrupt!</value>
+    <value>Az Updater.ini hiányzik vagy sérült!</value>
   </data>
   <data name="UpdatingTo" xml:space="preserve">
-    <value>Updating to {0}, released at: {1}...</value>
+    <value>Frssítés a következőre: {0}, kibocsátva: {1}...</value>
   </data>
 </root>

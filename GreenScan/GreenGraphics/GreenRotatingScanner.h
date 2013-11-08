@@ -1009,6 +1009,7 @@ namespace Green
 					}
 					delete [modelLen] modelData;
 
+					//Buil model
 					indexCount = faceCount * 2 * 3;
 					vertices = new VertexPosition[vertexCount];
 					indicies = new unsigned[indexCount];
@@ -1088,11 +1089,90 @@ namespace Green
 						pIndex++;
 					}					
 					delete [modelLenExt] faceCube;
-					delete [modelLenExt] indexCube;				
+					delete [modelLenExt] indexCube;	
+
+					//Smooth
+					SmoothCube(vertices, vertexCount, indicies, indexCount);
 				}
 				SafeDelete(SaveCubeTarget);
 				CloseHandle(SaveEvent);
 				return ok;
+			}
+			
+#define SmoothingMaxConnections 12
+#define SmoothingIterations 4
+			void AddToMap(unsigned* map, unsigned source, unsigned target)
+			{
+				map += source * SmoothingMaxConnections;
+				for(int i = 0; i < SmoothingMaxConnections; i++)
+				{
+					if(*map == MAXUINT)
+					{
+						*map = target;
+						return;
+					}
+					if(*map == target) return;
+					map++;
+				}
+				//This should newer happen
+				throw 0;
+			}
+
+			void SmoothCube(VertexPosition* vertices, unsigned vertexCount, const unsigned* indicies, unsigned indexCount)
+			{
+				//Build map
+				int mapLength = vertexCount * SmoothingMaxConnections;
+				unsigned* map = new unsigned[mapLength];
+				FillMemory(map, 4 * mapLength, 0xFF);
+
+				const unsigned* pIndicies = indicies;
+				for(int i = 0; i < indexCount; i += 3)
+				{
+					AddToMap(map, *pIndicies, *(pIndicies + 1));
+					AddToMap(map, *(pIndicies + 1), *pIndicies);
+
+					AddToMap(map, *pIndicies, *(pIndicies + 2));
+					AddToMap(map, *(pIndicies + 2), *pIndicies);
+
+					AddToMap(map, *(pIndicies + 1), *(pIndicies + 2));
+					AddToMap(map, *(pIndicies + 2), *(pIndicies + 1));
+					pIndicies += 3;
+				}
+
+				//Smooth
+				VertexPosition *targetVertices, *sourceVertices = vertices, *tempVertices = new VertexPosition[vertexCount];
+				unsigned* pMap, *connection;
+				XMVECTOR position;
+				int j;
+
+				for(int pass = 0; pass < SmoothingIterations; pass++)
+				{
+					pMap = map;
+					targetVertices = ( pass % 2 ? vertices : tempVertices);
+					sourceVertices = ( pass % 2 ? tempVertices : vertices);
+					for(int i = 0; i < vertexCount; i++)
+					{
+						connection = pMap;
+						position = XMVectorZero();
+						for(j = 0; j < SmoothingMaxConnections; j++)
+						{
+							if(*connection == MAXUINT) break;
+							else position += XMLoadFloat3(&sourceVertices[*connection].Position);
+							connection++;
+						}
+						XMStoreFloat3(&targetVertices->Position, position / j);
+
+						targetVertices++;
+						pMap += SmoothingMaxConnections;
+					}
+				}
+
+				if(SmoothingIterations % 2)
+				{
+					memcpy(vertices, tempVertices, vertexCount * sizeof(VertexPosition));
+				}
+				delete [vertexCount] tempVertices;
+				delete [mapLength] map;
 			}
 
 			bool CalculateCubeMesh()
