@@ -223,6 +223,15 @@ namespace GreenScan.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Elevation angle.
+        /// </summary>
+        public static string KinectCalibrationAngle {
+            get {
+                return ResourceManager.GetString("KinectCalibrationAngle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Clear.
         /// </summary>
         public static string KinectCalibrationClear {
@@ -777,6 +786,15 @@ namespace GreenScan.Properties {
         public static string SettingDepthToIRMapping {
             get {
                 return ResourceManager.GetString("SettingDepthToIRMapping", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Elevation angle (degrees).
+        /// </summary>
+        public static string SettingElevationAngle {
+            get {
+                return ResourceManager.GetString("SettingElevationAngle", resourceCulture);
             }
         }
         

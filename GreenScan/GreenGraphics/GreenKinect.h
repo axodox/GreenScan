@@ -142,6 +142,20 @@ namespace Green
 				return 0;
 			}
 		public:
+			int GetAngle()
+			{
+				if(!Sensor) return 0;
+				long angle;
+				Sensor->NuiCameraElevationGetAngle(&angle);
+				return angle;
+			}
+
+			void SetAngle(int angle)
+			{
+				if(!Sensor) return;
+				Sensor->NuiCameraElevationSetAngle(angle);
+			}
+
 			void SetEmitter(bool enabled)
 			{
 				EmitterEnabled = enabled;

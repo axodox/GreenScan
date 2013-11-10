@@ -171,6 +171,9 @@
   <data name="ImportFileTitle" xml:space="preserve">
     <value>Modell importálása</value>
   </data>
+  <data name="KinectCalibrationAngle" xml:space="preserve">
+    <value>Emelkedési szög</value>
+  </data>
   <data name="KinectCalibrationClear" xml:space="preserve">
     <value>Törlés</value>
   </data>
@@ -356,6 +359,9 @@
   </data>
   <data name="SettingDepthToIRMapping" xml:space="preserve">
     <value>Mélységből -&gt; Infravörös leképezés</value>
+  </data>
+  <data name="SettingElevationAngle" xml:space="preserve">
+    <value>Emelkedési szög (fokban)</value>
   </data>
   <data name="SettingGroupCamera" xml:space="preserve">
     <value>Kamerák</value>
@@ -592,7 +598,7 @@
     <value>Ezzel az eszközzel megmérheti, hogy hány lépés szükséges a fogópad egy teljes körbeforgatásához.</value>
   </data>
   <data name="TurntableStepCounterPasses" xml:space="preserve">
-    <value>menet(ek).</value>
+    <value>menet.</value>
   </data>
   <data name="TurntableStepCounterSaveResults" xml:space="preserve">
     <value>El kívánja menteni az ereményeket a beállításokba?</value>
@@ -613,7 +619,7 @@
     <value>lépés.</value>
   </data>
   <data name="TurntableStepCounterStepsPerRotation" xml:space="preserve">
-    <value>lépészsám fordulatonként.</value>
+    <value>lépés fordulatonként.</value>
   </data>
   <data name="TurntableStepCounterTitle" xml:space="preserve">
     <value>Forgópad lépésszámláló</value>

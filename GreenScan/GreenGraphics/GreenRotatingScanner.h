@@ -1098,7 +1098,7 @@ namespace Green
 			}
 			
 #define SmoothingMaxConnections 12
-#define SmoothingIterations 4
+#define SmoothingIterations 16
 			void AddToMap(unsigned* map, unsigned source, unsigned target)
 			{
 				map += source * SmoothingMaxConnections;

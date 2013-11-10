@@ -40,9 +40,16 @@
                     <ColumnDefinition/>
                     <ColumnDefinition/>
                 </Grid.ColumnDefinitions>
-                <Button x:Name="BStart" Grid.Column="0" Content="{x:Static p:Resources.CommonStart}" Padding="3" Margin="3" Click="BStart_Click"/>
-                <Button x:Name="BClear" Grid.Column="1" Content="{x:Static p:Resources.KinectCalibrationClear}" Padding="3" Margin="3" IsEnabled="False" Click="BClear_Click"/>
-                <Button x:Name="BNext" Grid.Column="2" Content="{x:Static p:Resources.CommonNext}" Padding="3" Margin="3" IsEnabled="False" Click="BNext_Click"/>
+                <Grid.RowDefinitions>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                </Grid.RowDefinitions>
+                <TextBlock Grid.ColumnSpan="3" Text="{x:Static p:Resources.KinectCalibrationAngle}" Padding="3" Margin="3"/>
+                <Slider x:Name="SAngle" Grid.Row="1" Grid.ColumnSpan="3" Padding="3" Margin="3" Minimum="-27" Maximum="27"/>
+                <Button x:Name="BStart" Grid.Row="2" Grid.Column="0" Content="{x:Static p:Resources.CommonStart}" Padding="3" Margin="3" Click="BStart_Click"/>
+                <Button x:Name="BClear" Grid.Row="2" Grid.Column="1" Content="{x:Static p:Resources.KinectCalibrationClear}" Padding="3" Margin="3" IsEnabled="False" Click="BClear_Click"/>
+                <Button x:Name="BNext" Grid.Row="2" Grid.Column="2" Content="{x:Static p:Resources.CommonNext}" Padding="3" Margin="3" IsEnabled="False" Click="BNext_Click"/>
             </Grid>
         </GroupBox>
     </Grid>

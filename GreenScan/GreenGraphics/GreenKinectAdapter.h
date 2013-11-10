@@ -35,6 +35,7 @@ namespace Green
 			property bool FileOpened { bool get()	{ return fileOpened; } private: void set(bool value) { fileOpened = value; OnPropertyChanged("FileOpened"); }}
 			property bool Processing { bool get() { return processing; } private: void set(bool value) { processing = value; OnPropertyChanged("Processing"); }}
 			property bool ProvidesData { bool get() { return providesData; } private: void set(bool value) { providesData = value; OnPropertyChanged("ProvidesData"); }}
+			property int Angle { int get() { return Device->GetAngle(); } void set(int value) { Device->SetAngle(value); }}
 			static property int DepthWidth { int get() { return KinectDevice::DepthWidth; }}
 			static property int DepthHeight { int get() { return KinectDevice::DepthHeight; }}
 			static property int ColorWidth { int get() { return KinectDevice::ColorWidth; }}

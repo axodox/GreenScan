@@ -1,8 +1,10 @@
 ﻿using Green.Remoting;
 using Green.Settings;
+using System;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Threading;
 using GreenResources = GreenScan.Properties.Resources;
 
 namespace GreenScan
@@ -12,8 +14,10 @@ namespace GreenScan
     /// </summary>
     public partial class KinectCalibrationWindow : Window
     {
+        DispatcherTimer Timer;
         int SceneNumber;
         int Image;
+        int Angle = int.MinValue;
         private RemotingServer Remote;
         public KinectCalibrationWindow(RemotingServer remotingServer)
         {
@@ -29,6 +33,20 @@ namespace GreenScan
             Commands = new string[] { "Export", "Export", "Save" };
             Arguments = new string[] { "PNG/raw", "PNG/raw", "" };
             Labels = new string[] { "Infrared", "Color", "Depth" };
+            Timer = new DispatcherTimer();
+            Timer.Interval = new TimeSpan(0, 0, 1);
+            Timer.Tick += Timer_Tick;
+            Timer.Start();
+        }
+
+        void Timer_Tick(object sender, EventArgs e)
+        {
+            int newAngle = (int)SAngle.Value;
+            if (Angle != newAngle)
+            {
+                Remote.SetOption("Kinect.ElevationAngle", newAngle.ToString());
+                Angle = newAngle;
+            }
         }
 
         private void BPath_Click(object sender, RoutedEventArgs e)
@@ -49,7 +67,6 @@ namespace GreenScan
         private void BStart_Click(object sender, RoutedEventArgs e)
         {
             if (!Remote.ExecuteCommand("Start", "0")) return;
-            bool ok = true;
 
             TargetPath = TBPath.Text;
             try
@@ -59,9 +76,8 @@ namespace GreenScan
             }
             catch
             {
-                ok = false;
+                return;
             }
-            if (!ok) return;
             BPath.IsEnabled = false;
             BStart.IsEnabled = false;
             BNext.IsEnabled = true;
@@ -111,6 +127,7 @@ namespace GreenScan
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
+            Timer.Stop();
             Remote.RestoreOption("Save.Directory");
             Remote.RestoreOption("Save.Label");
             Remote.RestoreOption("Save.NoTimestamp");

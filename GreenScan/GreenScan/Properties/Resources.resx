@@ -171,6 +171,9 @@
   <data name="ImportFileTitle" xml:space="preserve">
     <value>Import model</value>
   </data>
+  <data name="KinectCalibrationAngle" xml:space="preserve">
+    <value>Elevation angle</value>
+  </data>
   <data name="KinectCalibrationClear" xml:space="preserve">
     <value>Clear</value>
   </data>
@@ -356,6 +359,9 @@
   </data>
   <data name="SettingDepthToIRMapping" xml:space="preserve">
     <value>Depth to IR mapping</value>
+  </data>
+  <data name="SettingElevationAngle" xml:space="preserve">
+    <value>Elevation angle (degrees)</value>
   </data>
   <data name="SettingGroupCamera" xml:space="preserve">
     <value>Camera</value>

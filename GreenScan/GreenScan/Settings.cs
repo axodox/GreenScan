@@ -14,6 +14,7 @@ namespace Green.Scan
         public EnumSetting<KinectManager.Modes> KinectMode { get; private set; }
         public BooleanSetting NearModeEnabled { get; private set; }
         public BooleanSetting EmitterEnabled { get; private set; }
+        public NumericSetting<int> ElevationAngle { get; private set; }
 
         public SettingGroup PreprocessingProperties { get; private set; }
         public NumericSetting<int> DepthAveraging { get; private set; }
@@ -184,8 +185,10 @@ namespace Green.Scan
 
             NearModeEnabled = new BooleanSetting("NearModeEnabled", true) { FriendlyName = GreenResources.SettingKinectNearMode, AvailabilityProvider = kinectModeWithDepth };
             EmitterEnabled = new BooleanSetting("EmitterEnabled", true) { FriendlyName = GreenResources.SettingKinectEmitterEnabled, AvailabilityProvider = kinectModeWithDepth };
+            ElevationAngle = new NumericSetting<int>("ElevationAngle", 0, -27, 27) { FriendlyName = GreenResources.SettingElevationAngle };
             KinectProperties.Settings.Add(NearModeEnabled);
             KinectProperties.Settings.Add(EmitterEnabled);
+            KinectProperties.Settings.Add(ElevationAngle);
 
             TurntableScanningSetter.Settings.AddRange(KinectProperties.Settings);
 
@@ -316,7 +319,7 @@ namespace Green.Scan
             TurntableProperties.Settings.Add(TurntableMode);
             TurntableTransform = new MatrixSetting("TurntableTransform", new float[,] { { 1f, 0f, 0f, 0f }, { 0f, 1f, 0f, 0f }, { 0f, 0f, 1f, 0f }, { 0f, 0f, 0f, 1f } }) { FriendlyName = GreenResources.SettingTurntableTransform, IsHidden = true };
             TurntableProperties.Settings.Add(TurntableTransform);
-            TurntablePiSteps = new NumericSetting<int>("PiSteps", 10989, 360, 1000000) { IsHidden = true };
+            TurntablePiSteps = new NumericSetting<int>("PiSteps", 10987, 360, 1000000) { IsHidden = true };
             TurntableProperties.Settings.Add(TurntablePiSteps);
             TurntableHasMirror = new BooleanSetting("HasMirror", true) { FriendlyName = GreenResources.SettingTurntableHasMirror };
             TurntableProperties.Settings.Add(TurntableHasMirror);

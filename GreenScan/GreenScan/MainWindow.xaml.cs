@@ -212,6 +212,7 @@ namespace Green.Scan
         {
             DeviceManager.SetEmitter(Settings.EmitterEnabled.Value);
             DeviceManager.SetNearMode(Settings.NearModeEnabled.Value);
+            DeviceManager.Angle = Settings.ElevationAngle.Value;
         }
 
         void SetPreprocessing()
