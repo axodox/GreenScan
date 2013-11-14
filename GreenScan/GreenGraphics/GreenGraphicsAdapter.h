@@ -50,7 +50,7 @@ namespace Green
 					0, L"static", L"",
 					WS_CHILD,
 					0, 0, (int)Width, (int)Height,
-					parent, 
+					parent,
 					0, nullptr, 0);
 				String^ root = Path::GetDirectoryName(Assembly::GetExecutingAssembly()->Location);
 				XWindow = new DirectXWindow(Host, StringToLPWSTR(root));
@@ -75,7 +75,7 @@ namespace Green
 					ResizeNeeded = true;
 					break;
 				case WM_TIMER:
-					if(ResizeNeeded)
+					if (ResizeNeeded)
 					{
 						XWindow->Resize();
 						ResizeNeeded = false;
@@ -110,13 +110,13 @@ namespace Green
 			{
 				int width, height;
 				XMFLOAT4* data;
-				if(XWindow->GetVertices(data, width, height))
+				if (XWindow->GetVertices(data, width, height))
 				{
 					int bufferLength = width * height;
 					vertices = gcnew array<Float4, 2>(width, height);
 					pin_ptr<Float4> sVertices = &vertices[0, 0];
 					memcpy(sVertices, data, bufferLength * sizeof(XMFLOAT4));
-					delete [bufferLength] data;
+					delete[bufferLength] data;
 					return true;
 				}
 				else return false;
@@ -152,21 +152,21 @@ namespace Green
 			}
 
 			void SetView(
-				float transX, float transY, float transZ, 
-				float rotX, float rotY, float rotZ, 
+				float transX, float transY, float transZ,
+				float rotX, float rotY, float rotZ,
 				float scale, float moveX, float moveY, float rotation)
 			{
 				XWindow->SetView(transX, transY, transZ, rotX, rotY, rotZ, scale, moveX, moveY, rotation);
 			}
 
 			void SetCameras(
-				array<float, 2>^ infraredIntrinsics, array<float, 2>^ infraredDistortion, 
+				array<float, 2>^ infraredIntrinsics, array<float, 2>^ infraredDistortion,
 				bool infraredDistortionCorrectionEnabled, array<float, 2>^ depthToIRMapping,
 				array<float, 2>^ colorIntrinsics, array<float, 2>^ colorRemapping,
-				array<float, 2>^ colorExtrinsics, int colorDispX, int colorDispY, 
+				array<float, 2>^ colorExtrinsics, int colorDispX, int colorDispY,
 				float colorScaleX, float colorScaleY, array<float, 2>^ depthCoeffs)
 			{
-				if(Is3x3(infraredIntrinsics) && Is3x3(depthToIRMapping))
+				if (Is3x3(infraredIntrinsics) && Is3x3(depthToIRMapping))
 				{
 					pin_ptr<float> pInfraredIntrinsics = &To4x4(infraredIntrinsics)[0, 0];
 					pin_ptr<float> pInfraredDistortion = &infraredDistortion[0, 0];
@@ -209,7 +209,7 @@ namespace Green
 
 			void Draw()
 			{
-				if(XWindow!=nullptr) 
+				if (XWindow != nullptr)
 					XWindow->Draw();
 			}
 		};

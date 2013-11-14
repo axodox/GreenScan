@@ -6,6 +6,7 @@
 using namespace System;
 using namespace System::ComponentModel;
 using namespace System::Runtime::InteropServices;
+using namespace System::Windows::Threading;
 namespace Green
 {
 	namespace Kinect
@@ -29,13 +30,47 @@ namespace Green
 			virtual event EventHandler^ DeviceCountChanged;
 			virtual event EventHandler^ DeviceDisconnected;
 			virtual event EventHandler^ DeviceStarting;
-			property Modes Mode	{ Modes get() { return mode; } private: void set(Modes value) { mode = value; OnPropertyChanged("Mode"); }}
-			property int DeviceCount { int get() { return deviceCount; } private: void set(int value) { deviceCount = value; OnPropertyChanged("DeviceCount"); }}
-			property bool DeviceOpened { bool get()	{ return deviceOpened; } private: void set(bool value) { deviceOpened = value; OnPropertyChanged("DeviceOpened"); }}
-			property bool FileOpened { bool get()	{ return fileOpened; } private: void set(bool value) { fileOpened = value; OnPropertyChanged("FileOpened"); }}
-			property bool Processing { bool get() { return processing; } private: void set(bool value) { processing = value; OnPropertyChanged("Processing"); }}
-			property bool ProvidesData { bool get() { return providesData; } private: void set(bool value) { providesData = value; OnPropertyChanged("ProvidesData"); }}
-			property int Angle { int get() { return Device->GetAngle(); } void set(int value) { Device->SetAngle(value); }}
+			property Modes Mode	
+			{ 
+				Modes get() { return mode; } 
+			private: 
+				void set(Modes value) { mode = value; OnPropertyChanged("Mode"); }
+			}
+			property int DeviceCount 
+			{ 
+				int get() { return deviceCount; } 
+			private: 
+				void set(int value) { deviceCount = value; OnPropertyChanged("DeviceCount"); }
+			}
+			property bool DeviceOpened 
+			{ 
+				bool get() { return deviceOpened; } 
+			private: 
+				void set(bool value) { deviceOpened = value; OnPropertyChanged("DeviceOpened"); }
+			}
+			property bool FileOpened
+			{ 
+				bool get() { return fileOpened; } 
+			private: 
+				void set(bool value) { fileOpened = value; OnPropertyChanged("FileOpened"); }
+			}
+			property bool Processing
+			{ 
+				bool get() { return processing; }
+			private: 
+				void set(bool value) { processing = value; OnPropertyChanged("Processing"); }
+			}
+			property bool ProvidesData
+			{ 
+				bool get() { return providesData; } 
+			private: 
+				void set(bool value) { providesData = value; OnPropertyChanged("ProvidesData"); }
+			}
+			property int Angle 
+			{ 
+				int get() { return Device->GetAngle(); } 
+				void set(int value) { Device->SetAngle(value); }
+			}
 			static property int DepthWidth { int get() { return KinectDevice::DepthWidth; }}
 			static property int DepthHeight { int get() { return KinectDevice::DepthHeight; }}
 			static property int ColorWidth { int get() { return KinectDevice::ColorWidth; }}
@@ -93,10 +128,64 @@ namespace Green
 					bool ok = Device->SaveRaw(nPath, nMetadata);
 					LPWSTRDelete(nPath);
 					LPWSTRDelete(nMetadata);
+
 					return ok;
 				}
 				else
 					return false;
+			}
+		private:
+			int continousShootingCounter;
+			bool continousShootingEnabled;
+			DispatcherTimer^ ContinousShootingTimer;
+			void ContinousShootingTimer_Tick(Object^ sender, EventArgs^ e)
+			{
+				if(continousShootingCounter != Device->GetContinousShootingCount())
+					ContinousShootingCounter = Device->GetContinousShootingCount();
+			}
+		public:
+			property bool ContinousShootingEnabled
+			{
+				bool get() { return continousShootingEnabled; }
+			private:
+				void set(bool value) { continousShootingEnabled = value; OnPropertyChanged("ContinousShootingEnabled"); }
+			}
+			property unsigned ContinousShootingCounter
+			{
+				unsigned get() { return continousShootingCounter; }
+			private:
+				void set(unsigned value) { continousShootingCounter = value; OnPropertyChanged("ContinousShootingCounter"); }
+			}
+			bool StartContinousShooting(String^ pathWithoutExtension, String^ metadata, int interval)
+			{
+				if(ContinousShootingEnabled) return false;
+				LPWSTR nPath = StringToLPWSTR(pathWithoutExtension);
+				LPWSTR nMetadata = StringToLPWSTR(metadata);
+					
+				bool ok = Device->StartContinousShooting(nPath, nMetadata, interval);
+				if(ok)
+				{
+					ContinousShootingCounter = 0;
+					ContinousShootingEnabled = true;
+					ContinousShootingTimer = gcnew DispatcherTimer(DispatcherPriority::DataBind);
+					ContinousShootingTimer->Interval = TimeSpan(0, 0, 0, 0, 100);
+					ContinousShootingTimer->Tick += gcnew EventHandler(this, &KinectManager::ContinousShootingTimer_Tick);
+					ContinousShootingTimer->Start();
+				}
+				
+				LPWSTRDelete(nPath);
+				LPWSTRDelete(nMetadata);
+				return ok;
+			}
+
+			void StopContinousShooting()
+			{
+				if(ContinousShootingEnabled)
+				{
+					Device->StopContinousShooting();
+					ContinousShootingTimer->Stop();
+					ContinousShootingEnabled = false;					
+				}
 			}
 
 			void CloseFile()
@@ -167,6 +256,7 @@ namespace Green
 			void StopKinect()
 			{
 				if(!Processing) return;
+				StopContinousShooting();
 				Processing = false;
 				ProvidesData = false;
 				FileOpened = false;

@@ -78,6 +78,7 @@ namespace Green.Scan
             MIExport.DataContext = DeviceManager;
             SMC.DataContext = Settings;
             IStatus.DataContext = DeviceManager;
+            SBIContinousShooting.DataContext = DeviceManager;
 
             MainDispatcher = new DispatcherTimer(DispatcherPriority.Send);
             MainDispatcher.Interval = new TimeSpan(0, 0, 0, 0, 30);
@@ -536,7 +537,7 @@ namespace Green.Scan
         }
 
         #endregion
-
+        
         #region Rotating scanner
 
         RotatingScanner TurntableScanner;
@@ -612,7 +613,7 @@ namespace Green.Scan
                     ShowStatusAsync(GreenResources.StatusSaveInProgress, true);
                 }
                 else
-                    DoIsAsync(() => { StopKinect(); });
+                    DoItAsync(() => { StopKinect(); });
                 MessageBox.Show(GreenResources.MessageKinectDisconnected);
             };
             DeviceManager.DeviceStarting += (object o, EventArgs e) =>
@@ -755,6 +756,26 @@ namespace Green.Scan
         void SaveCmdCanExecute(object target, CanExecuteRoutedEventArgs e)
         {
             e.CanExecute = DeviceManager.Processing && !SavingInProgress;
+        }
+
+        void StartContinousShootingCmdExecuted(object target, ExecutedRoutedEventArgs e)
+        {
+            DeviceManager.StartContinousShooting(GenerateFilename(), Settings.GetRawMetadata(), Settings.SaveContinousShootingInterval.Value);
+        }
+
+        void StartContinousShootingCmdCanExecute(object target, CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = !DeviceManager.ContinousShootingEnabled && DeviceManager.Processing;
+        }
+
+        void StopContinousShootingCmdExecuted(object target, ExecutedRoutedEventArgs e)
+        {
+            DeviceManager.StopContinousShooting();
+        }
+
+        void StopContinousShootingCmdCanExecute(object target, CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = DeviceManager.ContinousShootingEnabled;
         }
 
         void BrowseCmdExecuted(object target, ExecutedRoutedEventArgs e)
@@ -984,7 +1005,8 @@ namespace Green.Scan
         }
         #endregion
 
-        public void DoIsAsync(Action action)
+        #region Helper functions
+        public void DoItAsync(Action action)
         {
             SyncContext.Post(DoItAsyncCallback, action);
         }
@@ -999,7 +1021,9 @@ namespace Green.Scan
         {
             if (PropertyChanged != null) PropertyChanged(this, new PropertyChangedEventArgs(name));
         }
+        #endregion
 
+        #region Exiting
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             Hide();
@@ -1010,6 +1034,7 @@ namespace Green.Scan
             Settings.RestoreMetadata();
             Settings.Save("Settings.ini");
         }
+        #endregion
 
     }
 
@@ -1024,6 +1049,8 @@ namespace Green.Scan
         public static RoutedUICommand Export = new RoutedUICommand("Exports the current scene to the specified format. Supported formats: PNG, PNG/raw, STL, FBX, DAE, DXF, OBJ, FL4.", "Export", typeof(MainWindow));
         public static RoutedUICommand Start = new RoutedUICommand("Start the Kinect with the specified index.", "Start", typeof(MainWindow));
         public static RoutedUICommand Stop = new RoutedUICommand("Stops the Kinect.", "Stop", typeof(MainWindow));
+        public static RoutedUICommand StartContinousShooting = new RoutedUICommand("Starts continous shooting.", "StartContinousShooting", typeof(MainWindow));
+        public static RoutedUICommand StopContinousShooting = new RoutedUICommand("Stops continous shooting.", "StopContinousShooting", typeof(MainWindow));
         public static RoutedUICommand Calibrate = new RoutedUICommand("Starts calibration procedure.", "Calibrate", typeof(MainWindow));
         public static RoutedUICommand About = new RoutedUICommand("Displays the about box.", "About", typeof(MainWindow));
     }

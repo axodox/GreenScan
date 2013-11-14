@@ -19,7 +19,7 @@ namespace Green
 		{
 		public:
 			void* Host;
-			Callback RequestDraw;	
+			Callback RequestDraw;
 			bool DrawsOverlay, StaticInput;
 			virtual void CreateResources(GraphicsDeviceWithSwapChain* device) = 0;
 			virtual void DestroyResources() = 0;

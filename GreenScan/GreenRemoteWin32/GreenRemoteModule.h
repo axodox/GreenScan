@@ -3,9 +3,9 @@
 #include "ExcaliburClient.h"
 using namespace Green::Remoting;
 
-typedef void (_stdcall *SettingValueReceivedCallback)(void* argument, char* name, char* value);
-typedef void (_stdcall *CommandDescriptionReceivedCallback)(void* argument, char* name, char* description);
-typedef void (_stdcall *Callback)(void* argument);
+typedef void(_stdcall *SettingValueReceivedCallback)(void* argument, char* name, char* value);
+typedef void(_stdcall *CommandDescriptionReceivedCallback)(void* argument, char* name, char* description);
+typedef void(_stdcall *Callback)(void* argument);
 
 #define REMOTEPROTOCOL 101
 
@@ -24,11 +24,11 @@ namespace Green
 			static void MessageCallback(void* argument, int id, LPSTR text)
 			{
 				RemoteControl* rc = (RemoteControl*)argument;
-				switch(text[0])
+				switch (text[0])
 				{
 				case 'c':
 				case 's':
-					if(text[1] == '!' && (rc->OnSettingValueReceived || rc->OnCommandDescriptionReceived))
+					if (text[1] == '!' && (rc->OnSettingValueReceived || rc->OnCommandDescriptionReceived))
 					{
 						char* sepa = strchr(text, '=');
 						int namelen = sepa - text - 2;
@@ -39,17 +39,17 @@ namespace Green
 						char* value = new char[valuelen + 1];
 						memcpy(value, sepa + 1, valuelen);
 						value[valuelen] = 0;
-						switch(text[0])
+						switch (text[0])
 						{
 						case 'c':
-							if(rc->OnCommandDescriptionReceived) rc->OnCommandDescriptionReceived(rc->CallbackArgument, name, value);
+							if (rc->OnCommandDescriptionReceived) rc->OnCommandDescriptionReceived(rc->CallbackArgument, name, value);
 							break;
 						case 's':
-							if(rc->OnSettingValueReceived) rc->OnSettingValueReceived(rc->CallbackArgument, name, value);
+							if (rc->OnSettingValueReceived) rc->OnSettingValueReceived(rc->CallbackArgument, name, value);
 							break;
 						}
-						delete [namelen + 1] name;
-						delete [valuelen + 1] value;
+						delete[namelen + 1] name;
+						delete[valuelen + 1] value;
 					}
 					break;
 				}
@@ -57,9 +57,9 @@ namespace Green
 
 			static void DisconnectCallback(void* argument, ExcaliburClient::DisconnectTypes reason)
 			{
-				RemoteControl* rc = (RemoteControl*)argument;						
+				RemoteControl* rc = (RemoteControl*)argument;
 				rc->DestroyClient();
-				if(!rc->IsDisposed) rc->SetUpSeeker();
+				if (!rc->IsDisposed) rc->SetUpSeeker();
 			}
 
 			char* CreateMessage(char* prefix, char* command, char* argument, unsigned &len)
@@ -73,7 +73,7 @@ namespace Green
 				return line;
 			}
 		public:
-			void* CallbackArgument;			
+			void* CallbackArgument;
 			SettingValueReceivedCallback OnSettingValueReceived;
 			CommandDescriptionReceivedCallback OnCommandDescriptionReceived;
 			Callback OnDisconnected, OnConnected;
@@ -106,20 +106,20 @@ namespace Green
 				EC->CallbackArgument = this;
 				EC->OnMessageReceived = &MessageCallback;
 				EC->OnDisconnected = &DisconnectCallback;
-				if(OnConnected) OnConnected(CallbackArgument);
+				if (OnConnected) OnConnected(CallbackArgument);
 			}
 
 			void DestroyClient()
 			{
-				if(!EC) return;
+				if (!EC) return;
 				delete EC;
 				EC = nullptr;
-				if(OnDisconnected) OnDisconnected(CallbackArgument);
+				if (OnDisconnected) OnDisconnected(CallbackArgument);
 			}
 
 			void SetUpSeeker()
 			{
-				if(ES) return;
+				if (ES) return;
 				ES = new ExcaliburSeeker(Port, 101);
 				ES->CallbackArgument = this;
 				ES->OnEndPointFound = &OnEndPointFound;
@@ -127,37 +127,37 @@ namespace Green
 
 			void DestroySeeker()
 			{
-				if(!ES) return;
+				if (!ES) return;
 				delete ES;
 				ES = nullptr;
-			}		
+			}
 
 			void SetOptionAsync(char* option, char* value)
 			{
-				if(!EC) return;
+				if (!EC) return;
 				unsigned len;
 				char* line = CreateMessage("s/", option, value, len);
 				EC->SendText(line);
-				delete [len] line;
+				delete[len] line;
 			}
 
 			void ExecuteCommandAsync(char* command, char* argument)
 			{
-				if(!EC) return;
+				if (!EC) return;
 				unsigned len;
 				char* line = CreateMessage("c/", command, argument, len);
 				EC->SendText(line);
-				delete [len] line;
+				delete[len] line;
 			}
 
 			bool ExecuteCommand(char* command, char* argument, unsigned long timeout)
 			{
-				if(!EC) return false;
+				if (!EC) return false;
 				unsigned len;
 				char* line = CreateMessage("c/", command, argument, len);
 				char* answer = EC->SendMessageAndWaitForAnswer(line, timeout);
 				bool success = answer && answer[2] == 's';
-				delete [len] line;
+				delete[len] line;
 				LPSTRDelete(answer);
 				return answer;
 			}
@@ -165,11 +165,11 @@ namespace Green
 			~RemoteControl()
 			{
 				IsDisposed = true;
-				if(EC)
+				if (EC)
 				{
 					EC->Disconnect();
 				}
-				if(ES)
+				if (ES)
 				{
 					delete ES;
 				}
@@ -214,7 +214,7 @@ void _stdcall SetRemoteConnectionCallbacks(void* remote, Callback onConnected, C
 }
 
 void _stdcall SetRemoteMessageReceivedCallbacks(void* remote,
-	SettingValueReceivedCallback onSettingValueReceived, 
+	SettingValueReceivedCallback onSettingValueReceived,
 	CommandDescriptionReceivedCallback onCommandDescriptionReceived)
 {
 	RemoteControl* rc = (RemoteControl*)remote;

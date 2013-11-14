@@ -39,7 +39,7 @@ namespace Green
 				Projection,
 				Slice,
 				Model
-			};			
+			};
 		private:
 			Turntable^ table;
 			KinectManager^ Kinect;
@@ -64,7 +64,7 @@ namespace Green
 
 			void OnTableConnected(Object^ sender, EventArgs^ e)
 			{
-				if(isConnected) return;
+				if (isConnected) return;
 				isConnected = true;
 				ScannerModule = new RotatingScannerModule();
 				ScannerModule->SetMode((RotatingScannerModule::Modes)Mode);
@@ -72,14 +72,14 @@ namespace Green
 				Canvas->GetDirectXWindow()->LoadModule(ScannerModule);
 
 				table = Turntable::DefaultDevice;
-				table->MotorStopped += gcnew EventHandler(this, &RotatingScanner::OnMotorStopped);				
+				table->MotorStopped += gcnew EventHandler(this, &RotatingScanner::OnMotorStopped);
 				table->PositionChanged += gcnew EventHandler(this, &RotatingScanner::OnPositionChanged);
 				ToOrigin();
 			}
 
 			void OnPositionChanged(Object^ sender, EventArgs^ e)
 			{
-				if(HasMirror)
+				if (HasMirror)
 					ScannerModule->SetTurntablePosition(table->PositionInRadians);
 				else
 					ScannerModule->SetTurntablePosition(-table->PositionInRadians);
@@ -87,7 +87,7 @@ namespace Green
 
 			void OnProgressChanged(Object^ sender, EventArgs^ e)
 			{
-				if(!isConnected || toOrigin) return;
+				if (!isConnected || toOrigin) return;
 				double progress = table->PositionInUnits;
 				StatusChanged(this, gcnew StatusEventArgs(GreenResources::GetString("TurntableScanningInProgress") + " " + (progress*100.0).ToString("F2") + "%", true, progress));
 			}
@@ -104,7 +104,7 @@ namespace Green
 			void OnTableDisconnected(Object^ sender, EventArgs^ e)
 			{
 				StatusChanged(this, gcnew StatusEventArgs(GreenResources::GetString("TurntableDisconnected")));
-				if(Turntable::DeviceCount != 0) return;
+				if (Turntable::DeviceCount != 0) return;
 
 				isConnected = false;
 				OnPropertyChanged("IsConnected");
@@ -141,13 +141,13 @@ namespace Green
 			{
 				pin_ptr<float> pTurntableTransform = &turntableTransform[0, 0];
 				if (ScannerModule) ScannerModule->SetTurntable(pTurntableTransform);
-				if(table) table->PiSteps = piSteps;
+				if (table) table->PiSteps = piSteps;
 				HasMirror = hasMirror;
 			}
 
 			void SetAxial(
 				AxialViews view,
-				float height, float radius, float coreX, float coreY, 
+				float height, float radius, float coreX, float coreY,
 				int modelWidth, int modelHeight, int textureWidth, int textureHeight)
 			{
 				if (ScannerModule) ScannerModule->SetAxial(
@@ -165,25 +165,25 @@ namespace Green
 			virtual event PropertyChangedEventHandler^ PropertyChanged;
 			property bool IsConnected { bool get() { return isConnected; }}
 			property bool IsScanning { bool get() { return isScanning; }}
-			property bool IsAtOrigin 
-			{ 
-				bool get() 
+			property bool IsAtOrigin
+			{
+				bool get()
 				{
 					return isConnected && table->AtOrigin;
 				}
 			}
 			property bool CanSave
-			{ 
-				bool get() 
+			{
+				bool get()
 				{
 					return isConnected && ScannerModule->State == RotatingScannerModule::States::Processing;
 				}
 			}
-			property Turntable^ Table 
-			{ 
-				Turntable^ get() 
+			property Turntable^ Table
+			{
+				Turntable^ get()
 				{
-					if(IsConnected)
+					if (IsConnected)
 						return table;
 					else
 						return nullptr;
@@ -204,7 +204,7 @@ namespace Green
 
 			void Scan()
 			{
-				if(!isConnected || isScanning) return;
+				if (!isConnected || isScanning) return;
 				isScanning = true;
 				table->TurnOnce();
 				ProgressTimer->Start();
@@ -251,15 +251,15 @@ namespace Green
 
 			void Stop()
 			{
-				if(!isConnected || !isScanning) return;
+				if (!isConnected || !isScanning) return;
 				EndScan();
 			}
 
 			void ReturnToOrigin()
 			{
-				if(!isConnected || isScanning || table->AtOrigin) return;
+				if (!isConnected || isScanning || table->AtOrigin) return;
 				ToOrigin();
-			}			
+			}
 
 			~RotatingScanner()
 			{

@@ -493,6 +493,33 @@ namespace GreenScan.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Raw continous shooting.
+        /// </summary>
+        public static string MenuFileContinousShooting {
+            get {
+                return ResourceManager.GetString("MenuFileContinousShooting", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Start.
+        /// </summary>
+        public static string MenuFileContinousShootingStart {
+            get {
+                return ResourceManager.GetString("MenuFileContinousShootingStart", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Stop.
+        /// </summary>
+        public static string MenuFileContinousShootingStop {
+            get {
+                return ResourceManager.GetString("MenuFileContinousShootingStop", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Exit.
         /// </summary>
         public static string MenuFileExit {
@@ -1213,6 +1240,15 @@ namespace GreenScan.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Steps over a half rotation.
+        /// </summary>
+        public static string SettingTurntablePiSteps {
+            get {
+                return ResourceManager.GetString("SettingTurntablePiSteps", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Model resolution (vertices/leg).
         /// </summary>
         public static string SettingTurntableSaveModelResolution {
@@ -1447,7 +1483,7 @@ namespace GreenScan.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Place the calibration etalon to the turntable: the etalon should face toward the scanner&apos;s mirror and it should snap in the holes on the turntable. Click next to continue..
+        ///   Looks up a localized string similar to Place the calibration standard to the turntable: the standard should face toward the scanner&apos;s mirror and it should snap in the holes on the turntable. Click next to continue..
         /// </summary>
         public static string TurntableCalibrationStep3 {
             get {
@@ -1456,7 +1492,7 @@ namespace GreenScan.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Select the etalon on the image with the mouse (like in step 2). Click next to preview the calibration results..
+        ///   Looks up a localized string similar to Select the standard&apos;s left side on the image with the mouse (like in step 2). Click next to select the right side..
         /// </summary>
         public static string TurntableCalibrationStep4 {
             get {
@@ -1465,11 +1501,20 @@ namespace GreenScan.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Check if the the turntable&apos;s position has been selected correctly. Click to finish to save the results..
+        ///   Looks up a localized string similar to Select the standard&apos;s right side on the image. Click next to preview the calibration results..
         /// </summary>
         public static string TurntableCalibrationStep5 {
             get {
                 return ResourceManager.GetString("TurntableCalibrationStep5", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Check if the the turntable&apos;s position has been selected correctly. Click to finish to save the results..
+        /// </summary>
+        public static string TurntableCalibrationStep6 {
+            get {
+                return ResourceManager.GetString("TurntableCalibrationStep6", resourceCulture);
             }
         }
         

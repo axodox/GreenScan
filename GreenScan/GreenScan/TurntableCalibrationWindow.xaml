@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:h="clr-namespace:Green.Helper"
         xmlns:p="clr-namespace:GreenScan.Properties"
-        MouseLeftButtonDown="IDepth_MouseLeftButtonDown" MouseMove="IDepth_MouseMove"
+        MouseLeftButtonDown="IDepth_MouseLeftButtonDown" MouseMove="IDepth_MouseMove" Closing="Window_Closing"
         Title="{x:Static p:Resources.TurntableCalibrationTitle}" Height="640" Width="640" SizeToContent="Height">
     <Grid>
         <Grid.RowDefinitions>

@@ -2,9 +2,9 @@
 
 [maxvertexcount(2)]
 void main(
-	line VertexPositionInstance input[2], 
+	line VertexPositionInstance input[2],
 	inout LineStream<VertexPositionTarget> output
-)
+	)
 {
 	for (uint i = 0; i < 2; i++)
 	{

@@ -15,18 +15,18 @@ int GetEncoderClsid(const WCHAR* form, CLSID* pClsid)
 {
 	UINT num;
 	UINT size;
-	ImageCodecInfo* pImageCodecInfo=NULL;
-	GetImageEncodersSize(&num,&size);
-	if(size==0)
+	ImageCodecInfo* pImageCodecInfo = NULL;
+	GetImageEncodersSize(&num, &size);
+	if (size == 0)
 		return -1;
-	
-	pImageCodecInfo=(ImageCodecInfo*)(malloc(size));
-	if(pImageCodecInfo==NULL)
+
+	pImageCodecInfo = (ImageCodecInfo*)(malloc(size));
+	if (pImageCodecInfo == NULL)
 		return -1;
-	GetImageEncoders(num,size,pImageCodecInfo);
-	for(UINT j=0;j<num;j++)
+	GetImageEncoders(num, size, pImageCodecInfo);
+	for (UINT j = 0; j < num; j++)
 	{
-		if(wcscmp(pImageCodecInfo[j].MimeType,form)==0)
+		if (wcscmp(pImageCodecInfo[j].MimeType, form) == 0)
 		{
 			*pClsid = pImageCodecInfo[j].Clsid;
 			free(pImageCodecInfo);
@@ -40,7 +40,7 @@ int GetEncoderClsid(const WCHAR* form, CLSID* pClsid)
 void Release(IUnknown* object)
 {
 	int count = object->Release();
-	if(count)
+	if (count)
 	{
 		char text[10];
 		itoa(count, text, 10);
@@ -50,13 +50,13 @@ void Release(IUnknown* object)
 
 void Error(HRESULT hr)
 {
-	if(FAILED(hr))
+	if (FAILED(hr))
 	{
 		_com_error ce = _com_error(hr);
-	    //MessageBox(NULL, ce.ErrorMessage(), L"Error", MB_OK);
+		//MessageBox(NULL, ce.ErrorMessage(), L"Error", MB_OK);
 		FILE* hF = nullptr;
 		_wfopen_s(&hF, L"error.txt", L"a");
-		
+
 		fputws(ce.ErrorMessage(), hF);
 		fputws(L"\r\n", hF);
 		fclose(hF);
@@ -89,10 +89,10 @@ XMFLOAT4X4 Invert(XMFLOAT4X4 matrix)
 LPSTR LPWSTRToLPSTR(LPWSTR wstr)
 {
 	size_t length = wcslen(wstr) + 1;
-    size_t convertedChars = 0;
-    char* str = new char[length];
-    wcstombs_s(&convertedChars, str, length, wstr, _TRUNCATE);
-    return str;
+	size_t convertedChars = 0;
+	char* str = new char[length];
+	wcstombs_s(&convertedChars, str, length, wstr, _TRUNCATE);
+	return str;
 }
 
 char ClampToChar(float x)
@@ -109,14 +109,14 @@ byte ClampToByte(float x)
 	else return (byte)(x * 255);
 }
 
-typedef void (*Callback)(void* param); 
+typedef void(*Callback)(void* param);
 
 bool IsIdentity(XMFLOAT4X4 matrix)
 {
-	return 
-		matrix._11 == 1.f && matrix._12 == 0.f && matrix._13 == 0.f && matrix._14 == 0.f && 
-		matrix._21 == 0.f && matrix._22 == 1.f && matrix._23 == 0.f && matrix._24 == 0.f && 
-		matrix._31 == 0.f && matrix._32 == 0.f && matrix._33 == 1.f && matrix._34 == 0.f && 
+	return
+		matrix._11 == 1.f && matrix._12 == 0.f && matrix._13 == 0.f && matrix._14 == 0.f &&
+		matrix._21 == 0.f && matrix._22 == 1.f && matrix._23 == 0.f && matrix._24 == 0.f &&
+		matrix._31 == 0.f && matrix._32 == 0.f && matrix._33 == 1.f && matrix._34 == 0.f &&
 		matrix._41 == 0.f && matrix._42 == 0.f && matrix._43 == 0.f && matrix._44 == 1.f;
 }
 
@@ -124,11 +124,11 @@ bool IsIdentity(XMFLOAT4X4 matrix)
 #include <vcclr.h>
 LPWSTR StringToLPWSTR(System::String^ str)
 {
-	pin_ptr<const wchar_t> wch =  PtrToStringChars(str);
+	pin_ptr<const wchar_t> wch = PtrToStringChars(str);
 	size_t origsize = wcslen(wch) + 1;
 	const size_t newsizew = origsize;
-    wchar_t *wcstring = new wchar_t[newsizew];
-    wcscpy_s(wcstring, newsizew, wch);
+	wchar_t *wcstring = new wchar_t[newsizew];
+	wcscpy_s(wcstring, newsizew, wch);
 	return wcstring;
 }
 
@@ -145,8 +145,8 @@ bool Is3x3(array<float, 2>^ array)
 array<float, 2>^ To4x4(array<float, 2>^ input)
 {
 	array<float, 2>^ o = gcnew array<float, 2>(4, 4);
-	for(int j = 0; j < 3; j++)
-	for(int i = 0; i < 3; i++)
+	for (int j = 0; j < 3; j++)
+	for (int i = 0; i < 3; i++)
 		o[j, i] = input[j, i];
 	o[3, 3] = 1.f;
 	return o;
@@ -155,11 +155,11 @@ array<float, 2>^ To4x4(array<float, 2>^ input)
 array<float, 2>^ Expand4x4(array<float, 2>^ input)
 {
 	array<float, 2>^ output = gcnew array<float, 2>(4, 4);
-	for(int j = 0; j < 3; j++)
+	for (int j = 0; j < 3; j++)
 	{
-		for(int i = 0; i < 2; i++)
+		for (int i = 0; i < 2; i++)
 			output[j, i] = input[j, i];
-		if(j != 2) output[j, 3] = input[j, 2];
+		if (j != 2) output[j, 3] = input[j, 2];
 	}
 	output[2, 2] = input[2, 2];
 	output[3, 3] = 1.f;

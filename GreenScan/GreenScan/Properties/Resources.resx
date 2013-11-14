@@ -261,6 +261,15 @@
   <data name="MenuFileCloseFile" xml:space="preserve">
     <value>Close file</value>
   </data>
+  <data name="MenuFileContinousShooting" xml:space="preserve">
+    <value>Raw continous shooting</value>
+  </data>
+  <data name="MenuFileContinousShootingStart" xml:space="preserve">
+    <value>Start</value>
+  </data>
+  <data name="MenuFileContinousShootingStop" xml:space="preserve">
+    <value>Stop</value>
+  </data>
   <data name="MenuFileExit" xml:space="preserve">
     <value>Exit</value>
   </data>
@@ -501,6 +510,9 @@
   <data name="SettingTurntableMode" xml:space="preserve">
     <value>Mode</value>
   </data>
+  <data name="SettingTurntablePiSteps" xml:space="preserve">
+    <value>Steps over a half rotation</value>
+  </data>
   <data name="SettingTurntableSaveModelResolution" xml:space="preserve">
     <value>Model resolution (vertices/leg)</value>
   </data>
@@ -580,12 +592,15 @@
     <value>Select the turntable on the image with the mouse: move the cursor to the upper-left corner of the imaginary boundary rectangle of the turntable, then hold down the left button, and move the mouse to the bottom-right corner and release the button. You may repeat this procedure to select the turntable correctly. Click next to continue.</value>
   </data>
   <data name="TurntableCalibrationStep3" xml:space="preserve">
-    <value>Place the calibration etalon to the turntable: the etalon should face toward the scanner's mirror and it should snap in the holes on the turntable. Click next to continue.</value>
+    <value>Place the calibration standard to the turntable: the standard should face toward the scanner's mirror and it should snap in the holes on the turntable. Click next to continue.</value>
   </data>
   <data name="TurntableCalibrationStep4" xml:space="preserve">
-    <value>Select the etalon on the image with the mouse (like in step 2). Click next to preview the calibration results.</value>
+    <value>Select the standard's left side on the image with the mouse (like in step 2). Click next to select the right side.</value>
   </data>
   <data name="TurntableCalibrationStep5" xml:space="preserve">
+    <value>Select the standard's right side on the image. Click next to preview the calibration results.</value>
+  </data>
+  <data name="TurntableCalibrationStep6" xml:space="preserve">
     <value>Check if the the turntable's position has been selected correctly. Click to finish to save the results.</value>
   </data>
   <data name="TurntableCalibrationTitle" xml:space="preserve">

@@ -70,6 +70,15 @@ namespace Green.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Select {0} here..
+        /// </summary>
+        public static string BrowseDescription {
+            get {
+                return ResourceManager.GetString("BrowseDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Export.
         /// </summary>
         public static string Export {

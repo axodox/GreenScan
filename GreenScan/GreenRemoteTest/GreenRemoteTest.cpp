@@ -4,19 +4,19 @@
 #include "stdafx.h"
 
 //Callbacks
-typedef void (_stdcall *SimpleCallback)(void* argument);
-typedef void (_stdcall *SettingValueReceivedCallback)(void* argument, char* name, char* value);
-typedef void (_stdcall *CommandDescriptionReceivedCallback)(void* argument, char* name, char* description);
+typedef void(_stdcall *SimpleCallback)(void* argument);
+typedef void(_stdcall *SettingValueReceivedCallback)(void* argument, char* name, char* value);
+typedef void(_stdcall *CommandDescriptionReceivedCallback)(void* argument, char* name, char* description);
 
 //Functions
-typedef void (_stdcall *SimpleFunction)();
+typedef void(_stdcall *SimpleFunction)();
 typedef void* (_stdcall *CreateRemoteFunction)(unsigned short port);
-typedef void (_stdcall *ObjectFunction)(void* object);
-typedef void (_stdcall *SetRemoteCallbackArgumentFunction)(void* remote, void* argument);
-typedef void (_stdcall *SetRemoteConnectionCallbacksFunction)(void* remote, SimpleCallback onConnected, SimpleCallback onDisconnected);
-typedef void (_stdcall *SetRemoteMessageReceivedCallbacksFunction)(void* remote, SettingValueReceivedCallback onSettingValueReceived, CommandDescriptionReceivedCallback onCommandDescriptionReceived);
-typedef void (_stdcall *RemoteSendAsyncFunction)(void* remote, char* name, char* param);
-typedef void (_stdcall *RemoteSendFunction)(void* remote, char* name, char* param, unsigned long timeout);
+typedef void(_stdcall *ObjectFunction)(void* object);
+typedef void(_stdcall *SetRemoteCallbackArgumentFunction)(void* remote, void* argument);
+typedef void(_stdcall *SetRemoteConnectionCallbacksFunction)(void* remote, SimpleCallback onConnected, SimpleCallback onDisconnected);
+typedef void(_stdcall *SetRemoteMessageReceivedCallbacksFunction)(void* remote, SettingValueReceivedCallback onSettingValueReceived, CommandDescriptionReceivedCallback onCommandDescriptionReceived);
+typedef void(_stdcall *RemoteSendAsyncFunction)(void* remote, char* name, char* param);
+typedef void(_stdcall *RemoteSendFunction)(void* remote, char* name, char* param, unsigned long timeout);
 
 using namespace std;
 
@@ -44,7 +44,7 @@ int _tmain(int argc, _TCHAR* argv[])
 {
 	//Load library
 	HMODULE remoteLib = LoadLibrary(L"GreenRemoteWin32.dll");
-	if(!remoteLib)
+	if (!remoteLib)
 	{
 		printf("DLL not found!\r\n");
 		return -1;
@@ -73,39 +73,39 @@ int _tmain(int argc, _TCHAR* argv[])
 	while (true)
 	{
 		gets(text);
-		if(text[0] == 'e')
+		if (text[0] == 'e')
 			break;
-		if(text[1]!='/')
+		if (text[1] != '/')
 			printf("Enter commands in format s/Setting=value or c/Command=argument!\r\n");
 		switch (text[0])
 		{
 		case 's':
 		case 'c':
-			{
-				char* sepa = strchr(text, '=');
-				if(!sepa)
-				{
-					strcat(text, "=");
-					sepa = strchr(text, '=');
-				}
-				int namelen = sepa - text - 2;
-				char* name = new char[namelen + 1];
-				memcpy(name, text + 2, namelen);
-				name[namelen] = 0;
-				int valuelen = strlen(text) - namelen - 3;
-				char* value = new char[valuelen + 1];
-				memcpy(value, sepa + 1, valuelen);
-				value[valuelen] = 0;
-				switch (text[0])
-				{
-				case 's':
-					RemoteSetOptionAsync(remote, name, value);
-					break;
-				case 'c':
-					RemoteExecuteCommandAsync(remote, name, value);
-					break;
-				}
-			}
+		{
+					char* sepa = strchr(text, '=');
+					if (!sepa)
+					{
+						strcat(text, "=");
+						sepa = strchr(text, '=');
+					}
+					int namelen = sepa - text - 2;
+					char* name = new char[namelen + 1];
+					memcpy(name, text + 2, namelen);
+					name[namelen] = 0;
+					int valuelen = strlen(text) - namelen - 3;
+					char* value = new char[valuelen + 1];
+					memcpy(value, sepa + 1, valuelen);
+					value[valuelen] = 0;
+					switch (text[0])
+					{
+					case 's':
+						RemoteSetOptionAsync(remote, name, value);
+						break;
+					case 'c':
+						RemoteExecuteCommandAsync(remote, name, value);
+						break;
+					}
+		}
 			break;
 		default:
 			printf("Enter commands in format s/Setting=value or c/Command=argument!\r\n");

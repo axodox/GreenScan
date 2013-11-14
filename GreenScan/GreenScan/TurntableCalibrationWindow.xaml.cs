@@ -29,7 +29,8 @@ namespace GreenScan
             GreenResources.TurntableCalibrationStep2,
             GreenResources.TurntableCalibrationStep3,
             GreenResources.TurntableCalibrationStep4,
-            GreenResources.TurntableCalibrationStep5
+            GreenResources.TurntableCalibrationStep5,
+            GreenResources.TurntableCalibrationStep6
         };
 
         public TurntableCalibrationWindow(GraphicsCanvas canvas, ScanSettings settings)
@@ -43,12 +44,15 @@ namespace GreenScan
             Matrix4x4 mDepthIntrinsics = mDepthToIRMapping.Inverse * mInfraredIntrinsics;
             VI.WorldViewProjection = Matrix4x4.Scale(1d / KinectManager.DepthWidth, 1d / KinectManager.DepthHeight, 1d) * mDepthIntrinsics;
 
-            SelectedRectangle = settings.TurntableRectangle.Value;
+            SelectedRectangleA = settings.TurntableRectangleA.Value;
+            SelectedRectangleB = settings.TurntableRectangleB.Value;
             SelectedEllipse = settings.TurntableEllipse.Value;
             SetStep(0);
+            Settings.ViewProperties.StoreAllValues();
+            Settings.ViewProperties.ResetToDefault();
         }
 
-        Rect SelectedRectangle, SelectedEllipse;
+        Rect SelectedRectangleA, SelectedRectangleB, SelectedEllipse;
         Geometry SelectionGeometry;
         int Step;
         Float4[,] TableDepthData, StandardDepthData;
@@ -91,16 +95,23 @@ namespace GreenScan
                     }
                     VI.Pen = new Pen(Brushes.Blue, 2d);
                     VI.Brush = new SolidColorBrush(Color.FromArgb(128, 0, 0, 255));
-                    SelectionGeometry = new RectangleGeometry(SelectedRectangle);
+                    SelectionGeometry = new RectangleGeometry(SelectedRectangleA);
                     VI.AddGeometry(SelectionGeometry);
                     BNext.Visibility = Visibility.Visible;
                     BFinish.Visibility = Visibility.Collapsed;
                     break;
                 case 4:
+                    VI.Pen = new Pen(Brushes.Blue, 2d);
+                    VI.Brush = new SolidColorBrush(Color.FromArgb(128, 0, 0, 255));
+                    SelectionGeometry = new RectangleGeometry(SelectedRectangleB);
+                    VI.AddGeometry(SelectionGeometry);
+                    BNext.Visibility = Visibility.Visible;
+                    BFinish.Visibility = Visibility.Collapsed;
+                    break;
+                case 5:
                     if (StandardDepthData != null)
                     {
-                        Calibrator.CalibrateStandard(StandardDepthData, SelectedRectangle.TopLeft, SelectedRectangle.BottomRight);
-                        
+                        Calibrator.CalibrateStandard(StandardDepthData, SelectedRectangleA, SelectedRectangleB);
                     }
                     VI.Pen = new Pen(Brushes.Green, 2d);
                     VI.Brush = new SolidColorBrush(Color.FromArgb(128, 0, 255, 0));
@@ -171,6 +182,7 @@ namespace GreenScan
             {
                 case 1:
                 case 3:
+                case 4:
                     Mouse.Capture(IDepth);
                     MouseManipulation = true;
                     break;
@@ -184,8 +196,9 @@ namespace GreenScan
             {
                 MouseManipulation = false;
                 Mouse.Capture(null);
-                Settings.TurntableEllipse.Value = SelectedEllipse;
-                Settings.TurntableRectangle.Value = SelectedRectangle;
+                Settings.TurntableEllipse.Value = SelectedEllipse;                
+                Settings.TurntableRectangleA.Value = SelectedRectangleA;
+                Settings.TurntableRectangleB.Value = SelectedRectangleB;
                 return;
             }
             EndPoint = Mouse.GetPosition(VI);
@@ -196,15 +209,25 @@ namespace GreenScan
                 switch (Step)
                 {
                     case 1:
-                        EllipseGeometry eg = SelectionGeometry as EllipseGeometry;
-                        eg.Center = new Point((start.X + end.X) / 2d, (start.Y + end.Y) / 2d);
-                        eg.RadiusX = Math.Abs(start.X - end.X) / 2d;
-                        eg.RadiusY = Math.Abs(start.Y - end.Y) / 2d;
-                        SelectedEllipse = new Rect(start, end);
+                        {
+                            EllipseGeometry eg = SelectionGeometry as EllipseGeometry;
+                            eg.Center = new Point((start.X + end.X) / 2d, (start.Y + end.Y) / 2d);
+                            eg.RadiusX = Math.Abs(start.X - end.X) / 2d;
+                            eg.RadiusY = Math.Abs(start.Y - end.Y) / 2d;
+                            SelectedEllipse = new Rect(start, end);
+                        }
                         break;
                     case 3:
-                        RectangleGeometry rg = SelectionGeometry as RectangleGeometry;
-                        SelectedRectangle = rg.Rect = new Rect(start, end);
+                        {
+                            RectangleGeometry rg = SelectionGeometry as RectangleGeometry;
+                            SelectedRectangleA = rg.Rect = new Rect(start, end);
+                        }
+                        break;
+                    case 4:
+                        {
+                            RectangleGeometry rg = SelectionGeometry as RectangleGeometry;
+                            SelectedRectangleB = rg.Rect = new Rect(start, end);
+                        }
                         break;
                 }
             }
@@ -214,6 +237,11 @@ namespace GreenScan
         {
             Settings.TurntableTransform.Value = Calibrator.Table.GetTransform().GetMatrix();
             Close();
+        }
+
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            Settings.ViewProperties.RestoreAllValues();
         }
     }
 
@@ -297,13 +325,10 @@ namespace GreenScan
         {
             Ground = PlaneFromDepthData(data, new EllipseRegion(tableA, tableB));
         }
-        public void CalibrateStandard(Float4[,] data, Point standardA, Point standardB)
+        public void CalibrateStandard(Float4[,] data, Rect standardA, Rect standardB)
         {
-            int mX = (int)(standardA.X + standardB.X) / 2;
-            Point standardM1 = new Point(mX - 10, standardB.Y);
-            Point standardM2 = new Point(mX + 10, standardA.Y);
-            Plane a = PlaneFromDepthData(data, new RectangleRegion(standardA, standardM1));
-            Plane b = PlaneFromDepthData(data, new RectangleRegion(standardM2, standardB));
+            Plane a = PlaneFromDepthData(data, new RectangleRegion(standardA.TopLeft, standardA.BottomRight));
+            Plane b = PlaneFromDepthData(data, new RectangleRegion(standardB.TopLeft, standardB.BottomRight));
             Line axis = Plane.Intersect(a, b);
             Vector3 origin = axis.Intersect(Ground);
             Table = new Plane(origin, axis.Direction);

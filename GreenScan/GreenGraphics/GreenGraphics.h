@@ -69,7 +69,7 @@ namespace Green
 			char* DepthDistortionMap;
 			GraphicsModule* ModuleToUnload;
 			HANDLE UnloadEvent;
-			
+
 			struct RenderingParameters
 			{
 				XMFLOAT4X4 DepthIntrinsics, DepthInvIntrinsics, World;
@@ -83,12 +83,12 @@ namespace Green
 			{
 				XMFLOAT4X4 SceneRotation;
 				XMFLOAT2 AspectScale;
-				XMFLOAT2 Move;	
+				XMFLOAT2 Move;
 				XMFLOAT2 DepthCoeffs;
 				float Scale;
 			} CommonOptions;
 
-			struct DepthAndColorConstants 
+			struct DepthAndColorConstants
 			{
 				XMFLOAT4X4 DepthInvIntrinsics;
 				XMFLOAT4X4 ReprojectionTransform;
@@ -123,7 +123,7 @@ namespace Green
 
 				VSSimple = new VertexShader(Device, L"SimpleVertexShader.cso");
 				VSSimple->SetInputLayout(QMain->GetVertexDefinition());
-				
+
 				VSCommon = new VertexShader(Device, L"CommonVertexShader.cso");
 				VSCommon->SetInputLayout(QMain->GetVertexDefinition());
 
@@ -156,10 +156,10 @@ namespace Green
 				SLinearClamp = new SamplerState(Device, D3D11_FILTER_MIN_MAG_MIP_LINEAR, D3D11_TEXTURE_ADDRESS_CLAMP);
 				SPointClamp = new SamplerState(Device, D3D11_FILTER_MIN_MAG_MIP_POINT, D3D11_TEXTURE_ADDRESS_CLAMP);
 
-				ZeroMemory(&Params, sizeof(RenderingParameters));				
+				ZeroMemory(&Params, sizeof(RenderingParameters));
 				CBDepthAndColor = new ConstantBuffer<DepthAndColorConstants>(Device);
 				CBCommon = new ConstantBuffer<CommonConstants>(Device);
-				
+
 				KinectReady = false;
 
 				TColor = nullptr;
@@ -167,7 +167,7 @@ namespace Green
 				THueMap = Texture1D::FromFile(Device, L"hueMap.png");
 				TScaleMap = Texture1D::FromFile(Device, L"scaleMap.png");
 				TGauss = new Texture1D(Device, GaussCoeffCount, DXGI_FORMAT_R32_FLOAT);
-				
+
 				TDBDepth = nullptr;
 				RTDepthSum = nullptr;
 				RTPDepth = nullptr;
@@ -182,7 +182,7 @@ namespace Green
 				RDefault = new RasterizerState(Device, RasterizerState::Default);
 				RCullNone = new RasterizerState(Device, RasterizerState::CullNone);
 				RWireframe = new RasterizerState(Device, RasterizerState::Wireframe);
-				
+
 				PreprocessingChanged = false;
 				DepthDistortionChanged = false;
 
@@ -232,29 +232,29 @@ namespace Green
 				delete RCullNone;
 				delete RWireframe;
 
-				if(DepthDistortionMap)
+				if (DepthDistortionMap)
 				{
-					delete [KinectDevice::DepthWidth * KinectDevice::DepthHeight * 2] DepthDistortionMap;
+					delete[KinectDevice::DepthWidth * KinectDevice::DepthHeight * 2] DepthDistortionMap;
 					DepthDistortionMap = nullptr;
 				}
 			}
 
 			void DrawToSaveRawImage(PixelShader* pixelShader)
 			{
-				if(!SaveTextureReady && RRTSaveTexture != nullptr)
+				if (!SaveTextureReady && RRTSaveTexture != nullptr)
 				{
 					SaveTextureReady = true;
 					RRTSaveTexture->SetAsRenderTarget();
 					Device->SetShaders(VSSimple, pixelShader);
 					QMain->Draw();
 					RRTSaveTexture->CopyToStage();
-					if(!StaticInput) SetEvent(SaveEvent);
+					if (!StaticInput) SetEvent(SaveEvent);
 				}
 			}
 
 			void DrawScene()
 			{
-				if(!KinectReady) return;
+				if (!KinectReady) return;
 				CBDepthAndColor->Update(&DepthAndColorOptions);
 
 				Device->SetAsRenderTarget();
@@ -268,7 +268,7 @@ namespace Green
 					Device->SetShaders(VSCommon, PSDepth);
 					THueMap->SetForPS(1);
 					TColor->SetForPS();
-					SLinearWrap->SetForPS();	
+					SLinearWrap->SetForPS();
 					CBDepthAndColor->SetForPS(1);
 					QMain->Draw();
 					DrawToSaveRawImage(PSDepth);
@@ -276,15 +276,15 @@ namespace Green
 				case KinectDevice::Color:
 					Device->SetShaders(VSCommon, PSColor);
 					TColor->SetForPS();
-					SLinearWrap->SetForPS();	
+					SLinearWrap->SetForPS();
 					QMain->Draw();
 
 					DrawToSaveRawImage(PSColor);
-					break;					
+					break;
 				case KinectDevice::Infrared:
 					Device->SetShaders(VSCommon, PSInfrared);
 					TColor->SetForPS();
-					SLinearWrap->SetForPS();				
+					SLinearWrap->SetForPS();
 					QMain->Draw();
 
 					DrawToSaveRawImage(PSInfrared);
@@ -301,10 +301,10 @@ namespace Green
 					Device->SetShaders(VSSimple, PSDepthSum);
 					BAdditive->Apply();
 					Texture2D *depthTex;
-					for(int i = 0; i < DepthBufferSize; i++)
+					for (int i = 0; i < DepthBufferSize; i++)
 					{
 						depthTex = TDBDepth->BeginTextureUse(i);
-						if(depthTex == 0) continue;
+						if (depthTex == 0) continue;
 						depthTex->SetForPS();
 
 						QMain->Draw();
@@ -317,14 +317,14 @@ namespace Green
 					QMain->Draw();
 
 					//Distortion Correction
-					if(DepthDistortionChanged)
+					if (DepthDistortionChanged)
 					{
 						DepthDistortionChanged = false;
 						SafeDelete(TDepthCorrection);
-						if(DepthDistortionMap) 
+						if (DepthDistortionMap)
 							TDepthCorrection = new Texture2D(Device, DistortionMapWidth, DistortionMapHeight, DXGI_FORMAT_R8G8_SNORM, DepthDistortionMap, DistortionMapWidth * 2);
 					}
-					if(TDepthCorrection)
+					if (TDepthCorrection)
 					{
 						RTPDepth->Swap();
 						RTPDepth->SetAsRenderTarget();
@@ -335,14 +335,14 @@ namespace Green
 					}
 
 					//Depth Gauss filtering
-					if(PreprocessingChanged)
+					if (PreprocessingChanged)
 					{
 						TGauss->Load<float>(Params.GaussCoeffs);
 						PreprocessingChanged = false;
 					}
 					SPointClamp->SetForPS();
 					TGauss->SetForPS(1);
-					for(int i = 0; i < Params.DepthGaussIterations; i++)
+					for (int i = 0; i < Params.DepthGaussIterations; i++)
 					{
 						RTPDepth->Swap();
 						RTPDepth->SetAsRenderTarget();
@@ -360,38 +360,38 @@ namespace Green
 					SLinearWrap->SetForPS();
 
 					//Process with modules
-					for(int i = 0; i < MaxModuleCount; i++)
+					for (int i = 0; i < MaxModuleCount; i++)
 					{
-						if(Modules[i] != nullptr) Modules[i]->ProcessFrame(RTPDepth, TColor);
+						if (Modules[i] != nullptr) Modules[i]->ProcessFrame(RTPDepth, TColor);
 					}
 
 					//Rendering
 					Device->SetAsRenderTarget();
-					if(Params.UseModuleShading && ModuleCount > 0)
+					if (Params.UseModuleShading && ModuleCount > 0)
 					{
-						for(int i = 0; i < MaxModuleCount; i++)
+						for (int i = 0; i < MaxModuleCount; i++)
 						{
-							if(Modules[i] != nullptr)
+							if (Modules[i] != nullptr)
 							{
-							   if(Modules[i]->DrawsOverlay)
-							   {
-								   overlayMode = true;
-							   }
-							   else
-							   {
-								   Modules[i]->Draw();
-								   backgroundDone = true;
-							   }
+								if (Modules[i]->DrawsOverlay)
+								{
+									overlayMode = true;
+								}
+								else
+								{
+									Modules[i]->Draw();
+									backgroundDone = true;
+								}
 							}
 						}
 					}
 
-					if(!Params.UseModuleShading || (Params.UseModuleShading && ModuleCount == 0) || (overlayMode && !backgroundDone))
+					if (!Params.UseModuleShading || (Params.UseModuleShading && ModuleCount == 0) || (overlayMode && !backgroundDone))
 					{
-						BOpaque->Apply();		
+						BOpaque->Apply();
 						RTPDepth->SetForVS();
 
-						if(Params.WireframeShading)
+						if (Params.WireframeShading)
 							RWireframe->Set();
 						else
 							RCullNone->Set();
@@ -436,24 +436,24 @@ namespace Green
 						RCullNone->Set();
 					}
 
-					if(Params.UseModuleShading && overlayMode)
+					if (Params.UseModuleShading && overlayMode)
 					{
-						for(int i = 0; i < MaxModuleCount; i++)
+						for (int i = 0; i < MaxModuleCount; i++)
 						{
-							if(Modules[i] != nullptr && Modules[i]->DrawsOverlay)
+							if (Modules[i] != nullptr && Modules[i]->DrawsOverlay)
 								Modules[i]->Draw();
 						}
 					}
 
 					//Save
-					if(!SaveTextureReady && (RRTSaveVertices != nullptr || RRTSaveTexture != nullptr))
+					if (!SaveTextureReady && (RRTSaveVertices != nullptr || RRTSaveTexture != nullptr))
 					{
 						SaveTextureReady = true;
 						SLinearWrap->SetForPS();
 						BOpaque->Apply();
 
 						//Vertices
-						if(RRTSaveVertices != nullptr)
+						if (RRTSaveVertices != nullptr)
 						{
 							RRTSaveVertices->SetAsRenderTarget();
 							Device->SetShaders(VSSimple, PSVectorOutput);
@@ -463,17 +463,17 @@ namespace Green
 						}
 
 						//Texture
-						if(RRTSaveTexture != nullptr)
+						if (RRTSaveTexture != nullptr)
 						{
 							RRTSaveTexture->SetAsRenderTarget();
 							Device->SetShaders(VSSimple, PSTextureOutput);
 							RRTSaveVertices->SetForPS(0);
 							TColor->SetForPS(1);
 							QMain->Draw();
-							RRTSaveTexture->CopyToStage();	
+							RRTSaveTexture->CopyToStage();
 						}
 
-						if(!StaticInput) SetEvent(SaveEvent);
+						if (!StaticInput) SetEvent(SaveEvent);
 					}
 					break;
 				default:
@@ -485,7 +485,7 @@ namespace Green
 			{
 				XMMATRIX world = XMLoadFloat4x4(&Params.World);
 				XMMATRIX depthIntrinsics = XMLoadFloat4x4(&Params.DepthIntrinsics);
-				XMMATRIX depthInverseIntrinsics = XMLoadFloat4x4(&Params.DepthInvIntrinsics);				
+				XMMATRIX depthInverseIntrinsics = XMLoadFloat4x4(&Params.DepthInvIntrinsics);
 				XMMATRIX reproj = depthIntrinsics * world * depthInverseIntrinsics;
 				XMMATRIX reprojNormals = XMMatrixTranspose(XMMatrixInverse(0, world));
 				XMStoreFloat4x4(&DepthAndColorOptions.ReprojectionTransform, reproj);
@@ -499,7 +499,7 @@ namespace Green
 				float depthAspectRatio = (float)KinectDevice::DepthWidth / (float)KinectDevice::DepthHeight;
 				float aspectRatio = (Params.Rotation % 2 == 0 ? Device->GetAspectRatio() : 1.f / Device->GetAspectRatio());
 
-				if(depthAspectRatio >= aspectRatio)
+				if (depthAspectRatio >= aspectRatio)
 				{
 					aspectScale.x = 1.f;
 					aspectScale.y = aspectRatio / depthAspectRatio;
@@ -527,7 +527,7 @@ namespace Green
 				}
 			}
 
-			char* GenerateDistortionMap(int width, int height, int imageWidth, int imageHeight, float k1, float k2, float p1, float p2, 
+			char* GenerateDistortionMap(int width, int height, int imageWidth, int imageHeight, float k1, float k2, float p1, float p2,
 				float cx, float cy, float fx, float fy)
 			{
 				char* map = new char[width * height * 2], *pMap = map;
@@ -578,7 +578,7 @@ namespace Green
 					RTPDepth = new RenderTargetPair(Device, KinectDevice::DepthWidth, KinectDevice::DepthHeight, DXGI_FORMAT_R32_FLOAT);
 					PMain = new Plane(Device, NextTriangleGridWidth, NextTriangleGridHeight);
 					DepthAndColorOptions.DepthStep = XMFLOAT2(1.f / NextTriangleGridWidth, 1.f / NextTriangleGridHeight);
-					if(DepthDistortionMap) 
+					if (DepthDistortionMap)
 						TDepthCorrection = new Texture2D(Device, DistortionMapWidth, DistortionMapHeight, DXGI_FORMAT_R8G8_SNORM, DepthDistortionMap, DistortionMapWidth * 2);
 					break;
 				case KinectDevice::Infrared:
@@ -588,25 +588,25 @@ namespace Green
 					RDefault->Set();
 					break;
 				}
-				
+
 				DepthBufferSize = NextDepthBufferSize;
 				SetDepthAndColorOptions();
 				KinectReady = true;
 				StaticInput = mode & KinectDevice::Virtual;
 
-				if(mode == KinectDevice::DepthAndColor)
+				if (mode == KinectDevice::DepthAndColor)
 				{
-					for(int i = 0; i < MaxModuleCount; i++)
+					for (int i = 0; i < MaxModuleCount; i++)
 					{
-						if(Modules[i]) Modules[i]->StartProcessing();
+						if (Modules[i]) Modules[i]->StartProcessing();
 					}
 				}
 			}
-			
+
 			static void OnKinectStarting(KinectDevice::Modes mode, void* obj)
 			{
 				DirectXWindow* dxw = (DirectXWindow*)obj;
-				dxw->PrepareProcessing(mode);				
+				dxw->PrepareProcessing(mode);
 			}
 
 			static void OnColorFrameReady(void* data, void* obj)
@@ -647,17 +647,17 @@ namespace Green
 
 			void ShutdownProcessing()
 			{
-				if(!KinectReady) return;
+				if (!KinectReady) return;
 				KinectReady = false;
-				if(KinectMode == KinectDevice::DepthAndColor && !StaticInput)
+				if (KinectMode == KinectDevice::DepthAndColor && !StaticInput)
 				{
-					for(int i = 0; i < MaxModuleCount; i++)
+					for (int i = 0; i < MaxModuleCount; i++)
 					{
-						if(Modules[i]) Modules[i]->EndProcessing();
+						if (Modules[i]) Modules[i]->EndProcessing();
 					}
 				}
 				SafeDelete(TColor);
-				SafeDelete(TDBDepth);				
+				SafeDelete(TDBDepth);
 				SafeDelete(RTDepthSum);
 				SafeDelete(RTPDepth);
 				SafeDelete(PMain);
@@ -677,11 +677,11 @@ namespace Green
 				if (!KinectReady && ModuleCount > 0)
 				{
 					bool draw = false;
-					for(int i = 0; i < MaxModuleCount; i++)
+					for (int i = 0; i < MaxModuleCount; i++)
 					{
-						if(Modules[i]) draw |= Modules[i]->StaticInput;
+						if (Modules[i]) draw |= Modules[i]->StaticInput;
 					}
-					if(draw) Draw();
+					if (draw) Draw();
 				}
 
 			}
@@ -696,8 +696,8 @@ namespace Green
 			}
 
 			void SetView(
-				float transX, float transY, float transZ, 
-				float rotX, float rotY, float rotZ, 
+				float transX, float transY, float transZ,
+				float rotX, float rotY, float rotZ,
 				float scale, float moveX, float moveY, float rotation)
 			{
 				Params.Rotation = rotation;
@@ -711,7 +711,7 @@ namespace Green
 				XMMATRIX T = XMMatrixTranspose(XMMatrixTranslation(0.f, 0.f, -transZ));
 				XMMATRIX T2 = XMMatrixTranspose(XMMatrixTranslation(transX, transY, 0.f));
 				XMMATRIX Ti = XMMatrixInverse(0, T);
-				XMMATRIX R = 
+				XMMATRIX R =
 					XMMatrixRotationZ(XMConvertToRadians(rotZ)) *
 					XMMatrixRotationX(XMConvertToRadians(rotX)) *
 					XMMatrixRotationY(XMConvertToRadians(rotY));
@@ -725,9 +725,9 @@ namespace Green
 				SetAspectRatio();
 				SetDepthAndColorOptions();
 
-				for(int i = 0; i < MaxModuleCount; i++)
+				for (int i = 0; i < MaxModuleCount; i++)
 				{
-					if(Modules[i] != nullptr)
+					if (Modules[i] != nullptr)
 					{
 						Modules[i]->SetView(Params.World, Params.TransX, Params.TransY, Params.TransZ, Params.RotX, Params.RotY, Params.RotZ);
 					}
@@ -741,12 +741,12 @@ namespace Green
 				float* colorIntrinsics, float* colorRemapping, float* colorExtrinsics,
 				int colorDispX, int colorDispY, float colorScaleX, float colorScaleY, float* depthCoeffs)
 			{
-				delete [KinectDevice::DepthWidth * KinectDevice::DepthHeight * 2] DepthDistortionMap;
+				delete[KinectDevice::DepthWidth * KinectDevice::DepthHeight * 2] DepthDistortionMap;
 				DepthDistortionMap = nullptr;
 
-				if(infraredDistortion)
+				if (infraredDistortion)
 				{
-					
+
 					DepthDistortionMap = GenerateDistortionMap(
 						DistortionMapWidth, DistortionMapHeight, KinectDevice::DepthWidth, KinectDevice::DepthHeight,
 						infraredDistortion[0], infraredDistortion[1], infraredDistortion[2], infraredDistortion[3],
@@ -758,11 +758,11 @@ namespace Green
 				XMMATRIX mDepthToIRMapping = Load4x4(depthToIRMapping);
 				XMMATRIX mDepthIntrinsics = XMMatrixInverse(0, mDepthToIRMapping) * mInfraredIntrinsics;
 				XMMATRIX mDepthInvIntrinsics = XMMatrixInverse(0, mDepthIntrinsics);
-				
+
 				XMMATRIX mColorIntrinsics = Load4x4(colorIntrinsics);
 				XMMATRIX mColorRemapping = Load4x4(colorRemapping);
 				XMMATRIX mColorRemappedIntrinsics = XMMatrixInverse(0, mColorRemapping) * mColorIntrinsics;
-				
+
 				XMMATRIX mColorExtrinsics = Load4x4(colorExtrinsics);
 				XMMATRIX mWorldToColor = mColorRemappedIntrinsics * mColorExtrinsics;
 				XMMATRIX mDepthToColor = mWorldToColor * mDepthInvIntrinsics;
@@ -771,16 +771,16 @@ namespace Green
 				XMStoreFloat4x4(&Params.DepthInvIntrinsics, mDepthInvIntrinsics);
 				XMStoreFloat4x4(&DepthAndColorOptions.DepthToColorTransform, mDepthToColor);
 				XMStoreFloat4x4(&DepthAndColorOptions.WorldToColorTransform, mWorldToColor);
-				
+
 				DepthAndColorOptions.ColorMove = XMFLOAT2((float)colorDispX / KinectDevice::ColorWidth, (float)colorDispY / KinectDevice::ColorHeight);
 				DepthAndColorOptions.ColorScale = XMFLOAT2(colorScaleX, colorScaleY);
 				DepthAndColorOptions.DepthInvIntrinsics = Params.DepthInvIntrinsics;
 				CommonOptions.DepthCoeffs = XMFLOAT2(depthCoeffs[0], depthCoeffs[1]);
 				SetDepthAndColorOptions();
-				
-				for(int i = 0; i < MaxModuleCount; i++)
+
+				for (int i = 0; i < MaxModuleCount; i++)
 				{
-					if(Modules[i] != nullptr)
+					if (Modules[i] != nullptr)
 					{
 						Modules[i]->SetCameras(Params.DepthIntrinsics, Params.DepthInvIntrinsics, DepthAndColorOptions.WorldToColorTransform, DepthAndColorOptions.DepthToColorTransform, DepthAndColorOptions.ColorMove, DepthAndColorOptions.ColorScale);
 					}
@@ -818,9 +818,9 @@ namespace Green
 				DepthAndColorOptions.SaveSize = XMINT2(width, height);
 				DepthAndColorOptions.DepthSaveStep = XMFLOAT2(1.f / width, 1.f / height);
 
-				for(int i = 0; i < MaxModuleCount; i++)
+				for (int i = 0; i < MaxModuleCount; i++)
 				{
-					if(Modules[i]) Modules[i]->SetSave(width, height, texWidth, texHeight);
+					if (Modules[i]) Modules[i]->SetSave(width, height, texWidth, texHeight);
 				}
 			}
 
@@ -853,7 +853,7 @@ namespace Green
 				Modules = new GraphicsModule*[MaxModuleCount];
 				ModuleCount = 0;
 				ModuleToUnload = nullptr;
-				for(int i = 0; i < MaxModuleCount; i++)
+				for (int i = 0; i < MaxModuleCount; i++)
 				{
 					Modules[i] = nullptr;
 				}
@@ -867,23 +867,23 @@ namespace Green
 
 			~DirectXWindow()
 			{
-				for(int i = 0; i < MaxModuleCount; i++)
+				for (int i = 0; i < MaxModuleCount; i++)
 				{
-					if(Modules[i]) Modules[i]->DestroyResources();
+					if (Modules[i]) Modules[i]->DestroyResources();
 					SafeDelete(Modules[i]);
 				}
-				delete [MaxModuleCount] Modules;
+				delete[MaxModuleCount] Modules;
 				DestroyResources();
 				delete Device;
 				GdiplusShutdown(GdiPlusToken);
 				CloseHandle(SaveEvent);
-			}			
+			}
 
 			bool LoadModule(GraphicsModule* module)
 			{
-				for(int i = 0; i < MaxModuleCount; i++)
+				for (int i = 0; i < MaxModuleCount; i++)
 				{
-					if(!Modules[i])
+					if (!Modules[i])
 					{
 						module->CreateResources(Device);
 						module->SetView(Params.World, Params.TransX, Params.TransY, Params.TransZ, Params.RotX, Params.RotY, Params.RotZ);
@@ -891,8 +891,8 @@ namespace Green
 						module->SetSave(Params.SaveWidth, Params.SaveHeight, Params.SaveTextureWidth, Params.SaveTextureHeight);
 						module->Host = this;
 						module->RequestDraw = &DirectXWindow::OnModuleDraw;
-						if(KinectReady) module->StartProcessing();
-						Modules[i] = module;	
+						if (KinectReady) module->StartProcessing();
+						Modules[i] = module;
 						ModuleCount++;
 						return true;
 					}
@@ -903,11 +903,11 @@ namespace Green
 			bool UnloadModule(GraphicsModule* module)
 			{
 				if (module)
-				for(int i = 0; i < MaxModuleCount; i++)
+				for (int i = 0; i < MaxModuleCount; i++)
 				{
-					if(Modules[i] == module)
-					{						
-						if(!StaticInput && KinectReady)
+					if (Modules[i] == module)
+					{
+						if (!StaticInput && KinectReady)
 						{
 							UnloadEvent = CreateEvent(0, 0, 0, 0);
 							ModuleToUnload = module;
@@ -937,7 +937,7 @@ namespace Green
 			static void OnModuleDraw(void* param)
 			{
 				DirectXWindow* dxw = (DirectXWindow*)param;
-				if(!dxw->KinectReady)
+				if (!dxw->KinectReady)
 				{
 					dxw->Draw();
 				}
@@ -954,21 +954,21 @@ namespace Green
 			{
 				bool ok = false;
 				SaveTextureReady = true;
-				ReadableBackBuffer = new ReadableRenderTarget2D(Device);							
+				ReadableBackBuffer = new ReadableRenderTarget2D(Device);
 				SaveTextureReady = false;
 				ResetEvent(SaveEvent);
 
-				if(StaticInput)
+				if (StaticInput)
 				{
 					Draw();
 					ok = true;
 				}
 				else
 				{
-					ok = WaitForSingleObject(SaveEvent, 1000) == WAIT_OBJECT_0;	
+					ok = WaitForSingleObject(SaveEvent, 1000) == WAIT_OBJECT_0;
 				}
-				
-				if(ok)
+
+				if (ok)
 				{
 					ok = PNGSave(path, ReadableBackBuffer->GetStagingTexture());
 				}
@@ -986,43 +986,15 @@ namespace Green
 				case Green::Kinect::KinectDevice::Depth:
 				case Green::Kinect::KinectDevice::Color:
 				case Green::Kinect::KinectDevice::Infrared:
-					RRTSaveTexture = new ReadableRenderTarget2D(Device, TColor->GetWidth(), TColor->GetHeight(), DXGI_FORMAT_R8G8B8A8_UNORM);	
+					RRTSaveTexture = new ReadableRenderTarget2D(Device, TColor->GetWidth(), TColor->GetHeight(), DXGI_FORMAT_R8G8B8A8_UNORM);
 					break;
 				default:
 					return false;
-				}	
+				}
 				SaveTextureReady = false;
 				ResetEvent(SaveEvent);
 
-				if(StaticInput)
-				{
-					Draw();
-					ok = true;
-				}
-				else
-				{
-					ok = WaitForSingleObject(SaveEvent, 1000) == WAIT_OBJECT_0;	
-				}
-				
-				if(ok)
-				{
-					ok = PNGSave(path, RRTSaveTexture->GetStagingTexture());
-				}
-				SafeDelete(RRTSaveTexture);
-				return ok;
-			}
-
-			bool GetVertices(XMFLOAT4* &data, int &width, int &height)
-			{
-				if(KinectMode != KinectDevice::DepthAndColor) return false;
-				XMStoreFloat4x4(&DepthAndColorOptions.SaveTransform, XMMatrixIdentity());
-				width = KinectDevice::DepthWidth;
-				height = KinectDevice::DepthHeight;
-				RRTSaveVertices = new ReadableRenderTarget2D(Device, width, height, DXGI_FORMAT_R32G32B32A32_FLOAT);
-				SaveTextureReady = false;
-
-				bool ok = false;
-				if(StaticInput)
+				if (StaticInput)
 				{
 					Draw();
 					ok = true;
@@ -1032,7 +1004,35 @@ namespace Green
 					ok = WaitForSingleObject(SaveEvent, 1000) == WAIT_OBJECT_0;
 				}
 
-				if(ok)
+				if (ok)
+				{
+					ok = PNGSave(path, RRTSaveTexture->GetStagingTexture());
+				}
+				SafeDelete(RRTSaveTexture);
+				return ok;
+			}
+
+			bool GetVertices(XMFLOAT4* &data, int &width, int &height)
+			{
+				if (KinectMode != KinectDevice::DepthAndColor) return false;
+				XMStoreFloat4x4(&DepthAndColorOptions.SaveTransform, XMMatrixIdentity());
+				width = KinectDevice::DepthWidth;
+				height = KinectDevice::DepthHeight;
+				RRTSaveVertices = new ReadableRenderTarget2D(Device, width, height, DXGI_FORMAT_R32G32B32A32_FLOAT);
+				SaveTextureReady = false;
+
+				bool ok = false;
+				if (StaticInput)
+				{
+					Draw();
+					ok = true;
+				}
+				else
+				{
+					ok = WaitForSingleObject(SaveEvent, 1000) == WAIT_OBJECT_0;
+				}
+
+				if (ok)
 				{
 					data = new XMFLOAT4[width * height];
 					RRTSaveVertices->GetData<XMFLOAT4>(data);
@@ -1044,14 +1044,14 @@ namespace Green
 
 			bool SaveModel(LPWSTR path, ModelFormats format)
 			{
-				if(KinectMode != KinectDevice::DepthAndColor) return false;
+				if (KinectMode != KinectDevice::DepthAndColor) return false;
 				XMStoreFloat4x4(&DepthAndColorOptions.SaveTransform, XMMatrixScaling(Params.SaveScaling, -Params.SaveScaling, Params.SaveScaling));
 				bool ok = false;
 				RRTSaveVertices = new ReadableRenderTarget2D(Device, Params.SaveWidth, Params.SaveHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);
-				RRTSaveTexture = new ReadableRenderTarget2D(Device, Params.SaveTextureWidth, Params.SaveTextureHeight, DXGI_FORMAT_R8G8B8A8_UNORM);				
+				RRTSaveTexture = new ReadableRenderTarget2D(Device, Params.SaveTextureWidth, Params.SaveTextureHeight, DXGI_FORMAT_R8G8B8A8_UNORM);
 				SaveTextureReady = false;
-				
-				if(StaticInput)
+
+				if (StaticInput)
 				{
 					Draw();
 					ok = true;
@@ -1060,8 +1060,8 @@ namespace Green
 				{
 					ok = WaitForSingleObject(SaveEvent, 1000) == WAIT_OBJECT_0;
 				}
-				
-				if(ok)
+
+				if (ok)
 				{
 					WCHAR textureFilename[MAX_PATH];
 					wcscpy_s(textureFilename, path);
@@ -1073,7 +1073,7 @@ namespace Green
 					//Geometry
 					XMFLOAT4* data = new XMFLOAT4[Params.SaveWidth * Params.SaveHeight];
 					RRTSaveVertices->GetData<XMFLOAT4>(data);
-					
+
 					switch (format)
 					{
 					case ModelFormats::STL:
@@ -1098,9 +1098,9 @@ namespace Green
 						ok = false;
 						break;
 					}
-					delete [Params.SaveWidth * Params.SaveHeight] data;
+					delete[Params.SaveWidth * Params.SaveHeight] data;
 
-					
+
 				}
 				SafeDelete(RRTSaveVertices);
 				SafeDelete(RRTSaveTexture);
@@ -1109,42 +1109,42 @@ namespace Green
 
 			void Draw()
 			{
-				if(ResizeNeeded)
+				if (ResizeNeeded)
 				{
 					ResizeNeeded = false;
 					Device->Resize();
-					SetAspectRatio();					
+					SetAspectRatio();
 				}
-				
+
 				CBCommon->Update(&CommonOptions);
 				CBCommon->SetForVS(0);
 				CBCommon->SetForGS(0);
 				CBCommon->SetForPS(0);
 
 				Device->Clear(BackgroundColor);
-				if(KinectReady)
+				if (KinectReady)
 					DrawScene();
 				else
 				{
-					if(ModuleCount > 0)
+					if (ModuleCount > 0)
 					{
-						for(int i = 0; i < MaxModuleCount; i++)
-							if(Modules[i] != nullptr) Modules[i]->Draw();
+						for (int i = 0; i < MaxModuleCount; i++)
+						if (Modules[i] != nullptr) Modules[i]->Draw();
 					}
 				}
 
 				Device->Present();
-				if(ReadableBackBuffer != nullptr && !SaveTextureReady)
+				if (ReadableBackBuffer != nullptr && !SaveTextureReady)
 				{
 					ReadableBackBuffer->CopyToStage();
 					SaveTextureReady = true;
-					if(!StaticInput) SetEvent(SaveEvent);
+					if (!StaticInput) SetEvent(SaveEvent);
 				}
 
-				if(ModuleToUnload)
+				if (ModuleToUnload)
 				{
-					for(int i = 0; i < MaxModuleCount; i++)
-						if(Modules[i] == ModuleToUnload) Modules[i] = nullptr;
+					for (int i = 0; i < MaxModuleCount; i++)
+					if (Modules[i] == ModuleToUnload) Modules[i] = nullptr;
 					ModuleToUnload = nullptr;
 					SetEvent(UnloadEvent);
 				}

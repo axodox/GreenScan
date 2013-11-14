@@ -24,9 +24,9 @@ VertexPositionOut main(VertexPositionTextureIn vi)
 	float depth = DepthTexture.Load(id);
 
 	float4 posDepth = float4(
-		DepthResolution.x * vi.Texture.x * depth, 
-		DepthResolution.y * vi.Texture.y * depth, 
-		depth, 
+		DepthResolution.x * vi.Texture.x * depth,
+		DepthResolution.y * vi.Texture.y * depth,
+		depth,
 		1);
 
 	float4 posWorld = mul(posDepth, DepthToWorldTransform);
@@ -37,7 +37,7 @@ VertexPositionOut main(VertexPositionTextureIn vi)
 	posOutput.z = posWorld.z / CubeSize.y + 0.5f;
 	posOutput.w = 1.f;
 
-	if(depth == 0.f || CheckTriangle(vi.Texture)) posOutput.z = -1.f;
+	if (depth == 0.f || CheckTriangle(vi.Texture)) posOutput.z = -1.f;
 
 	VertexPositionOut output;
 	output.Position = posOutput;

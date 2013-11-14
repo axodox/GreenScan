@@ -33,7 +33,7 @@ namespace Green.Settings.UI
             using (System.Windows.Forms.FolderBrowserDialog fbd = new System.Windows.Forms.FolderBrowserDialog())
             {
                 fbd.SelectedPath = ps.AbsolutePath;
-                fbd.Description = "Select '" + ps.FriendlyName + "' here.";
+                fbd.Description = string.Format(Green.Properties.Resources.BrowseDescription, ps.FriendlyName);
                 if(fbd.ShowDialog()==System.Windows.Forms.DialogResult.OK)
                 {
                     ps.Value = fbd.SelectedPath;

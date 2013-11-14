@@ -7,9 +7,9 @@ VertexPositionWorldDepthTexture main(VertexPositionTextureIn vi)
 	float depth = DepthTexture.Load(id);
 
 	float4 posDepth = float4(
-		DepthResolution.x * vi.Texture.x * depth, 
-		DepthResolution.y * vi.Texture.y * depth, 
-		depth, 
+		DepthResolution.x * vi.Texture.x * depth,
+		DepthResolution.y * vi.Texture.y * depth,
+		depth,
 		1);
 
 	float4 posWorld = mul(posDepth, DepthToTurntableTransform);
@@ -25,7 +25,7 @@ VertexPositionWorldDepthTexture main(VertexPositionTextureIn vi)
 	posOutput.z = sqrt(posCore.x * posCore.x + posCore.z * posCore.z);
 	posOutput.w = 1.f;
 
-	if(depth == 0.f) posOutput.z = 0.f;
+	if (depth == 0.f) posOutput.z = 0.f;
 
 	float4 posTex = mul(posDepth, DepthToTextureTransform);
 	posTex.xyz /= posTex.z;

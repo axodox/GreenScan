@@ -58,6 +58,8 @@
         <CommandBinding Command="{x:Static local:GreenScanCommands.About}" Executed="AboutCmdExecuted"/>
         <CommandBinding Command="{x:Static local:GreenScanCommands.Start}" Executed="StartCmdExecuted" CanExecute="StartCmdCanExecute"/>
         <CommandBinding Command="{x:Static local:GreenScanCommands.Stop}" Executed="StopCmdExecuted" CanExecute="StopCmdCanExecute"/>
+        <CommandBinding Command="{x:Static local:GreenScanCommands.StartContinousShooting}" Executed="StartContinousShootingCmdExecuted" CanExecute="StartContinousShootingCmdCanExecute"/>
+        <CommandBinding Command="{x:Static local:GreenScanCommands.StopContinousShooting}" Executed="StopContinousShootingCmdExecuted" CanExecute="StopContinousShootingCmdCanExecute"/>
         <CommandBinding Command="{x:Static local:GreenScanCommands.Calibrate}" Executed="CalibrateCmdExecuted" CanExecute="CalibrateCmdCanExecute"/>
         <CommandBinding Command="{x:Static local:GreenScanCommands.Import}" Executed="ImportCmdExecuted" CanExecute="ImportCmdCanExecute"/>
         <CommandBinding Command="{x:Static local:GreenScanCommands.Export}" Executed="ExportCmdExecuted" CanExecute="ExportCmdCanExecute"/>
@@ -118,6 +120,10 @@
                             <MenuItem Header="{x:Static p:Resources.MenuExportAsDae}" Command="{x:Static local:GreenScanCommands.Export}" CommandParameter="DAE"/>
                             <MenuItem Header="{x:Static p:Resources.MenuExportAsObj}" Command="{x:Static local:GreenScanCommands.Export}" CommandParameter="OBJ"/>
                             <MenuItem Header="{x:Static p:Resources.MenuExportAsFl4}" Command="{x:Static local:GreenScanCommands.Export}" CommandParameter="FL4"/>
+                        </MenuItem>
+                        <MenuItem Header="{x:Static p:Resources.MenuFileContinousShooting}">
+                            <MenuItem Header="{x:Static p:Resources.MenuFileContinousShootingStart}" Command="{x:Static local:GreenScanCommands.StartContinousShooting}"/>
+                            <MenuItem Header="{x:Static p:Resources.MenuFileContinousShootingStop}" Command="{x:Static local:GreenScanCommands.StopContinousShooting}"/>
                         </MenuItem>
                         <MenuItem Header="{x:Static p:Resources.MenuFileBrowseSaveDirectory}" Command="{x:Static local:GreenScanCommands.Browse}"/>
                         <Separator/>
@@ -185,7 +191,18 @@
                     <StatusBarItem>
                         <Image x:Name="IStatus" Width="16" Height="16" VerticalAlignment="Bottom" Source="{Binding Processing, Converter={StaticResource BooleanToProcessingIconConverter}}" />
                     </StatusBarItem>
+                    <StatusBarItem x:Name="SBIContinousShooting" Visibility="{Binding ContinousShootingEnabled, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition/>
+                                <ColumnDefinition/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="{Binding ContinousShootingCounter}"/>
+                            <Image Grid.Column="1" Width="16" Height="16" VerticalAlignment="Bottom" Source="Icons/timer16.png" />
+                        </Grid>                        
+                    </StatusBarItem>
                     <StatusBarItem x:Name="SBIStatusText" Content="{x:Static p:Resources.StatusReady}"/>
+                    
                 </StatusBar>
             </Grid>
             <Grid Grid.Column="2">

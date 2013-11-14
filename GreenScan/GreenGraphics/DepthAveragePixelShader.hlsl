@@ -5,7 +5,7 @@ float main(VertexPositionTextureOut v) : SV_TARGET
 {
 	int3 id = DepthCoords(v.Texture);
 	float2 sum = Texture.Load(id);
-	if(sum.y > 0)
+	if (sum.y > 0)
 	{
 		return ToDepth(sum.x / sum.y);
 	}

@@ -38,7 +38,7 @@ namespace Green
 				Stopped,
 				Processing
 			} State;
-		private:		
+		private:
 			GraphicsDeviceWithSwapChain* Device;
 			RenderTarget2D **ModelTargets, **TextureTargets, *OrthoTarget, *FilterTarget;
 			RenderTarget3D *CubeTarget;
@@ -81,7 +81,7 @@ namespace Green
 				float Threshold;
 				float GradientLimit;
 				float Slice;
-				int CubeRes;				
+				int CubeRes;
 			} TurntableOptions;
 
 			ConstantBuffer<TurntableConstants>* Constants;
@@ -109,55 +109,55 @@ namespace Green
 				{
 				case Modes::OneAxis:
 				case Modes::TwoAxis:
-					{
-						CrossVertices[6] = VertexPositionColor(XMFLOAT3(TurntableOptions.CorePosition.x, 0.f, TurntableOptions.CorePosition.y), XMFLOAT4(1.f, 0.f, 1.f, 1.f));
-						CrossVertices[7] = VertexPositionColor(XMFLOAT3(TurntableOptions.CorePosition.x, TurntableOptions.ClipLimit.y, TurntableOptions.CorePosition.y), XMFLOAT4(1.f, 0.f, 1.f, 1.f));
-						CrossVertices[8] = VertexPositionColor(XMFLOAT3(-TurntableOptions.CorePosition.x, 0.f, TurntableOptions.CorePosition.y), XMFLOAT4(1.f, 0.f, 1.f, 1.f));
-						CrossVertices[9] = VertexPositionColor(XMFLOAT3(-TurntableOptions.CorePosition.x, TurntableOptions.ClipLimit.y, TurntableOptions.CorePosition.y), XMFLOAT4(1.f, 0.f, 1.f, 1.f));
-						VertexPositionColor* vertex = &CrossVertices[10];
-						float x, y, angleStep = XM_2PI / CilinderSides;
-						for(int i = 0; i < CilinderSides; i++)
-						{
-							x = sin(i * angleStep) * TurntableOptions.ClipLimit.x;
-							y = cos(i * angleStep) * TurntableOptions.ClipLimit.x;
-							*vertex++ = VertexPositionColor(XMFLOAT3(x, 0.f, y), XMFLOAT4(0.f, 0.f, 0.f, 1.f));
-							*vertex++ = VertexPositionColor(XMFLOAT3(x, TurntableOptions.ClipLimit.y, y), XMFLOAT4(0.f, 0.f, 0.f, 1.f));
-						}
-					}
+				{
+									   CrossVertices[6] = VertexPositionColor(XMFLOAT3(TurntableOptions.CorePosition.x, 0.f, TurntableOptions.CorePosition.y), XMFLOAT4(1.f, 0.f, 1.f, 1.f));
+									   CrossVertices[7] = VertexPositionColor(XMFLOAT3(TurntableOptions.CorePosition.x, TurntableOptions.ClipLimit.y, TurntableOptions.CorePosition.y), XMFLOAT4(1.f, 0.f, 1.f, 1.f));
+									   CrossVertices[8] = VertexPositionColor(XMFLOAT3(-TurntableOptions.CorePosition.x, 0.f, TurntableOptions.CorePosition.y), XMFLOAT4(1.f, 0.f, 1.f, 1.f));
+									   CrossVertices[9] = VertexPositionColor(XMFLOAT3(-TurntableOptions.CorePosition.x, TurntableOptions.ClipLimit.y, TurntableOptions.CorePosition.y), XMFLOAT4(1.f, 0.f, 1.f, 1.f));
+									   VertexPositionColor* vertex = &CrossVertices[10];
+									   float x, y, angleStep = XM_2PI / CilinderSides;
+									   for (int i = 0; i < CilinderSides; i++)
+									   {
+										   x = sin(i * angleStep) * TurntableOptions.ClipLimit.x;
+										   y = cos(i * angleStep) * TurntableOptions.ClipLimit.x;
+										   *vertex++ = VertexPositionColor(XMFLOAT3(x, 0.f, y), XMFLOAT4(0.f, 0.f, 0.f, 1.f));
+										   *vertex++ = VertexPositionColor(XMFLOAT3(x, TurntableOptions.ClipLimit.y, y), XMFLOAT4(0.f, 0.f, 0.f, 1.f));
+									   }
+				}
 					break;
 				case Modes::Volumetric:
-					{
-						int i = 6;
-						XMFLOAT4 color = XMFLOAT4(1.f, 0.f, 1.f, 1.f);
-						float a = TurntableOptions.CubeSize.x / 2.f;
-						float h = TurntableOptions.CubeSize.x;
-						CrossVertices[i++] = VertexPositionColor(XMFLOAT3(a, 0.f, a), color);
-						CrossVertices[i++] = VertexPositionColor(XMFLOAT3(-a, 0.f, a), color);
-						CrossVertices[i++] = VertexPositionColor(XMFLOAT3(a, 0.f, -a), color);
-						CrossVertices[i++] = VertexPositionColor(XMFLOAT3(-a, 0.f, -a), color);
-						CrossVertices[i++] = VertexPositionColor(XMFLOAT3(a, 0.f, a), color);
-						CrossVertices[i++] = VertexPositionColor(XMFLOAT3(a, 0.f, -a), color);
-						CrossVertices[i++] = VertexPositionColor(XMFLOAT3(-a, 0.f, a), color);
-						CrossVertices[i++] = VertexPositionColor(XMFLOAT3(-a, 0.f, -a), color);
+				{
+										  int i = 6;
+										  XMFLOAT4 color = XMFLOAT4(1.f, 0.f, 1.f, 1.f);
+										  float a = TurntableOptions.CubeSize.x / 2.f;
+										  float h = TurntableOptions.CubeSize.x;
+										  CrossVertices[i++] = VertexPositionColor(XMFLOAT3(a, 0.f, a), color);
+										  CrossVertices[i++] = VertexPositionColor(XMFLOAT3(-a, 0.f, a), color);
+										  CrossVertices[i++] = VertexPositionColor(XMFLOAT3(a, 0.f, -a), color);
+										  CrossVertices[i++] = VertexPositionColor(XMFLOAT3(-a, 0.f, -a), color);
+										  CrossVertices[i++] = VertexPositionColor(XMFLOAT3(a, 0.f, a), color);
+										  CrossVertices[i++] = VertexPositionColor(XMFLOAT3(a, 0.f, -a), color);
+										  CrossVertices[i++] = VertexPositionColor(XMFLOAT3(-a, 0.f, a), color);
+										  CrossVertices[i++] = VertexPositionColor(XMFLOAT3(-a, 0.f, -a), color);
 
-						CrossVertices[i++] = VertexPositionColor(XMFLOAT3(a, h, a), color);
-						CrossVertices[i++] = VertexPositionColor(XMFLOAT3(-a, h, a), color);
-						CrossVertices[i++] = VertexPositionColor(XMFLOAT3(a, h, -a), color);
-						CrossVertices[i++] = VertexPositionColor(XMFLOAT3(-a, h, -a), color);
-						CrossVertices[i++] = VertexPositionColor(XMFLOAT3(a, h, a), color);
-						CrossVertices[i++] = VertexPositionColor(XMFLOAT3(a, h, -a), color);
-						CrossVertices[i++] = VertexPositionColor(XMFLOAT3(-a, h, a), color);
-						CrossVertices[i++] = VertexPositionColor(XMFLOAT3(-a, h, -a), color);
+										  CrossVertices[i++] = VertexPositionColor(XMFLOAT3(a, h, a), color);
+										  CrossVertices[i++] = VertexPositionColor(XMFLOAT3(-a, h, a), color);
+										  CrossVertices[i++] = VertexPositionColor(XMFLOAT3(a, h, -a), color);
+										  CrossVertices[i++] = VertexPositionColor(XMFLOAT3(-a, h, -a), color);
+										  CrossVertices[i++] = VertexPositionColor(XMFLOAT3(a, h, a), color);
+										  CrossVertices[i++] = VertexPositionColor(XMFLOAT3(a, h, -a), color);
+										  CrossVertices[i++] = VertexPositionColor(XMFLOAT3(-a, h, a), color);
+										  CrossVertices[i++] = VertexPositionColor(XMFLOAT3(-a, h, -a), color);
 
-						CrossVertices[i++] = VertexPositionColor(XMFLOAT3(a, 0.f, a), color);
-						CrossVertices[i++] = VertexPositionColor(XMFLOAT3(a, h, a), color);
-						CrossVertices[i++] = VertexPositionColor(XMFLOAT3(-a, 0.f, a), color);
-						CrossVertices[i++] = VertexPositionColor(XMFLOAT3(-a, h, a), color);
-						CrossVertices[i++] = VertexPositionColor(XMFLOAT3(a, 0.f, -a), color);
-						CrossVertices[i++] = VertexPositionColor(XMFLOAT3(a, h, -a), color);
-						CrossVertices[i++] = VertexPositionColor(XMFLOAT3(-a, 0.f, -a), color);
-						CrossVertices[i++] = VertexPositionColor(XMFLOAT3(-a, h, -a), color);
-					}
+										  CrossVertices[i++] = VertexPositionColor(XMFLOAT3(a, 0.f, a), color);
+										  CrossVertices[i++] = VertexPositionColor(XMFLOAT3(a, h, a), color);
+										  CrossVertices[i++] = VertexPositionColor(XMFLOAT3(-a, 0.f, a), color);
+										  CrossVertices[i++] = VertexPositionColor(XMFLOAT3(-a, h, a), color);
+										  CrossVertices[i++] = VertexPositionColor(XMFLOAT3(a, 0.f, -a), color);
+										  CrossVertices[i++] = VertexPositionColor(XMFLOAT3(a, h, -a), color);
+										  CrossVertices[i++] = VertexPositionColor(XMFLOAT3(-a, 0.f, -a), color);
+										  CrossVertices[i++] = VertexPositionColor(XMFLOAT3(-a, h, -a), color);
+				}
 					break;
 				}
 				CrossChanged = true;
@@ -170,7 +170,7 @@ namespace Green
 
 			void DrawIfNeeded()
 			{
-				if(StaticInput && State == States::Processing)
+				if (StaticInput && State == States::Processing)
 				{
 					RequestDraw(Host);
 				}
@@ -223,7 +223,7 @@ namespace Green
 				GSVolumetricOrtho = new GeometryShader(Device, L"TurntableVolumetricOrthoGeometryShader.cso");
 				GSVolumetricCube = new GeometryShader(Device, L"TurntableVolumetricCubeGeometryShader.cso");
 				GSModel = new GeometryShader(Device, L"TurntableModelGeometryShader.cso");
-				
+
 				PSOverlay = new PixelShader(Device, L"TurntableOverlayPixelShader.cso");
 				PSTwoAxisPolar = new PixelShader(Device, L"TurntableTwoAxisPolarPixelShader.cso");
 				PSOneAxisPolar = new PixelShader(Device, L"TurntableOneAxisPolarPixelShader.cso");
@@ -287,7 +287,7 @@ namespace Green
 				State = States::Unknown;
 				StaticInput = StaticInputNext;
 				StaticInputNext = false;
-				TurntableOptions.ModelResolution = XMINT2(NextModelWidth, NextModelHeight);	
+				TurntableOptions.ModelResolution = XMINT2(NextModelWidth, NextModelHeight);
 
 				Constants = new ConstantBuffer<TurntableConstants>(Device);
 				TurntableOptions.DepthResolution = XMINT2(KinectDevice::DepthWidth, KinectDevice::DepthHeight);
@@ -312,26 +312,26 @@ namespace Green
 				{
 				case Modes::OneAxis:
 				case Modes::TwoAxis:
-					{
-						ModelWidth = NextModelWidth;
-						ModelHeight = NextModelHeight;
-						TextureWidth = NextTextureWidth;
-						TextureHeight = NextTextureHeight;
-						CrossVertexCount = 2 * CilinderSides + 10;
-						TargetCount = (Mode == Modes::OneAxis ? 1 : 2);
-						ModelTargets = new RenderTarget2D*[TargetCount];
-						TextureTargets = new RenderTarget2D*[TargetCount];
-						RenderTarget2D** targets = new RenderTarget2D*[TargetCount * 2];
-						for(int i = 0; i < TargetCount; i++)
-						{
-							ModelTargets[i] = new RenderTarget2D(Device, ModelWidth, ModelHeight, DXGI_FORMAT_R32G32_FLOAT);
-							targets[2 * i] = ModelTargets[i];
-							TextureTargets[i] = new RenderTarget2D(Device, TextureWidth, TextureHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);
-							targets[2 * i + 1] = TextureTargets[i];
-						}
-						PolarTargetGroup = new RenderTarget2DGroup(Device, TargetCount * 2, targets);
-						delete [TargetCount * 2] targets;
-					}
+				{
+									   ModelWidth = NextModelWidth;
+									   ModelHeight = NextModelHeight;
+									   TextureWidth = NextTextureWidth;
+									   TextureHeight = NextTextureHeight;
+									   CrossVertexCount = 2 * CilinderSides + 10;
+									   TargetCount = (Mode == Modes::OneAxis ? 1 : 2);
+									   ModelTargets = new RenderTarget2D*[TargetCount];
+									   TextureTargets = new RenderTarget2D*[TargetCount];
+									   RenderTarget2D** targets = new RenderTarget2D*[TargetCount * 2];
+									   for (int i = 0; i < TargetCount; i++)
+									   {
+										   ModelTargets[i] = new RenderTarget2D(Device, ModelWidth, ModelHeight, DXGI_FORMAT_R32G32_FLOAT);
+										   targets[2 * i] = ModelTargets[i];
+										   TextureTargets[i] = new RenderTarget2D(Device, TextureWidth, TextureHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);
+										   targets[2 * i + 1] = TextureTargets[i];
+									   }
+									   PolarTargetGroup = new RenderTarget2DGroup(Device, TargetCount * 2, targets);
+									   delete[TargetCount * 2] targets;
+				}
 					break;
 				case Modes::Volumetric:
 					CrossVertexCount = 6 + 3 * 2 * 4;
@@ -352,29 +352,29 @@ namespace Green
 				CrossVertices[3] = VertexPositionColor(XMFLOAT3(0.f, 0.1f, 0.f), XMFLOAT4(0.f, 1.f, 0.f, 1.f));
 				CrossVertices[4] = VertexPositionColor(XMFLOAT3(0.f, 0.f, -0.1f), XMFLOAT4(0.f, 0.f, 1.f, 1.f));
 				CrossVertices[5] = VertexPositionColor(XMFLOAT3(0.f, 0.f, 0.1f), XMFLOAT4(0.f, 0.f, 1.f, 1.f));
-				
-				Cross = new VertexBuffer<VertexPositionColor>(Device, CrossVertexCount);				
+
+				Cross = new VertexBuffer<VertexPositionColor>(Device, CrossVertexCount);
 				State = States::Processing;
-				SetCross();	
+				SetCross();
 			}
 
 			virtual void EndProcessing() override
 			{
 				if (State != States::Processing) return;
 				State = States::Unknown;
-				if(SaveInProgress) 
+				if (SaveInProgress)
 					WaitForSingleObject(SaveCompletedEvent, INFINITE);
 				switch (Mode)
 				{
 				case Modes::OneAxis:
 				case Modes::TwoAxis:
-					for(int i = 0; i < TargetCount; i++)
+					for (int i = 0; i < TargetCount; i++)
 					{
 						delete ModelTargets[i];
 						delete TextureTargets[i];
 					}
-					delete [TargetCount] ModelTargets;
-					delete [TargetCount] TextureTargets;
+					delete[TargetCount] ModelTargets;
+					delete[TargetCount] TextureTargets;
 					delete PolarTargetGroup;
 					break;
 				case Modes::Volumetric:
@@ -383,10 +383,10 @@ namespace Green
 					delete CubeTarget;
 					delete LMain;
 					break;
-				}				
+				}
 				delete Cross;
 				delete CrossVertices;
-				delete Constants;				
+				delete Constants;
 				delete BOpaque;
 				delete BAdditive;
 				delete BAlpha;
@@ -402,7 +402,7 @@ namespace Green
 
 			void Scan()
 			{
-				if(Mode != NextMode) StartProcessing();
+				if (Mode != NextMode) StartProcessing();
 				switch (Mode)
 				{
 				case Modes::OneAxis:
@@ -412,14 +412,14 @@ namespace Green
 				case Modes::Volumetric:
 					CubeTarget->Clear();
 					break;
-				}				
+				}
 				Scanning = true;
 			}
 
 			void Stop()
 			{
 				Scanning = false;
-				if(State == States::Processing && Mode == Modes::Volumetric) CalculateCubeMesh();
+				if (State == States::Processing && Mode == Modes::Volumetric) CalculateCubeMesh();
 			}
 
 			virtual void ProcessFrame(RenderTargetPair* depth, Texture2D* color) override
@@ -430,7 +430,7 @@ namespace Green
 				Constants->SetForGS(2);
 				Constants->SetForPS(2);
 
-				switch(Mode)
+				switch (Mode)
 				{
 				case Modes::OneAxis:
 				case Modes::TwoAxis:
@@ -439,7 +439,7 @@ namespace Green
 						ClearNext = false;
 						PolarTargetGroup->Clear();
 					}
-										
+
 					RCullNone->Set();
 					BAdditive->Apply();
 					PolarTargetGroup->SetRenderTargets();
@@ -451,7 +451,7 @@ namespace Green
 					case Modes::TwoAxis:
 						Device->SetShaders(VSTwoAxisPolar, PSTwoAxisPolar, GSTwoAxisPolar);
 						break;
-					}					
+					}
 					depth->SetForVS();
 					color->SetForPS();
 					SLinearClamp->SetForPS();
@@ -466,13 +466,13 @@ namespace Green
 
 					OrthoTarget->Clear();
 					RCullNone->Set();
-					BOpaque->Apply();					
+					BOpaque->Apply();
 					OrthoTarget->SetAsRenderTarget();
 					Device->SetShaders(VSVolumetricOrtho, PSVolumetricOrtho, GSVolumetricOrtho);
-					depth->SetForVS();					
+					depth->SetForVS();
 					PMain->Draw();
 
-					FilterTarget->Clear();				
+					FilterTarget->Clear();
 					FilterTarget->SetAsRenderTarget();
 					Device->SetShaders(VSSimple, PSVolumetricOrthoFilter);
 					OrthoTarget->SetForPS();
@@ -502,7 +502,7 @@ namespace Green
 				ID3D11Texture2D* StagingTexture = target->GetStagingTexture();
 				D3D11_MAPPED_SUBRESOURCE ms;
 				Error(Context->Map(StagingTexture, 0, D3D11_MAP_READ, 0, &ms));
-				for(int row = 0; row < height; row++)
+				for (int row = 0; row < height; row++)
 				{
 					memcpy(data + row * polarWidth, (byte*)ms.pData + row * ms.RowPitch, width * sizeof(T));
 					memcpy(data + (row + 1) * polarWidth - 1, (byte*)ms.pData + row * ms.RowPitch, sizeof(T));
@@ -513,71 +513,71 @@ namespace Green
 			static const int SaveVersion = 0;
 			bool OpenRaw(LPWSTR path, LPWSTR &metadata)
 			{
-				if(Scanning) return false;
+				if (Scanning) return false;
 				bool ok = false;
 				FILE* file;
-				if(_wfopen_s(&file, path, L"rb") == 0)
+				if (_wfopen_s(&file, path, L"rb") == 0)
 				{
 					int version;
 					fread(&version, 4, 1, file);
 					Modes mode;
 					fread(&mode, 4, 1, file);
-					if(version == SaveVersion)
+					if (version == SaveVersion)
 					{
 						NextMode = mode;
-						StaticInputNext = true;						
+						StaticInputNext = true;
 
-						switch(NextMode)
+						switch (NextMode)
 						{
 						case Modes::OneAxis:
 						case Modes::TwoAxis:
-							{
-								StartProcessing();
-								int modelWidth, modelHeight, texWidth, texHeight;
-								fread(&modelWidth, 4, 1, file);
-								fread(&modelHeight, 4, 1, file);
-								int modelLen = modelWidth * modelHeight;
-								XMFLOAT2* modelData = new XMFLOAT2[modelLen];
+						{
+											   StartProcessing();
+											   int modelWidth, modelHeight, texWidth, texHeight;
+											   fread(&modelWidth, 4, 1, file);
+											   fread(&modelHeight, 4, 1, file);
+											   int modelLen = modelWidth * modelHeight;
+											   XMFLOAT2* modelData = new XMFLOAT2[modelLen];
 
-								for(int i = 0; i < TargetCount; i++)
-								{
-									fread(modelData, sizeof(XMFLOAT2), modelLen, file);
-									Texture2D* model = new Texture2D(Device, modelWidth, modelHeight, DXGI_FORMAT_R32G32_FLOAT, modelData, modelWidth * sizeof(XMFLOAT2));
-									ModelTargets[i]->Load(model);
-									SafeDelete(model);
-								}
-								delete [modelLen] modelData;
+											   for (int i = 0; i < TargetCount; i++)
+											   {
+												   fread(modelData, sizeof(XMFLOAT2), modelLen, file);
+												   Texture2D* model = new Texture2D(Device, modelWidth, modelHeight, DXGI_FORMAT_R32G32_FLOAT, modelData, modelWidth * sizeof(XMFLOAT2));
+												   ModelTargets[i]->Load(model);
+												   SafeDelete(model);
+											   }
+											   delete[modelLen] modelData;
 
-								fread(&texWidth, 4, 1, file);
-								fread(&texHeight, 4, 1, file);
-								int texLen = texWidth * texHeight;
-								XMFLOAT4* textureData = new XMFLOAT4[texLen];
-								for(int i = 0; i < TargetCount; i++)
-								{
-									fread(textureData, sizeof(XMFLOAT4), texLen, file);
-									Texture2D* texture = new Texture2D(Device, texWidth, texHeight, DXGI_FORMAT_R32G32B32A32_FLOAT, textureData, texWidth * sizeof(XMFLOAT4));
-									TextureTargets[i]->Load(texture);
-									SafeDelete(texture);
-								}
-								delete [texLen] textureData;
-							}
+											   fread(&texWidth, 4, 1, file);
+											   fread(&texHeight, 4, 1, file);
+											   int texLen = texWidth * texHeight;
+											   XMFLOAT4* textureData = new XMFLOAT4[texLen];
+											   for (int i = 0; i < TargetCount; i++)
+											   {
+												   fread(textureData, sizeof(XMFLOAT4), texLen, file);
+												   Texture2D* texture = new Texture2D(Device, texWidth, texHeight, DXGI_FORMAT_R32G32B32A32_FLOAT, textureData, texWidth * sizeof(XMFLOAT4));
+												   TextureTargets[i]->Load(texture);
+												   SafeDelete(texture);
+											   }
+											   delete[texLen] textureData;
+						}
 							break;
 						case Modes::Volumetric:
-							{
-								fread(&NextCubeRes, 4, 1, file);
-								StartProcessing();
-								int modelLen = pow(CubeRes, 3);
-								BYTE* modelData = new BYTE[modelLen];
-								fread(modelData, 1, modelLen, file);
-								Texture3D* texture = new Texture3D(Device, CubeRes, CubeRes, CubeRes, DXGI_FORMAT_R8_UNORM, modelData, CubeRes, CubeRes * CubeRes);
-								CubeTarget->Load(texture);
-								SafeDelete(texture);
-								delete [modelLen] modelData;
-								CalculateCubeMesh();
-							}
+						{
+												  fread(&NextCubeRes, 4, 1, file);
+												  StartProcessing();
+												  int modelLen = pow(CubeRes, 3);
+												  BYTE* modelData = new BYTE[modelLen];
+												  fread(modelData, 1, modelLen, file);
+												  Texture3D* texture = new Texture3D(Device, CubeRes, CubeRes, CubeRes, DXGI_FORMAT_R8_UNORM, modelData, CubeRes, CubeRes * CubeRes);
+												  CubeTarget->Load(texture);
+												  SafeDelete(texture);
+												  delete[modelLen] modelData;
+												  CalculateCubeMesh();
+						}
 							break;
-						}						
-						
+						}
+
 						unsigned metalen;
 						fread(&metalen, 4, 1, file);
 						metadata = new WCHAR[metalen];
@@ -597,13 +597,13 @@ namespace Green
 				RawSave = true;
 				SaveEvent = CreateEvent(0, 0, 0, 0);
 
-				switch(Mode)
+				switch (Mode)
 				{
 				case Modes::OneAxis:
 				case Modes::TwoAxis:
 					SaveModelTargets = new ReadableRenderTarget2D*[TargetCount];
 					SaveTextureTargets = new ReadableRenderTarget2D*[TargetCount];
-					for(int i = 0; i < TargetCount; i++)
+					for (int i = 0; i < TargetCount; i++)
 					{
 						SaveModelTargets[i] = new ReadableRenderTarget2D(ModelTargets[i]);
 						SaveTextureTargets[i] = new ReadableRenderTarget2D(TextureTargets[i]);
@@ -613,11 +613,11 @@ namespace Green
 					SaveCubeTarget = new ReadableRenderTarget3D(CubeTarget);
 					break;
 				}
-				
+
 				SaveTextureReady = false;
 
 				bool ok = false;
-				if(StaticInput)
+				if (StaticInput)
 				{
 					Draw();
 					ok = true;
@@ -625,75 +625,75 @@ namespace Green
 				else
 					ok = WaitForSingleObject(SaveEvent, 1000) == WAIT_OBJECT_0;
 
-				if(ok)
+				if (ok)
 				{
 					FILE* file;
-					if(_wfopen_s(&file, path, L"wb") == 0)
+					if (_wfopen_s(&file, path, L"wb") == 0)
 					{
 						fwrite(&SaveVersion, 4, 1, file);
 						fwrite(&Mode, 4, 1, file);
-						
-						switch(Mode)
+
+						switch (Mode)
 						{
 						case Modes::OneAxis:
 						case Modes::TwoAxis:
-							{
-								fwrite(&ModelWidth, 4, 1, file);
-								fwrite(&ModelHeight, 4, 1, file);
-								int modelLen = ModelWidth * ModelHeight;
-								XMFLOAT2* modelData = new XMFLOAT2[modelLen];
+						{
+											   fwrite(&ModelWidth, 4, 1, file);
+											   fwrite(&ModelHeight, 4, 1, file);
+											   int modelLen = ModelWidth * ModelHeight;
+											   XMFLOAT2* modelData = new XMFLOAT2[modelLen];
 
-								for(int i = 0; i < TargetCount; i++)
-								{
-									SaveModelTargets[i]->GetData<XMFLOAT2>(modelData);
-									fwrite(modelData, sizeof(XMFLOAT2), modelLen, file);
-								}
-								delete [modelLen] modelData;
+											   for (int i = 0; i < TargetCount; i++)
+											   {
+												   SaveModelTargets[i]->GetData<XMFLOAT2>(modelData);
+												   fwrite(modelData, sizeof(XMFLOAT2), modelLen, file);
+											   }
+											   delete[modelLen] modelData;
 
-								fwrite(&TextureWidth, 4, 1, file);
-								fwrite(&TextureHeight, 4, 1, file);
-								int texLen = TextureWidth * TextureHeight;
-								XMFLOAT4* textureData = new XMFLOAT4[texLen];
+											   fwrite(&TextureWidth, 4, 1, file);
+											   fwrite(&TextureHeight, 4, 1, file);
+											   int texLen = TextureWidth * TextureHeight;
+											   XMFLOAT4* textureData = new XMFLOAT4[texLen];
 
-								for(int i = 0; i < TargetCount; i++)
-								{
-									SaveTextureTargets[i]->GetData<XMFLOAT4>(textureData);
-									fwrite(textureData, sizeof(XMFLOAT4), texLen, file);
-								}
+											   for (int i = 0; i < TargetCount; i++)
+											   {
+												   SaveTextureTargets[i]->GetData<XMFLOAT4>(textureData);
+												   fwrite(textureData, sizeof(XMFLOAT4), texLen, file);
+											   }
 
-								delete [texLen] textureData;
-							}
+											   delete[texLen] textureData;
+						}
 							break;
 						case Modes::Volumetric:
-							{
-								fwrite(&CubeRes, 4, 1, file);
-								int modelLen = pow(CubeRes, 3);
-								BYTE* modelData = new BYTE[modelLen];
-								SaveCubeTarget->GetData(modelData);
-								fwrite(modelData, 1, modelLen, file);
-								delete [modelLen] modelData;
-							}
+						{
+												  fwrite(&CubeRes, 4, 1, file);
+												  int modelLen = pow(CubeRes, 3);
+												  BYTE* modelData = new BYTE[modelLen];
+												  SaveCubeTarget->GetData(modelData);
+												  fwrite(modelData, 1, modelLen, file);
+												  delete[modelLen] modelData;
+						}
 							break;
 						}
 
 						unsigned metalen = wcslen(metadata) + 1;
 						fwrite(&metalen, 4, 1, file);
-						fwrite((char*)metadata, 2, metalen, file);						
+						fwrite((char*)metadata, 2, metalen, file);
 						fclose(file);
 					}
 				}
 
-				switch(Mode)
+				switch (Mode)
 				{
 				case Modes::OneAxis:
 				case Modes::TwoAxis:
-					for(int i = 0; i < TargetCount; i++)
+					for (int i = 0; i < TargetCount; i++)
 					{
 						SafeDelete(SaveModelTargets[i]);
 						SafeDelete(SaveTextureTargets[i]);
 					}
-					delete [TargetCount] SaveModelTargets;
-					delete [TargetCount] SaveTextureTargets;
+					delete[TargetCount] SaveModelTargets;
+					delete[TargetCount] SaveTextureTargets;
 					break;
 				case Modes::Volumetric:
 					SafeDelete(SaveCubeTarget);
@@ -706,11 +706,11 @@ namespace Green
 
 			bool SaveModel(LPWSTR path, ModelFormats format)
 			{
-				if(State != States::Processing) return false;
+				if (State != States::Processing) return false;
 				ResetEvent(SaveCompletedEvent);
 				SaveInProgress = true;
 				bool ok = false;
-				if(Mode == Modes::Volumetric)
+				if (Mode == Modes::Volumetric)
 				{
 					ok = SaveCube(path, format);
 				}
@@ -721,14 +721,14 @@ namespace Green
 
 					SaveModelTargets = new ReadableRenderTarget2D*[TargetCount];
 					SaveTextureTargets = new ReadableRenderTarget2D*[TargetCount];
-					for(int i = 0; i < TargetCount; i++)
+					for (int i = 0; i < TargetCount; i++)
 					{
 						SaveModelTargets[i] = new ReadableRenderTarget2D(Device, Params.SaveWidth, Params.SaveHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);
 						SaveTextureTargets[i] = new ReadableRenderTarget2D(Device, Params.SaveTextureWidth, Params.SaveTextureHeight, DXGI_FORMAT_R8G8B8A8_UNORM);
 					}
 					SaveTextureReady = false;
 
-					if(StaticInput)
+					if (StaticInput)
 					{
 						Draw();
 						ok = true;
@@ -736,11 +736,11 @@ namespace Green
 					else
 						ok = WaitForSingleObject(SaveEvent, 1000) == WAIT_OBJECT_0;
 
-					if(ok)
+					if (ok)
 					{
 						WCHAR** textureFilenames = new WCHAR*[TargetCount];
 						WCHAR** filenames = new WCHAR*[TargetCount];
-						for(int i = 0; i < TargetCount; i++)
+						for (int i = 0; i < TargetCount; i++)
 						{
 							textureFilenames[i] = new WCHAR[MAX_PATH];
 							filenames[i] = new WCHAR[MAX_PATH];
@@ -762,8 +762,8 @@ namespace Green
 						}
 
 						int dataLen = (Params.SaveWidth + 1) * Params.SaveHeight;
-						for(int i = 0; i < TargetCount; i++)
-						{					
+						for (int i = 0; i < TargetCount; i++)
+						{
 							XMFLOAT4* data = new XMFLOAT4[dataLen];
 							GetPolarData(SaveModelTargets[i], data);
 							switch (format)
@@ -790,27 +790,27 @@ namespace Green
 								ok = false;
 								break;
 							}
-							delete [dataLen] data;
+							delete[dataLen] data;
 
-							ok &= PNGSave(textureFilenames[i], SaveTextureTargets[i]->GetStagingTexture());						
-						}					
-
-						for(int i = 0; i < TargetCount; i++)
-						{
-							delete [MAX_PATH] filenames[i];
-							delete [MAX_PATH] textureFilenames[i];
+							ok &= PNGSave(textureFilenames[i], SaveTextureTargets[i]->GetStagingTexture());
 						}
-						delete [TargetCount] filenames;
-						delete [TargetCount] textureFilenames;
+
+						for (int i = 0; i < TargetCount; i++)
+						{
+							delete[MAX_PATH] filenames[i];
+							delete[MAX_PATH] textureFilenames[i];
+						}
+						delete[TargetCount] filenames;
+						delete[TargetCount] textureFilenames;
 					}
 
-					for(int i = 0; i < TargetCount; i++)
+					for (int i = 0; i < TargetCount; i++)
 					{
 						SafeDelete(SaveModelTargets[i]);
 						SafeDelete(SaveTextureTargets[i]);
 					}
-					delete [TargetCount] SaveModelTargets;
-					delete [TargetCount] SaveTextureTargets;
+					delete[TargetCount] SaveModelTargets;
+					delete[TargetCount] SaveTextureTargets;
 					CloseHandle(SaveEvent);
 				}
 				SetEvent(SaveCompletedEvent);
@@ -820,7 +820,7 @@ namespace Green
 		private:
 			bool IsVoxelFilled(byte* const data, int x, int y, int z)
 			{
-				if(x < 0 || y < 0 || z < 0 || x >= CubeRes || y >= CubeRes || z >= CubeRes)
+				if (x < 0 || y < 0 || z < 0 || x >= CubeRes || y >= CubeRes || z >= CubeRes)
 					return false;
 				else
 					return *(data + x + CubeRes * y + CubeRes * CubeRes * z) == 255;
@@ -828,10 +828,10 @@ namespace Green
 
 			void CheckVertex(unsigned* const vertices, int x, int y, int z, unsigned &index)
 			{
-				if(x < 0 || y < 0 || z < 0 || x >= CubeResExt || y >= CubeResExt || z >= CubeResExt)
+				if (x < 0 || y < 0 || z < 0 || x >= CubeResExt || y >= CubeResExt || z >= CubeResExt)
 					return;
 				unsigned* vertex = vertices + x + CubeResExt * y + CubeResExt * CubeResExt * z;
-				if(*vertex == 0)
+				if (*vertex == 0)
 				{
 					*vertex = ++index;
 				}
@@ -839,7 +839,7 @@ namespace Green
 
 			unsigned GetIndex(unsigned* const vertices, int x, int y, int z)
 			{
-				if(x < 0 || y < 0 || z < 0 || x >= CubeResExt || y >= CubeResExt || z >= CubeResExt)
+				if (x < 0 || y < 0 || z < 0 || x >= CubeResExt || y >= CubeResExt || z >= CubeResExt)
 					return 0u;
 				return *(vertices + x + CubeResExt * y + CubeResExt * CubeResExt * z) - 1u;
 			}
@@ -848,12 +848,12 @@ namespace Green
 			{
 				RawSave = false;
 				SaveEvent = CreateEvent(0, 0, 0, 0);
-								
+
 				SaveCubeTarget = new ReadableRenderTarget3D(CubeTarget);
 				SaveTextureReady = false;
 
 				bool ok = false;
-				if(StaticInput)
+				if (StaticInput)
 				{
 					Draw();
 					ok = true;
@@ -861,53 +861,53 @@ namespace Green
 				else
 					ok = WaitForSingleObject(SaveEvent, 1000) == WAIT_OBJECT_0;
 
-				if(ok)
+				if (ok)
 				{
 					int modelLen = pow(CubeRes, 3);
 					byte* modelData = new byte[modelLen], *pModelData, *eModelData = modelData + modelLen;
 					SaveCubeTarget->GetData<byte>(modelData);
-					
+
 					//Thresholding
 					byte threshold = TurntableOptions.Threshold * 255;
-					for(pModelData = modelData; pModelData < eModelData; pModelData++)
-						if(*pModelData > threshold) *pModelData = 255;
-						else *pModelData = 0;
-					
+					for (pModelData = modelData; pModelData < eModelData; pModelData++)
+					if (*pModelData > threshold) *pModelData = 255;
+					else *pModelData = 0;
+
 					//Mark outer space with scanline flood-fill
 					stack<unsigned> voxelsToFill;
 					unsigned levelSize = CubeRes * CubeRes, index;
 					byte* pLevel, *pVoxel;
 					bool lastPushUp, lastPushDown, scanDirection;
-					for(int z = 0; z < CubeRes; z++)
+					for (int z = 0; z < CubeRes; z++)
 					{
-						for(int i = 0; i < CubeRes; i++)
+						for (int i = 0; i < CubeRes; i++)
 						{
 							voxelsToFill.push(i);
 							voxelsToFill.push(levelSize - i - 1);
 							voxelsToFill.push(CubeRes * i);
 							voxelsToFill.push(CubeRes * (i + 1) - 1);
 						}
-						
+
 						pLevel = modelData + levelSize * z;
-						while(!voxelsToFill.empty())
+						while (!voxelsToFill.empty())
 						{
 							index = voxelsToFill.top();
 							voxelsToFill.pop();
 							pVoxel = pLevel + index;
-							if(*pVoxel == 255) continue;
+							if (*pVoxel == 255) continue;
 							*pVoxel = 1;
-							
+
 							lastPushUp = lastPushDown = false;
 							unsigned x = index % CubeRes, y = index / CubeRes;
 							scanDirection = true;
 							int i = x;
-							while(true)
+							while (true)
 							{
-								if(scanDirection)
+								if (scanDirection)
 								{
 									i--;
 									pVoxel--;
-									if(i < 0 || *pVoxel == 255)
+									if (i < 0 || *pVoxel == 255)
 									{
 										i = x;
 										pVoxel = pLevel + index;
@@ -920,7 +920,7 @@ namespace Green
 								{
 									i++;
 									pVoxel++;
-									if(i == CubeRes || *pVoxel == 255)
+									if (i == CubeRes || *pVoxel == 255)
 									{
 										break;
 									}
@@ -928,20 +928,20 @@ namespace Green
 
 								*pVoxel = 1;
 
-								if(y > 0 && *(pVoxel - CubeRes) == 0)
+								if (y > 0 && *(pVoxel - CubeRes) == 0)
 								{
-									if(!lastPushUp)
+									if (!lastPushUp)
 									{
 										voxelsToFill.push(i + CubeRes * (y - 1));
 										lastPushUp = true;
 									}
 								}
-								else 
+								else
 									lastPushUp = false;
 
-								if(y < CubeRes - 1 && *(pVoxel + CubeRes) == 0)
+								if (y < CubeRes - 1 && *(pVoxel + CubeRes) == 0)
 								{
-									if(!lastPushDown)
+									if (!lastPushDown)
 									{
 										voxelsToFill.push(i + CubeRes * (y + 1));
 										lastPushDown = true;
@@ -954,9 +954,9 @@ namespace Green
 					}
 
 					//Fill closed spaces
-					for(pModelData = modelData; pModelData < eModelData; pModelData++)
-						if(*pModelData == 0) *pModelData = 255;
-					
+					for (pModelData = modelData; pModelData < eModelData; pModelData++)
+					if (*pModelData == 0) *pModelData = 255;
+
 					//Count quads
 					int modelLenExt = pow(CubeResExt, 3);
 					bool a, b, c, p;
@@ -965,17 +965,17 @@ namespace Green
 					ZeroMemory(indexCube, modelLenExt * 4);
 					byte* faceCube = new byte[modelLenExt], *pFace = faceCube;
 					ZeroMemory(faceCube, modelLenExt);
-					for(int z = 0; z < CubeResExt; z++)
-					for(int y = 0; y < CubeResExt; y++)
-					for(int x = 0; x < CubeResExt; x++)
+					for (int z = 0; z < CubeResExt; z++)
+					for (int y = 0; y < CubeResExt; y++)
+					for (int x = 0; x < CubeResExt; x++)
 					{
 						p = IsVoxelFilled(modelData, x, y, z);
 						a = IsVoxelFilled(modelData, x - 1, y, z);
 						b = IsVoxelFilled(modelData, x, y - 1, z);
 						c = IsVoxelFilled(modelData, x, y, z - 1);
-						if(p != a)
+						if (p != a)
 						{
-							if(p) *pFace |= 1;
+							if (p) *pFace |= 1;
 							else *pFace |= 2;
 							faceCount++;
 							CheckVertex(indexCube, x, y, z, vertexCount);
@@ -983,9 +983,9 @@ namespace Green
 							CheckVertex(indexCube, x, y + 1, z + 1, vertexCount);
 							CheckVertex(indexCube, x, y, z + 1, vertexCount);
 						}
-						if(p != b)
+						if (p != b)
 						{
-							if(p) *pFace |= 4;
+							if (p) *pFace |= 4;
 							else *pFace |= 8;
 							faceCount++;
 							CheckVertex(indexCube, x, y, z, vertexCount);
@@ -993,9 +993,9 @@ namespace Green
 							CheckVertex(indexCube, x + 1, y, z + 1, vertexCount);
 							CheckVertex(indexCube, x, y, z + 1, vertexCount);
 						}
-						if(p != c)
+						if (p != c)
 						{
-							if(p) *pFace |= 16;
+							if (p) *pFace |= 16;
 							else *pFace |= 32;
 							faceCount++;
 							CheckVertex(indexCube, x, y, z, vertexCount);
@@ -1005,7 +1005,7 @@ namespace Green
 						}
 						pFace++;
 					}
-					delete [modelLen] modelData;
+					delete[modelLen] modelData;
 
 					//Buil model
 					indexCount = faceCount * 2 * 3;
@@ -1018,12 +1018,12 @@ namespace Green
 					float cubeSize = TurntableOptions.CubeSize.x;
 					float start = -cubeSize / 2.f;
 					float cubeStep = cubeSize / CubeRes;
-					for(int z = 0; z < CubeResExt; z++)
-					for(int y = 0; y < CubeResExt; y++)
-					for(int x = 0; x < CubeResExt; x++)
+					for (int z = 0; z < CubeResExt; z++)
+					for (int y = 0; y < CubeResExt; y++)
+					for (int x = 0; x < CubeResExt; x++)
 					{
-						if(*pIndex > 0) pVertices[*pIndex - 1] = VertexPosition(start + x * cubeStep, z * cubeStep, start + y * cubeStep);
-						if(*pFace & 1)
+						if (*pIndex > 0) pVertices[*pIndex - 1] = VertexPosition(start + x * cubeStep, z * cubeStep, start + y * cubeStep);
+						if (*pFace & 1)
 						{
 							*pIndicies++ = GetIndex(indexCube, x, y, z);
 							*pIndicies++ = GetIndex(indexCube, x, y + 1, z + 1);
@@ -1033,17 +1033,17 @@ namespace Green
 							*pIndicies++ = GetIndex(indexCube, x, y + 1, z);
 							*pIndicies++ = GetIndex(indexCube, x, y + 1, z + 1);
 						}
-						if(*pFace & 2)
+						if (*pFace & 2)
 						{
-							*pIndicies++ = GetIndex(indexCube, x, y, z + 1);							
+							*pIndicies++ = GetIndex(indexCube, x, y, z + 1);
 							*pIndicies++ = GetIndex(indexCube, x, y + 1, z + 1);
 							*pIndicies++ = GetIndex(indexCube, x, y, z);
 
 							*pIndicies++ = GetIndex(indexCube, x, y + 1, z + 1);
 							*pIndicies++ = GetIndex(indexCube, x, y + 1, z);
-							*pIndicies++ = GetIndex(indexCube, x, y, z);							
+							*pIndicies++ = GetIndex(indexCube, x, y, z);
 						}
-						if(*pFace & 4)
+						if (*pFace & 4)
 						{
 							*pIndicies++ = GetIndex(indexCube, x, y, z);
 							*pIndicies++ = GetIndex(indexCube, x, y, z + 1);
@@ -1053,17 +1053,17 @@ namespace Green
 							*pIndicies++ = GetIndex(indexCube, x + 1, y, z + 1);
 							*pIndicies++ = GetIndex(indexCube, x + 1, y, z);
 						}
-						if(*pFace & 8)
+						if (*pFace & 8)
 						{
 							*pIndicies++ = GetIndex(indexCube, x + 1, y, z + 1);
 							*pIndicies++ = GetIndex(indexCube, x, y, z + 1);
-							*pIndicies++ = GetIndex(indexCube, x, y, z);							
+							*pIndicies++ = GetIndex(indexCube, x, y, z);
 
 							*pIndicies++ = GetIndex(indexCube, x + 1, y, z);
-							*pIndicies++ = GetIndex(indexCube, x + 1, y, z + 1);							
+							*pIndicies++ = GetIndex(indexCube, x + 1, y, z + 1);
 							*pIndicies++ = GetIndex(indexCube, x, y, z);
 						}
-						if(*pFace & 16)
+						if (*pFace & 16)
 						{
 							*pIndicies++ = GetIndex(indexCube, x, y, z);
 							*pIndicies++ = GetIndex(indexCube, x + 1, y + 1, z);
@@ -1073,21 +1073,21 @@ namespace Green
 							*pIndicies++ = GetIndex(indexCube, x + 1, y, z);
 							*pIndicies++ = GetIndex(indexCube, x + 1, y + 1, z);
 						}
-						if(*pFace & 32)
+						if (*pFace & 32)
 						{
 							*pIndicies++ = GetIndex(indexCube, x, y + 1, z);
-							*pIndicies++ = GetIndex(indexCube, x + 1, y + 1, z);							
+							*pIndicies++ = GetIndex(indexCube, x + 1, y + 1, z);
 							*pIndicies++ = GetIndex(indexCube, x, y, z);
 
 							*pIndicies++ = GetIndex(indexCube, x + 1, y + 1, z);
-							*pIndicies++ = GetIndex(indexCube, x + 1, y, z);							
+							*pIndicies++ = GetIndex(indexCube, x + 1, y, z);
 							*pIndicies++ = GetIndex(indexCube, x, y, z);
 						}
 						pFace++;
 						pIndex++;
-					}					
-					delete [modelLenExt] faceCube;
-					delete [modelLenExt] indexCube;	
+					}
+					delete[modelLenExt] faceCube;
+					delete[modelLenExt] indexCube;
 
 					//Smooth
 					SmoothMesh(vertices, vertexCount, indicies, indexCount);
@@ -1096,20 +1096,20 @@ namespace Green
 				CloseHandle(SaveEvent);
 				return ok;
 			}
-			
+
 #define SmoothingMaxConnections 12
 #define SmoothingIterations 16
 			void AddToMap(unsigned* map, unsigned source, unsigned target)
 			{
 				map += source * SmoothingMaxConnections;
-				for(int i = 0; i < SmoothingMaxConnections; i++)
+				for (int i = 0; i < SmoothingMaxConnections; i++)
 				{
-					if(*map == MAXUINT)
+					if (*map == MAXUINT)
 					{
 						*map = target;
 						return;
 					}
-					if(*map == target) return;
+					if (*map == target) return;
 					map++;
 				}
 				//This should newer happen
@@ -1124,7 +1124,7 @@ namespace Green
 				FillMemory(map, 4 * mapLength, 0xFF);
 
 				const unsigned* pIndicies = indicies;
-				for(int i = 0; i < indexCount; i += 3)
+				for (int i = 0; i < indexCount; i += 3)
 				{
 					AddToMap(map, *pIndicies, *(pIndicies + 1));
 					AddToMap(map, *(pIndicies + 1), *pIndicies);
@@ -1143,18 +1143,18 @@ namespace Green
 				XMVECTOR position;
 				int j;
 
-				for(int pass = 0; pass < SmoothingIterations; pass++)
+				for (int pass = 0; pass < SmoothingIterations; pass++)
 				{
 					pMap = map;
-					targetVertices = ( pass % 2 ? vertices : tempVertices);
-					sourceVertices = ( pass % 2 ? tempVertices : vertices);
-					for(int i = 0; i < vertexCount; i++)
+					targetVertices = (pass % 2 ? vertices : tempVertices);
+					sourceVertices = (pass % 2 ? tempVertices : vertices);
+					for (int i = 0; i < vertexCount; i++)
 					{
 						connection = pMap;
 						position = XMVectorZero();
-						for(j = 0; j < SmoothingMaxConnections; j++)
+						for (j = 0; j < SmoothingMaxConnections; j++)
 						{
-							if(*connection == MAXUINT) break;
+							if (*connection == MAXUINT) break;
 							else position += XMLoadFloat3(&sourceVertices[*connection].Position);
 							connection++;
 						}
@@ -1165,19 +1165,19 @@ namespace Green
 					}
 				}
 
-				if(SmoothingIterations % 2)
+				if (SmoothingIterations % 2)
 				{
 					memcpy(vertices, tempVertices, vertexCount * sizeof(VertexPosition));
 				}
-				delete [vertexCount] tempVertices;
-				delete [mapLength] map;
+				delete[vertexCount] tempVertices;
+				delete[mapLength] map;
 			}
-			
+
 			VertexPositionNormal* GenerateSmoothNormalsForMesh(const VertexPosition* const vertices, unsigned vertexCount, const unsigned* const indicies, unsigned indexCount)
 			{
 				VertexPositionNormal *verticesWithNormals = new VertexPositionNormal[vertexCount], *pVerticesWithNormals = verticesWithNormals;
 				const VertexPosition *pVertices = vertices;
-				for(int i = 0; i < vertexCount; i++)
+				for (int i = 0; i < vertexCount; i++)
 				{
 					pVerticesWithNormals->Position = pVertices->Position;
 					pVerticesWithNormals->Normal = XMFLOAT3();
@@ -1185,11 +1185,11 @@ namespace Green
 					pVertices++;
 				}
 
-				int triangleCount = indexCount / 3;				
+				int triangleCount = indexCount / 3;
 				XMVECTOR A, B, C, N, sumNa, sumNb, sumNc;
 				unsigned indexA, indexB, indexC;
 				const unsigned* pIndicies = indicies;
-				for(int i = 0; i < triangleCount; i++)
+				for (int i = 0; i < triangleCount; i++)
 				{
 					indexA = *pIndicies++;
 					indexB = *pIndicies++;
@@ -1207,7 +1207,7 @@ namespace Green
 				}
 
 				pVerticesWithNormals = verticesWithNormals;
-				for(int i = 0; i < vertexCount; i++)
+				for (int i = 0; i < vertexCount; i++)
 				{
 					N = XMLoadFloat3(&pVerticesWithNormals->Normal);
 					XMStoreFloat3(&pVerticesWithNormals->Normal, XMVector3Normalize(N));
@@ -1224,32 +1224,32 @@ namespace Green
 				unsigned vertexCount = 0, indexCount = 0;
 
 				bool ok = GetCube(vertices, vertexCount, indicies, indexCount);
-				if(!ok) return false;
+				if (!ok) return false;
 
 				VertexPositionNormal* verticesWithNormals = GenerateSmoothNormalsForMesh(vertices, vertexCount, indicies, indexCount);
-				delete [vertexCount] vertices;
+				delete[vertexCount] vertices;
 
 				SafeDelete(CubeMesh);
-				if(vertexCount > 0) CubeMesh = new Mesh<VertexPositionNormal, unsigned>(Device, verticesWithNormals, vertexCount, indicies, indexCount, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+				if (vertexCount > 0) CubeMesh = new Mesh<VertexPositionNormal, unsigned>(Device, verticesWithNormals, vertexCount, indicies, indexCount, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-				delete [vertexCount] verticesWithNormals;
-				delete [indexCount] indicies;
+				delete[vertexCount] verticesWithNormals;
+				delete[indexCount] indicies;
 			}
 		public:
 			bool SaveCube(LPWSTR path, ModelFormats format)
 			{
-				if(State != States::Processing || Mode != Modes::Volumetric) return false;
+				if (State != States::Processing || Mode != Modes::Volumetric) return false;
 
 				VertexPosition* vertices = nullptr;
 				unsigned* indicies = nullptr;
 				unsigned vertexCount = 0, indexCount = 0;
 
 				bool ok = GetCube(vertices, vertexCount, indicies, indexCount);
-				if(!ok) return false;
+				if (!ok) return false;
 
 				VertexPositionNormal* verticesWithNormals = GenerateSmoothNormalsForMesh(vertices, vertexCount, indicies, indexCount);
-				delete [vertexCount] vertices;
-				
+				delete[vertexCount] vertices;
+
 				switch (format)
 				{
 				case ModelFormats::FBX:
@@ -1267,10 +1267,10 @@ namespace Green
 				default:
 					ok = false;
 					break;
-				}		
-				
-				delete [vertexCount] verticesWithNormals;
-				delete [indexCount] indicies;
+				}
+
+				delete[vertexCount] verticesWithNormals;
+				delete[indexCount] indicies;
 				return ok;
 			}
 
@@ -1287,166 +1287,166 @@ namespace Green
 				Constants->Update(&TurntableOptions);
 				Constants->SetForVS(2);
 				Constants->SetForGS(2);
-				Constants->SetForPS(2);				
+				Constants->SetForPS(2);
 
 				bool drawCross = false;
 
-				switch(Mode)
+				switch (Mode)
 				{
 				case Modes::OneAxis:
 				case Modes::TwoAxis:
-					{
-						if (!SaveTextureReady)
-						{
-							SaveTextureReady = true;
-							if (RawSave)
-							{
-								for(int i = 0; i < TargetCount; i++)
-								{
-									SaveModelTargets[i]->CopyToStage();
-									SaveTextureTargets[i]->CopyToStage();
-								}
-							}
-							else
-							{
-								RDefault->Set();
-								SLinearClamp->SetForPS();
-								BOpaque->Apply();
+				{
+									   if (!SaveTextureReady)
+									   {
+										   SaveTextureReady = true;
+										   if (RawSave)
+										   {
+											   for (int i = 0; i < TargetCount; i++)
+											   {
+												   SaveModelTargets[i]->CopyToStage();
+												   SaveTextureTargets[i]->CopyToStage();
+											   }
+										   }
+										   else
+										   {
+											   RDefault->Set();
+											   SLinearClamp->SetForPS();
+											   BOpaque->Apply();
 
-								Device->SetShaders(VSSimple, PSModelOutput);
+											   Device->SetShaders(VSSimple, PSModelOutput);
 
-								for(int i = 0; i < TargetCount; i++)
-								{
-									TurntableOptions.Side = i * 2 - 1;
-									Constants->Update(&TurntableOptions);
-									SaveModelTargets[i]->SetAsRenderTarget();
-									ModelTargets[i]->SetForPS();
-									QMain->Draw();
-									SaveModelTargets[i]->CopyToStage();
-								}
+											   for (int i = 0; i < TargetCount; i++)
+											   {
+												   TurntableOptions.Side = i * 2 - 1;
+												   Constants->Update(&TurntableOptions);
+												   SaveModelTargets[i]->SetAsRenderTarget();
+												   ModelTargets[i]->SetForPS();
+												   QMain->Draw();
+												   SaveModelTargets[i]->CopyToStage();
+											   }
 
-								Device->SetShaders(VSSimple, PSTextureOutput);
+											   Device->SetShaders(VSSimple, PSTextureOutput);
 
-								for(int i = 0; i < TargetCount; i++)
-								{
-									SaveTextureTargets[i]->SetAsRenderTarget();
-									TextureTargets[i]->SetForPS();
-									QMain->Draw();
-									SaveTextureTargets[i]->CopyToStage();
-								}
-							}
-							SetEvent(SaveEvent);
-						}
+											   for (int i = 0; i < TargetCount; i++)
+											   {
+												   SaveTextureTargets[i]->SetAsRenderTarget();
+												   TextureTargets[i]->SetForPS();
+												   QMain->Draw();
+												   SaveTextureTargets[i]->CopyToStage();
+											   }
+										   }
+										   SetEvent(SaveEvent);
+									   }
 
-						Device->SetAsRenderTarget();
-						switch (Params.View)
-						{
-						case AxialViews::DepthL:
-						case AxialViews::DepthR:
-							RDefault->Set();
-							BAlpha->Apply();
-							Device->SetShaders(VSSimple, PSPolarDepth);
-							switch (Mode)
-							{
-							case Modes::OneAxis:
-								ModelTargets[0]->SetForPS();
-								break;
-							case Modes::TwoAxis:
-								if(Params.View == AxialViews::DepthL)
-									ModelTargets[0]->SetForPS();
-								else
-									ModelTargets[1]->SetForPS();
-								break;
-							}					
-							SLinearClamp->SetForPS();
-							QMain->Draw();
-							break;
-						case AxialViews::TextureL:
-						case AxialViews::TextureR:
-							RDefault->Set();
-							BAlpha->Apply();
-							Device->SetShaders(VSSimple, PSPolarTexture);
-							switch (Mode)
-							{
-							case Modes::OneAxis:
-								TextureTargets[0]->SetForPS();
-								break;
-							case Modes::TwoAxis:
-								if(Params.View == AxialViews::TextureL)
-									TextureTargets[0]->SetForPS();
-								else
-									TextureTargets[1]->SetForPS();
-								break;
-							}
-							SLinearClamp->SetForPS();
-							QMain->Draw();
-							break;
-						case AxialViews::Model:
-							RCullNone->Set();
-							BOpaque->Apply();
-							Device->SetShaders(VSModel, PSModel, GSModel);
-							SLinearClamp->SetForPS();
+									   Device->SetAsRenderTarget();
+									   switch (Params.View)
+									   {
+									   case AxialViews::DepthL:
+									   case AxialViews::DepthR:
+										   RDefault->Set();
+										   BAlpha->Apply();
+										   Device->SetShaders(VSSimple, PSPolarDepth);
+										   switch (Mode)
+										   {
+										   case Modes::OneAxis:
+											   ModelTargets[0]->SetForPS();
+											   break;
+										   case Modes::TwoAxis:
+											   if (Params.View == AxialViews::DepthL)
+												   ModelTargets[0]->SetForPS();
+											   else
+												   ModelTargets[1]->SetForPS();
+											   break;
+										   }
+										   SLinearClamp->SetForPS();
+										   QMain->Draw();
+										   break;
+									   case AxialViews::TextureL:
+									   case AxialViews::TextureR:
+										   RDefault->Set();
+										   BAlpha->Apply();
+										   Device->SetShaders(VSSimple, PSPolarTexture);
+										   switch (Mode)
+										   {
+										   case Modes::OneAxis:
+											   TextureTargets[0]->SetForPS();
+											   break;
+										   case Modes::TwoAxis:
+											   if (Params.View == AxialViews::TextureL)
+												   TextureTargets[0]->SetForPS();
+											   else
+												   TextureTargets[1]->SetForPS();
+											   break;
+										   }
+										   SLinearClamp->SetForPS();
+										   QMain->Draw();
+										   break;
+									   case AxialViews::Model:
+										   RCullNone->Set();
+										   BOpaque->Apply();
+										   Device->SetShaders(VSModel, PSModel, GSModel);
+										   SLinearClamp->SetForPS();
 
-							for(int i = 0; i < TargetCount; i++)
-							{
-								TurntableOptions.Side = i * 2 - 1;
-								Constants->Update(&TurntableOptions);
-								ModelTargets[i]->SetForVS();
-								TextureTargets[i]->SetForPS();
-								PMain->Draw();
-							}
-							break;
-						default:
-							drawCross = true;
-							break;
-						}			
-					}
+										   for (int i = 0; i < TargetCount; i++)
+										   {
+											   TurntableOptions.Side = i * 2 - 1;
+											   Constants->Update(&TurntableOptions);
+											   ModelTargets[i]->SetForVS();
+											   TextureTargets[i]->SetForPS();
+											   PMain->Draw();
+										   }
+										   break;
+									   default:
+										   drawCross = true;
+										   break;
+									   }
+				}
 					break;
 				case Modes::Volumetric:
-					{
-						if (!SaveTextureReady)
-						{
-							SaveTextureReady = true;
-							SaveCubeTarget->CopyToStage();
-							SetEvent(SaveEvent);
-						}
+				{
+										  if (!SaveTextureReady)
+										  {
+											  SaveTextureReady = true;
+											  SaveCubeTarget->CopyToStage();
+											  SetEvent(SaveEvent);
+										  }
 
-						Device->SetAsRenderTarget();
-						switch (Params.VolumetricView)
-						{
-						case VolumetricViews::Projection:
-							RDefault->Set();
-							BOpaque->Apply();
-							Device->SetShaders(VSSimple, PSVolumetricDepth);
-							FilterTarget->SetForPS();	
-							SPointClamp->SetForPS();
-							QMain->Draw();
-							break;
-						case VolumetricViews::Slice:
-							RDefault->Set();
-							BOpaque->Apply();
-							Device->SetShaders(VSSimple, PSVolumetricSlice);
-							CubeTarget->SetForPS();
-							SPointClamp->SetForPS();
-							QMain->Draw();
-							break;
-						case VolumetricViews::Model:
-							if(!CubeMesh) break;
+										  Device->SetAsRenderTarget();
+										  switch (Params.VolumetricView)
+										  {
+										  case VolumetricViews::Projection:
+											  RDefault->Set();
+											  BOpaque->Apply();
+											  Device->SetShaders(VSSimple, PSVolumetricDepth);
+											  FilterTarget->SetForPS();
+											  SPointClamp->SetForPS();
+											  QMain->Draw();
+											  break;
+										  case VolumetricViews::Slice:
+											  RDefault->Set();
+											  BOpaque->Apply();
+											  Device->SetShaders(VSSimple, PSVolumetricSlice);
+											  CubeTarget->SetForPS();
+											  SPointClamp->SetForPS();
+											  QMain->Draw();
+											  break;
+										  case VolumetricViews::Model:
+											  if (!CubeMesh) break;
 
-							RDefault->Set();
-							BOpaque->Apply();
-							Device->SetShaders(VSVolumetricModel, PSVolumetricModel);
-							CubeMesh->Draw();
-							break;
-						default:
-							drawCross = true;
-							break;
-						}						
-					}
+											  RDefault->Set();
+											  BOpaque->Apply();
+											  Device->SetShaders(VSVolumetricModel, PSVolumetricModel);
+											  CubeMesh->Draw();
+											  break;
+										  default:
+											  drawCross = true;
+											  break;
+										  }
+				}
 					break;
 				}
-				
-				if(drawCross && Calibrated)
+
+				if (drawCross && Calibrated)
 				{
 					RDefault->Set();
 					BOpaque->Apply();
@@ -1454,7 +1454,7 @@ namespace Green
 					{
 						Cross->Load(CrossVertices, CrossVertexCount);
 						CrossChanged = false;
-					}					
+					}
 					Cross->Set();
 					Device->SetShaders(VSOverlay, PSOverlay);
 					Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
@@ -1481,7 +1481,7 @@ namespace Green
 				NextTextureHeight = textureHeight;
 				SetOverlay();
 				SetCross();
-				if(!Scanning && State == States::Processing && (
+				if (!Scanning && State == States::Processing && (
 					NextModelWidth != ModelWidth ||
 					NextModelHeight != ModelHeight ||
 					NextTextureWidth != TextureWidth ||
@@ -1503,7 +1503,7 @@ namespace Green
 				NextCubeRes = cubeRes;
 				SetOverlay();
 				SetCross();
-				if(!Scanning && NextCubeRes != CubeRes && State == States::Processing)
+				if (!Scanning && NextCubeRes != CubeRes && State == States::Processing)
 				{
 					RestartOnNextFrame = true;
 				}
@@ -1522,14 +1522,14 @@ namespace Green
 			}
 
 			virtual void SetView(XMFLOAT4X4 world, float transX, float transY, float transZ, float rotX, float rotY, float rotZ) override
-			{ 
+			{
 				Params.World = world;
 				Params.TransX = transX;
 				Params.TransY = transY;
 				Params.TransZ = transZ;
 				Params.RotX = rotX;
 				Params.RotY = rotY;
-				Params.RotZ = rotZ;			
+				Params.RotZ = rotZ;
 				SetTurntableOptions();
 				DrawIfNeeded();
 			}
@@ -1543,7 +1543,7 @@ namespace Green
 			void SetMode(Modes mode)
 			{
 				NextMode = mode;
-				if(!Scanning && NextMode != Mode && State == States::Processing)
+				if (!Scanning && NextMode != Mode && State == States::Processing)
 				{
 					RestartOnNextFrame = true;
 				}
@@ -1552,7 +1552,7 @@ namespace Green
 			Modes GetMode()
 			{
 				return Mode;
-			}			
+			}
 
 			void SetTurntableOptions()
 			{
@@ -1566,10 +1566,10 @@ namespace Green
 				XMMATRIX DepthToTurntableTransform = WorldToTurntableTransform * DepthInvIntrinsics;
 				XMMATRIX DepthToWorldTransform = XMMatrixInverse(0, TurntableTransform) * DepthInvIntrinsics;
 				XMMATRIX T = XMMatrixTranspose(XMMatrixTranslation(Params.TransX, Params.TransY, Params.TransZ));
-				XMMATRIX R = 
+				XMMATRIX R =
 					XMMatrixRotationZ(XMConvertToRadians(Params.RotZ)) *
 					XMMatrixRotationX(XMConvertToRadians(Params.RotX)) *
-					XMMatrixRotationY(XMConvertToRadians(Params.RotY));				
+					XMMatrixRotationY(XMConvertToRadians(Params.RotY));
 				XMStoreFloat4x4(&TurntableOptions.ModelToScreenTransform, DepthIntrinsics * T * R);
 				XMStoreFloat4x4(&TurntableOptions.TurntableToScreenTransform, TurntableToScreenTransform);
 				XMStoreFloat4x4(&TurntableOptions.DepthToTurntableTransform, DepthToTurntableTransform);

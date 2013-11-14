@@ -68,6 +68,7 @@ namespace Green.Scan
         public SizeSetting SaveTextureResolution { get; private set; }
         public PathSetting SaveCalibrationDirectory { get; private set; }
         public NumericSetting<int> SaveScalingPower { get; set; }
+        public NumericSetting<int> SaveContinousShootingInterval { get; set; }
 
         public SettingGroup TurntableProperties { get; private set; }
         public EnumSetting<RotatingScanner.Modes> TurntableMode { get; private set; }
@@ -75,7 +76,8 @@ namespace Green.Scan
         public NumericSetting<int> TurntablePiSteps { get; private set; }
         public BooleanSetting TurntableHasMirror { get; private set; }
         public RectangleSetting TurntableEllipse { get; private set; }
-        public RectangleSetting TurntableRectangle { get; private set; }
+        public RectangleSetting TurntableRectangleA { get; private set; }
+        public RectangleSetting TurntableRectangleB { get; private set; }
 
         public SettingGroup TurntableAxialProperties { get; private set; }
         public EnumSetting<RotatingScanner.AxialViews> TurntableAxialView { get; private set; }
@@ -309,6 +311,9 @@ namespace Green.Scan
             SaveProperties.Settings.Add(SaveCalibrationDirectory);
             SaveProperties.Settings.Add(SaveScalingPower);
 
+            SaveContinousShootingInterval = new NumericSetting<int>("SaveContinousShootingInterval", 100, 0, 1000);
+            SaveProperties.Settings.Add(SaveContinousShootingInterval);
+
             //Turntable
             TurntableProperties = new SettingGroup("Turntable") { FriendlyName = GreenResources.SettingGroupTurntable, IsHidden = true };
             SettingGroups.Add(TurntableProperties);
@@ -319,14 +324,16 @@ namespace Green.Scan
             TurntableProperties.Settings.Add(TurntableMode);
             TurntableTransform = new MatrixSetting("TurntableTransform", new float[,] { { 1f, 0f, 0f, 0f }, { 0f, 1f, 0f, 0f }, { 0f, 0f, 1f, 0f }, { 0f, 0f, 0f, 1f } }) { FriendlyName = GreenResources.SettingTurntableTransform, IsHidden = true };
             TurntableProperties.Settings.Add(TurntableTransform);
-            TurntablePiSteps = new NumericSetting<int>("PiSteps", 10987, 360, 1000000) { IsHidden = true };
+            TurntablePiSteps = new NumericSetting<int>("PiSteps", 10934, 5000, 20000) { FriendlyName = GreenResources.SettingTurntablePiSteps };
             TurntableProperties.Settings.Add(TurntablePiSteps);
             TurntableHasMirror = new BooleanSetting("HasMirror", true) { FriendlyName = GreenResources.SettingTurntableHasMirror };
             TurntableProperties.Settings.Add(TurntableHasMirror);
             TurntableEllipse = new RectangleSetting("SelectionEllipse", new Rect(0d, 0d, 0d, 0d)) { IsHidden = true };
-            TurntableRectangle = new RectangleSetting("SelectionRectangle", new Rect(0d, 0d, 0d, 0d)) { IsHidden = true };
+            TurntableRectangleA = new RectangleSetting("SelectionRectangleA", new Rect(0d, 0d, 0d, 0d)) { IsHidden = true };
+            TurntableRectangleB = new RectangleSetting("SelectionRectangleB", new Rect(0d, 0d, 0d, 0d)) { IsHidden = true };
             TurntableProperties.Settings.Add(TurntableEllipse);
-            TurntableProperties.Settings.Add(TurntableRectangle);
+            TurntableProperties.Settings.Add(TurntableRectangleA);
+            TurntableProperties.Settings.Add(TurntableRectangleB);
 
             TurntableScanningSetter.Settings.AddRange(new Setting[] { TurntableMode, TurntableHasMirror });
 

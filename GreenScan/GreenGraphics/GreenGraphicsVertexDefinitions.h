@@ -23,8 +23,8 @@ namespace Green
 
 			~VertexDefinition()
 			{
-				if(ElementCount > 0)
-					delete [ElementCount] Description;
+				if (ElementCount > 0)
+					delete[ElementCount] Description;
 			}
 
 			static D3D11_INPUT_ELEMENT_DESC CreateDescription(
@@ -57,7 +57,7 @@ namespace Green
 			static void Init()
 			{
 				D3D11_INPUT_ELEMENT_DESC *ied;
-				
+
 				ied = new D3D11_INPUT_ELEMENT_DESC[1];
 				ied[0] = CreateDescription(
 					"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,
@@ -149,7 +149,7 @@ namespace Green
 			XMFLOAT2 Texture;
 			VertexPositionTexture() {}
 			VertexPositionTexture(XMFLOAT3 position, XMFLOAT2 texture) : Position(position), Texture(texture) {}
-			
+
 			static const VertexDefinition* GetVertexDefinition()
 			{
 				return VertexDefinition::VertexPositionTexture;

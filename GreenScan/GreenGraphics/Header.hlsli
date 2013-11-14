@@ -8,9 +8,9 @@ cbuffer CommonConstants : register(b0)
 {
 	float4x4 SceneRotation;
 	float2 AspectScale;
-	float2 Move;	
+	float2 Move;
 	float2 DepthCoeffs;
-	float Scale;	
+	float Scale;
 };
 
 cbuffer DepthAndColorConstants : register(b1)
@@ -53,17 +53,17 @@ cbuffer TurntableConstants : register(b2)
 	int2 DepthResolution;
 	int2 ColorResolution;
 	int2 ModelResolution;
-	float Side;	
+	float Side;
 	float Threshold;
 	float GradientLimit;
 	float Slice;
-	int CubeRes;	
+	int CubeRes;
 };
 
 float ToDepth(float raw)
 {
 	float depth = raw * DepthCoeffs.x + DepthCoeffs.y;
-	if(depth < MaxDepth)
+	if (depth < MaxDepth)
 		return depth;
 	else
 		return 0.f;

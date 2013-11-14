@@ -261,6 +261,15 @@
   <data name="MenuFileCloseFile" xml:space="preserve">
     <value>Fájl bezárása</value>
   </data>
+  <data name="MenuFileContinousShooting" xml:space="preserve">
+    <value>Nyers sorozatfelvétel</value>
+  </data>
+  <data name="MenuFileContinousShootingStart" xml:space="preserve">
+    <value>Indítás</value>
+  </data>
+  <data name="MenuFileContinousShootingStop" xml:space="preserve">
+    <value>Leállítás</value>
+  </data>
   <data name="MenuFileExit" xml:space="preserve">
     <value>Kilépés</value>
   </data>
@@ -501,6 +510,9 @@
   <data name="SettingTurntableMode" xml:space="preserve">
     <value>Modellalkotási mód</value>
   </data>
+  <data name="SettingTurntablePiSteps" xml:space="preserve">
+    <value>Lépések egy fél körbefordulás alatt</value>
+  </data>
   <data name="SettingTurntableSaveModelResolution" xml:space="preserve">
     <value>Modell felbontása (vertexek/láb)</value>
   </data>
@@ -583,9 +595,12 @@
     <value>Helyezze a kalibráló etalont a forgópadra, úgy hogy az szembe nézzen a tükörrel, és a lapok kb. 90-120 fokos szöget zárjanak be egymással! Kattintson a következőre a folytatáshoz!</value>
   </data>
   <data name="TurntableCalibrationStep4" xml:space="preserve">
-    <value>Jelölje ki az etalont, ügyelve arra, hogy semmi mást nem jelöl ki a képen. Ügyeljen arra is, hogy a kijelölés szimmetrikus legyen az etalon hajtási tengelyére! Kattintson a következőre, hogy megtekinthesse a kalibráció eredményeit!</value>
+    <value>Jelölje ki az etalon bal lapját, ügyelve arra, hogy semmi mást nem jelöl ki a képen. Kattintson a következőre a jobb oldal kijelöléséhez!</value>
   </data>
   <data name="TurntableCalibrationStep5" xml:space="preserve">
+    <value>Jelölje ki az etalon jobb lapját, ügyelve arra, hogy semmi mást nem jelöl ki a képen. Kattintson a következőre, hogy megtekinthesse a kalibráció eredményeit!</value>
+  </data>
+  <data name="TurntableCalibrationStep6" xml:space="preserve">
     <value>Ellenőrizze, hogy a forgópad és az etalon lapjainak helymeghatározása jól sikerült-e! Kattintson a befejezésre az eredmények elfogadásához.</value>
   </data>
   <data name="TurntableCalibrationTitle" xml:space="preserve">

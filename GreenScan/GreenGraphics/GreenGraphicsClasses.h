@@ -63,15 +63,15 @@ namespace Green
 			}
 		protected:
 			ID3D11Device* Device;
-			ID3D11DeviceContext* DeviceContext;		
+			ID3D11DeviceContext* DeviceContext;
 			GraphicsDevice(bool manualInit)
 			{
-				if(!manualInit) Init();
+				if (!manualInit) Init();
 			}
 
 		public:
 			GraphicsDevice()
-			{				
+			{
 				Init();
 			}
 
@@ -88,14 +88,14 @@ namespace Green
 				D3D11_QUERY_DESC qd;
 				ZeroMemory(&qd, sizeof(qd));
 				qd.Query = D3D11_QUERY_EVENT;
-				
+
 				ID3D11Query* query;
 				Error(Device->CreateQuery(&qd, &query));
 
 				DeviceContext->Flush();
 				DeviceContext->End(query);
-				while(DeviceContext->GetData(query, 0, 0, 0) == S_FALSE) Sleep(pollInterval);
-				
+				while (DeviceContext->GetData(query, 0, 0, 0) == S_FALSE) Sleep(pollInterval);
+
 				query->Release();
 			}
 
@@ -239,7 +239,7 @@ namespace Green
 				RenderTargetView->Release();
 				DepthStencilView->Release();
 				SwapChain->Release();
-				delete Viewport;				
+				delete Viewport;
 			}
 		};
 
@@ -293,7 +293,7 @@ namespace Green
 					rtbd.BlendOpAlpha = D3D11_BLEND_OP_ADD;
 					break;
 				}
-				
+
 				D3D11_BLEND_DESC bd;
 				ZeroMemory(&bd, sizeof(bd));
 				bd.RenderTarget[0] = rtbd;
@@ -343,8 +343,8 @@ namespace Green
 				rd.ScissorEnable = false;
 				rd.MultisampleEnable = false;
 				rd.AntialiasedLineEnable = false;
-				
-				switch(type)
+
+				switch (type)
 				{
 				case RasterizerType::CullNone:
 					rd.CullMode = D3D11_CULL_NONE;
@@ -390,7 +390,7 @@ namespace Green
 				Host->DeviceContext->IASetInputLayout(InputLayout);
 			}
 		public:
-			ID3D11VertexShader* Shader;			
+			ID3D11VertexShader* Shader;
 			VertexShader(GraphicsDevice* graphicsDevice, LPWSTR path)
 			{
 				Host = graphicsDevice;
@@ -403,9 +403,9 @@ namespace Green
 
 			void SetInputLayout(const VertexDefinition* vertexDefinition)
 			{
-				if(InputLayout != 0) InputLayout->Release();
+				if (InputLayout != 0) InputLayout->Release();
 				Error(Host->Device->CreateInputLayout(
-					vertexDefinition->Description, 
+					vertexDefinition->Description,
 					vertexDefinition->ElementCount,
 					Source, SourceLength, &InputLayout));
 			}
@@ -414,7 +414,7 @@ namespace Green
 			{
 				SetInputLayout(source->GetVertexDefinition());
 			}
-			
+
 			~VertexShader()
 			{
 				Shader->Release();
@@ -432,16 +432,16 @@ namespace Green
 			ID3D11Buffer* Buffer;
 			int Size;
 			const VertexDefinition* Definition;
-		public:			
+		public:
 			VertexBuffer(GraphicsDevice* graphicsDevice, int size, const T* vertices = 0)
 			{
 				Host = graphicsDevice;
 
 				D3D11_BUFFER_DESC bd;
 				ZeroMemory(&bd, sizeof(bd));
-				bd.ByteWidth = sizeof(T) * size;
+				bd.ByteWidth = sizeof(T)* size;
 				bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-				if(vertices == 0)
+				if (vertices == 0)
 				{
 					bd.Usage = D3D11_USAGE_DYNAMIC;
 					bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
@@ -458,7 +458,7 @@ namespace Green
 
 					Error(Host->Device->CreateBuffer(&bd, &sd, &Buffer));
 				}
-				
+
 				Definition = T::GetVertexDefinition();
 				Size = size;
 			}
@@ -477,7 +477,7 @@ namespace Green
 			{
 				D3D11_MAPPED_SUBRESOURCE ms;
 				Host->DeviceContext->Map(Buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &ms);
-				memcpy(ms.pData, vertices, sizeof(T) * count);
+				memcpy(ms.pData, vertices, sizeof(T)* count);
 				Host->DeviceContext->Unmap(Buffer, 0);
 			}
 
@@ -502,16 +502,16 @@ namespace Green
 			GraphicsDevice* Host;
 			ID3D11Buffer* Buffer;
 			int Size;
-		public:			
+		public:
 			IndexBuffer(GraphicsDevice* graphicsDevice, int size, const T* indicies = 0)
 			{
 				Host = graphicsDevice;
 
 				D3D11_BUFFER_DESC bd;
 				ZeroMemory(&bd, sizeof(bd));
-				bd.ByteWidth = sizeof(T) * size;
+				bd.ByteWidth = sizeof(T)* size;
 				bd.BindFlags = D3D11_BIND_INDEX_BUFFER;
-				if(indicies == 0)
+				if (indicies == 0)
 				{
 					bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 					bd.Usage = D3D11_USAGE_DYNAMIC;
@@ -540,13 +540,13 @@ namespace Green
 			{
 				D3D11_MAPPED_SUBRESOURCE ms;
 				Host->DeviceContext->Map(Buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &ms);
-				memcpy(ms.pData, vertices, sizeof(T) * count);
+				memcpy(ms.pData, vertices, sizeof(T)* count);
 				Host->DeviceContext->Unmap(Buffer, 0);
 			}
 
 			void Set()
 			{
-				if(sizeof(T) == 4)
+				if (sizeof(T) == 4)
 					Host->DeviceContext->IASetIndexBuffer(Buffer, DXGI_FORMAT_R32_UINT, 0);
 				else
 					Host->DeviceContext->IASetIndexBuffer(Buffer, DXGI_FORMAT_R16_UINT, 0);
@@ -564,7 +564,7 @@ namespace Green
 		private:
 			GraphicsDevice* Host;
 			ID3D11Buffer* Buffer;
-		public:			
+		public:
 			ConstantBuffer(GraphicsDevice* graphicsDevice)
 			{
 				Host = graphicsDevice;
@@ -572,12 +572,12 @@ namespace Green
 				D3D11_BUFFER_DESC bd;
 				int size = sizeof(T);
 				bd.ByteWidth = (size % 16 == 0 ? size : size + 16 - size % 16);
-				bd.Usage = D3D11_USAGE_DYNAMIC;				
+				bd.Usage = D3D11_USAGE_DYNAMIC;
 				bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 				bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 				bd.MiscFlags = 0;
 				bd.StructureByteStride = 0;
-				
+
 				Error(Host->Device->CreateBuffer(&bd, 0, &Buffer));
 			}
 
@@ -626,7 +626,7 @@ namespace Green
 			{
 				Host->DeviceContext->GSSetShader(Shader, 0, 0);
 			}
-		public:			
+		public:
 			GeometryShader(GraphicsDevice* graphicsDevice, const LPWSTR path)
 			{
 				Host = graphicsDevice;
@@ -655,7 +655,7 @@ namespace Green
 			{
 				Host->DeviceContext->PSSetShader(Shader, 0, 0);
 			}
-		public:			
+		public:
 			PixelShader(GraphicsDevice* graphicsDevice, const LPWSTR path)
 			{
 				Host = graphicsDevice;
@@ -694,7 +694,7 @@ namespace Green
 				sd.MinLOD = 0.f;
 				sd.MaxLOD = D3D11_FLOAT32_MAX;
 				sd.ComparisonFunc = D3D11_COMPARISON_NEVER;
-				for(int i = 0; i < 4; i++)
+				for (int i = 0; i < 4; i++)
 					sd.BorderColor[i] = 0.f;
 				Error(Host->Device->CreateSamplerState(&sd, &State));
 			}
@@ -732,9 +732,9 @@ namespace Green
 				desc.MipLevels = 1;
 				desc.ArraySize = 1;
 				desc.Format = format;
-				desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;				
+				desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 				desc.MiscFlags = 0;
-				if(data == 0)
+				if (data == 0)
 				{
 					desc.Usage = D3D11_USAGE_DYNAMIC;
 					desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
@@ -751,14 +751,14 @@ namespace Green
 					sd.SysMemPitch = stride;
 					sd.SysMemSlicePitch = 0;
 					Error(Host->Device->CreateTexture1D(&desc, &sd, &Texture));
-				}				
+				}
 
 				D3D11_SHADER_RESOURCE_VIEW_DESC textureViewDesc;
 				ZeroMemory(&textureViewDesc, sizeof(textureViewDesc));
-				textureViewDesc.Format = format; 
-				textureViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE1D; 
-				textureViewDesc.Texture2D.MipLevels = 1; 
-				textureViewDesc.Texture2D.MostDetailedMip = 0; 
+				textureViewDesc.Format = format;
+				textureViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE1D;
+				textureViewDesc.Texture2D.MipLevels = 1;
+				textureViewDesc.Texture2D.MostDetailedMip = 0;
 
 				Error(Host->Device->CreateShaderResourceView(Texture, &textureViewDesc, &ResourceView));
 			}
@@ -854,14 +854,14 @@ namespace Green
 				desc.Format = format;
 				desc.SampleDesc.Count = 1;
 				desc.SampleDesc.Quality = 0;
-				desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;				
+				desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 				desc.MiscFlags = 0;
 				switch ((int)data)
 				{
 				case -1: //Render target
 					desc.Usage = D3D11_USAGE_DEFAULT;
 					desc.CPUAccessFlags = 0;
-					desc.BindFlags |= D3D11_BIND_RENDER_TARGET;	
+					desc.BindFlags |= D3D11_BIND_RENDER_TARGET;
 					Error(Host->Device->CreateTexture2D(&desc, 0, &Texture));
 					break;
 				case 0: //Dynamic texture
@@ -880,14 +880,14 @@ namespace Green
 					sd.SysMemSlicePitch = 0;
 					Error(Host->Device->CreateTexture2D(&desc, &sd, &Texture));
 					break;
-				}			
+				}
 
 				D3D11_SHADER_RESOURCE_VIEW_DESC textureViewDesc;
 				ZeroMemory(&textureViewDesc, sizeof(textureViewDesc));
-				textureViewDesc.Format = format; 
-				textureViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D; 
-				textureViewDesc.Texture2D.MipLevels = 1; 
-				textureViewDesc.Texture2D.MostDetailedMip = 0; 
+				textureViewDesc.Format = format;
+				textureViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+				textureViewDesc.Texture2D.MipLevels = 1;
+				textureViewDesc.Texture2D.MostDetailedMip = 0;
 
 				Error(Host->Device->CreateShaderResourceView(Texture, &textureViewDesc, &ResourceView));
 			}
@@ -929,7 +929,7 @@ namespace Green
 				int size = Width * Height;
 				byte* pTarget = (byte*)ms.pData;
 				byte* pSource = (byte*)data;
-				for(int i = 0; i < size; i++)
+				for (int i = 0; i < size; i++)
 				{
 					*pTarget++ = *pSource++;
 					*pTarget++ = *pSource++;
@@ -989,14 +989,14 @@ namespace Green
 				desc.Depth = depth;
 				desc.MipLevels = 1;
 				desc.Format = format;
-				desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;				
+				desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 				desc.MiscFlags = 0;
 				switch ((int)data)
 				{
 				case -1: //Render target
 					desc.Usage = D3D11_USAGE_DEFAULT;
 					desc.CPUAccessFlags = 0;
-					desc.BindFlags |= D3D11_BIND_RENDER_TARGET;	
+					desc.BindFlags |= D3D11_BIND_RENDER_TARGET;
 					Error(Host->Device->CreateTexture3D(&desc, 0, &Texture));
 					break;
 				case 0: //Dynamic texture
@@ -1015,17 +1015,17 @@ namespace Green
 					sd.SysMemSlicePitch = slicelength;
 					Error(Host->Device->CreateTexture3D(&desc, &sd, &Texture));
 					break;
-				}			
+				}
 
 				D3D11_SHADER_RESOURCE_VIEW_DESC textureViewDesc;
 				ZeroMemory(&textureViewDesc, sizeof(textureViewDesc));
-				textureViewDesc.Format = format; 
-				textureViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D; 
-				textureViewDesc.Texture3D.MipLevels = 1; 
+				textureViewDesc.Format = format;
+				textureViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
+				textureViewDesc.Texture3D.MipLevels = 1;
 				textureViewDesc.Texture3D.MostDetailedMip = 0;
 
 				Error(Host->Device->CreateShaderResourceView(Texture, &textureViewDesc, &ResourceView));
-			}			
+			}
 
 			int GetWidth() { return Width; }
 			int GetHeight() { return Height; }
@@ -1084,14 +1084,14 @@ namespace Green
 				desc.Format = format;
 				desc.SampleDesc.Count = 1;
 				desc.SampleDesc.Quality = 0;
-				desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;				
+				desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 				desc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE;
 				switch ((int)data)
 				{
 				case -1: //Render target
 					desc.Usage = D3D11_USAGE_DEFAULT;
 					desc.CPUAccessFlags = 0;
-					desc.BindFlags |= D3D11_BIND_RENDER_TARGET;	
+					desc.BindFlags |= D3D11_BIND_RENDER_TARGET;
 					Error(Host->Device->CreateTexture2D(&desc, 0, &Texture));
 					break;
 				case 0: //Dynamic texture
@@ -1105,7 +1105,7 @@ namespace Green
 
 					D3D11_SUBRESOURCE_DATA sd[6];
 					ZeroMemory(&sd, sizeof(sd));
-					for(int i = 0; i < 6; i++)
+					for (int i = 0; i < 6; i++)
 					{
 						sd[i].pSysMem = (char*)data + i * slice;
 						sd[i].SysMemPitch = stride;
@@ -1113,14 +1113,14 @@ namespace Green
 					}
 					Error(Host->Device->CreateTexture2D(&desc, &sd[0], &Texture));
 					break;
-				}			
+				}
 
 				D3D11_SHADER_RESOURCE_VIEW_DESC textureViewDesc;
 				ZeroMemory(&textureViewDesc, sizeof(textureViewDesc));
-				textureViewDesc.Format = format; 
-				textureViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE; 
-				textureViewDesc.TextureCube.MipLevels = 1; 
-				textureViewDesc.TextureCube.MostDetailedMip = 0; 
+				textureViewDesc.Format = format;
+				textureViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
+				textureViewDesc.TextureCube.MipLevels = 1;
+				textureViewDesc.TextureCube.MostDetailedMip = 0;
 
 				Error(Host->Device->CreateShaderResourceView(Texture, &textureViewDesc, &ResourceView));
 			}
@@ -1130,7 +1130,7 @@ namespace Green
 				Bitmap bitmap(path);
 				int width = bitmap.GetWidth();
 				int height = bitmap.GetHeight();
-				if(width != height / 6 || width == 0) return nullptr;
+				if (width != height / 6 || width == 0) return nullptr;
 				Gdiplus::Rect lockRect(0, 0, width, height);
 				BitmapData bitmapData;
 				bitmap.LockBits(&lockRect, Gdiplus::ImageLockMode::ImageLockModeRead, PixelFormat32bppARGB, &bitmapData);
@@ -1146,7 +1146,7 @@ namespace Green
 			{
 				D3D11_MAPPED_SUBRESOURCE ms;
 				Error(Host->DeviceContext->Map(Texture, 0, D3D11_MAP_WRITE_DISCARD, 0, &ms));
-				memcpy(ms.pData, data, Size * Size * sizeof(T) * 6);
+				memcpy(ms.pData, data, Size * Size * sizeof(T)* 6);
 				Host->DeviceContext->Unmap(Texture, 0);
 			}
 
@@ -1193,7 +1193,7 @@ namespace Green
 				Viewport = new D3D11_VIEWPORT(*target->Viewport);
 			}
 		public:
-			RenderTarget2D(GraphicsDevice* graphicsDevice, int width, int height, DXGI_FORMAT format) 
+			RenderTarget2D(GraphicsDevice* graphicsDevice, int width, int height, DXGI_FORMAT format)
 				: Texture2D(graphicsDevice, width, height, format, (void*)-1, 0)
 			{
 				D3D11_RENDER_TARGET_VIEW_DESC rtvd;
@@ -1215,8 +1215,8 @@ namespace Green
 
 			virtual void Clear(float* color = nullptr)
 			{
-				float bg[] = {0, 0, 0, 0};
-				if(color)
+				float bg[] = { 0, 0, 0, 0 };
+				if (color)
 					Host->DeviceContext->ClearRenderTargetView(RenderTargetView, color);
 				else
 					Host->DeviceContext->ClearRenderTargetView(RenderTargetView, bg);
@@ -1253,7 +1253,7 @@ namespace Green
 				Viewport = new D3D11_VIEWPORT(*target->Viewport);
 			}
 		public:
-			RenderTarget3D(GraphicsDevice* graphicsDevice, int width, int height, int depth, DXGI_FORMAT format) 
+			RenderTarget3D(GraphicsDevice* graphicsDevice, int width, int height, int depth, DXGI_FORMAT format)
 				: Texture3D(graphicsDevice, width, height, depth, format, (void*)-1, 0)
 			{
 				D3D11_RENDER_TARGET_VIEW_DESC rtvd;
@@ -1277,7 +1277,7 @@ namespace Green
 
 			void Clear()
 			{
-				float bg[] = {0, 0, 0, 0};
+				float bg[] = { 0, 0, 0, 0 };
 				Host->DeviceContext->ClearRenderTargetView(RenderTargetView, bg);
 			}
 
@@ -1308,7 +1308,7 @@ namespace Green
 				Count = count;
 				RenderTargetViews = new ID3D11RenderTargetView*[count];
 				ViewPorts = new D3D11_VIEWPORT[count];
-				for(int i = 0; i < count; i++)
+				for (int i = 0; i < count; i++)
 				{
 					RenderTargetViews[i] = targets[i]->RenderTargetView;
 					ViewPorts[i] = *targets[i]->Viewport;
@@ -1317,8 +1317,8 @@ namespace Green
 
 			void Clear()
 			{
-				float color[] =  {0.f, 0.f, 0.f, 0.f};
-				for(int i = 0; i < Count; i++)
+				float color[] = { 0.f, 0.f, 0.f, 0.f };
+				for (int i = 0; i < Count; i++)
 				{
 					Host->DeviceContext->ClearRenderTargetView(RenderTargetViews[i], color);
 				}
@@ -1332,8 +1332,8 @@ namespace Green
 
 			~RenderTarget2DGroup()
 			{
-				delete [Count] ViewPorts;
-				delete [Count] RenderTargetViews;
+				delete[Count] ViewPorts;
+				delete[Count] RenderTargetViews;
 			}
 		};
 
@@ -1346,14 +1346,14 @@ namespace Green
 			RenderTargetPair(GraphicsDevice* graphicsDevice, int width, int height, DXGI_FORMAT format)
 			{
 				Targets = new RenderTarget2D*[2];
-				for(int i = 0; i < 2; i++)
+				for (int i = 0; i < 2; i++)
 					Targets[i] = new RenderTarget2D(graphicsDevice, width, height, format);
 				Tick = 0;
 			}
 
 			void Clear()
 			{
-				for(int i = 0; i < 2; i++)
+				for (int i = 0; i < 2; i++)
 					Targets[i]->Clear();
 			}
 
@@ -1375,14 +1375,14 @@ namespace Green
 			void Swap()
 			{
 				Tick++;
-				if(Tick == 2) Tick = 0;
+				if (Tick == 2) Tick = 0;
 			}
 
 			~RenderTargetPair()
 			{
-				for(int i = 0; i < 2; i++)
+				for (int i = 0; i < 2; i++)
 					delete Targets[i];
-				delete [2] Targets;
+				delete[2] Targets;
 			}
 		};
 
@@ -1402,7 +1402,7 @@ namespace Green
 				desc.Format = format;
 				desc.SampleDesc.Count = 1;
 				desc.SampleDesc.Quality = 0;
-				desc.BindFlags = 0;				
+				desc.BindFlags = 0;
 				desc.MiscFlags = 0;
 				desc.Usage = D3D11_USAGE_STAGING;
 				desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
@@ -1421,7 +1421,7 @@ namespace Green
 				CreateStagingTexture(Width, Height, target->Format);
 			}
 
-			ReadableRenderTarget2D(GraphicsDevice* graphicsDevice, int width, int height, DXGI_FORMAT format) 
+			ReadableRenderTarget2D(GraphicsDevice* graphicsDevice, int width, int height, DXGI_FORMAT format)
 				: RenderTarget2D(graphicsDevice, width, height, format)
 			{
 				CreateStagingTexture(width, height, format);
@@ -1443,7 +1443,7 @@ namespace Green
 			template <class T> void GetData(T* data)
 			{
 				D3D11_MAPPED_SUBRESOURCE ms = MappedTexture;
-				for(int row = 0; row < Height; row++)
+				for (int row = 0; row < Height; row++)
 					memcpy(data + row * Width, (byte*)ms.pData + row * ms.RowPitch, Width * sizeof(T));
 				Host->DeviceContext->Unmap(StagingTexture, 0);
 			}
@@ -1468,7 +1468,7 @@ namespace Green
 				desc.Depth = depth;
 				desc.MipLevels = 1;
 				desc.Format = format;
-				desc.BindFlags = 0;				
+				desc.BindFlags = 0;
 				desc.MiscFlags = 0;
 				desc.Usage = D3D11_USAGE_STAGING;
 				desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
@@ -1481,7 +1481,7 @@ namespace Green
 				CreateStagingTexture(Width, Height, Depth, target->Format);
 			}
 
-			ReadableRenderTarget3D(GraphicsDevice* graphicsDevice, int width, int height, int depth, DXGI_FORMAT format) 
+			ReadableRenderTarget3D(GraphicsDevice* graphicsDevice, int width, int height, int depth, DXGI_FORMAT format)
 				: RenderTarget3D(graphicsDevice, width, height, depth, format)
 			{
 				CreateStagingTexture(width, height, depth, format);
@@ -1504,11 +1504,11 @@ namespace Green
 			{
 				D3D11_MAPPED_SUBRESOURCE ms = MappedTexture;
 				int sliceSize = Width * Height, slRam, slVram;
-				for(int slice = 0; slice < Depth; slice++)
+				for (int slice = 0; slice < Depth; slice++)
 				{
 					slRam = slice * sliceSize;
 					slVram = slice * ms.DepthPitch;
-					for(int row = 0; row < Height; row++)
+					for (int row = 0; row < Height; row++)
 						memcpy(data + row * Width + slRam, (byte*)ms.pData + row * ms.RowPitch + slVram, Width * sizeof(T));
 				}
 				Host->DeviceContext->Unmap(StagingTexture, 0);
@@ -1595,13 +1595,13 @@ namespace Green
 			int TextureCount, TextureInRead, TextureInWrite, FrontTextureIndex;
 			int Width, Height;
 			Texture2D** Textures;
-		public:			
+		public:
 			Texture2DDoubleBuffer(GraphicsDevice* graphicsDevice, int width, int height, DXGI_FORMAT format, int size = 2) :
-				TextureCount(size), Width(width), Height(height), TextureInRead(-1), TextureInWrite(-1), 
+				TextureCount(size), Width(width), Height(height), TextureInRead(-1), TextureInWrite(-1),
 				FrontTextureIndex(-1)
 			{
 				Textures = new Texture2D*[size];
-				for(int i = 0; i < size; i++)
+				for (int i = 0; i < size; i++)
 					Textures[i] = new Texture2D(graphicsDevice, width, height, format);
 			}
 
@@ -1612,17 +1612,16 @@ namespace Green
 
 			template <class T> void Load(const T* data)
 			{
-				if(TextureInWrite != -1) return;
+				if (TextureInWrite != -1) return;
 				int id = FrontTextureIndex;
-                do
-                {
-                    id = (id + 1) % TextureCount;
-                }
-                while (id == TextureInRead);
-                TextureInWrite = id;
+				do
+				{
+					id = (id + 1) % TextureCount;
+				} while (id == TextureInRead);
+				TextureInWrite = id;
 				Textures[TextureInWrite]->Load<T>(data);
-                FrontTextureIndex = TextureInWrite;
-                TextureInWrite = -1;
+				FrontTextureIndex = TextureInWrite;
+				TextureInWrite = -1;
 			}
 
 			Texture2D* BeginTextureUse(int id)
@@ -1648,7 +1647,7 @@ namespace Green
 
 			void SetForVS(int slot = 0)
 			{
-				if(FrontTextureIndex != -1 && TextureInRead == -1 && TextureInWrite != FrontTextureIndex) 
+				if (FrontTextureIndex != -1 && TextureInRead == -1 && TextureInWrite != FrontTextureIndex)
 				{
 					TextureInRead = FrontTextureIndex;
 					Textures[FrontTextureIndex]->SetForVS(slot);
@@ -1657,7 +1656,7 @@ namespace Green
 
 			void SetForPS(int slot = 0)
 			{
-				if(FrontTextureIndex != -1 && TextureInRead == -1 && TextureInWrite != FrontTextureIndex) 
+				if (FrontTextureIndex != -1 && TextureInRead == -1 && TextureInWrite != FrontTextureIndex)
 				{
 					TextureInRead = FrontTextureIndex;
 					Textures[FrontTextureIndex]->SetForPS(slot);
@@ -1666,9 +1665,9 @@ namespace Green
 
 			~Texture2DDoubleBuffer()
 			{
-				for(int i = 0; i < TextureCount; i++)
+				for (int i = 0; i < TextureCount; i++)
 					delete Textures[i];
-				delete [TextureCount] Textures;
+				delete[TextureCount] Textures;
 				FrontTextureIndex = -1;
 			}
 		};
@@ -1717,7 +1716,7 @@ namespace Green
 			VertexBuffer<VertexPositionTexture>* VB;
 		public:
 			Quad(GraphicsDevice* graphicsDevice)
-			{	
+			{
 				Host = graphicsDevice;
 
 				VertexPositionTexture* vertices = new VertexPositionTexture[4];
@@ -1730,7 +1729,7 @@ namespace Green
 				vertices[3].Position = XMFLOAT3(1.f, 1.f, 0.f);
 				vertices[3].Texture = XMFLOAT2(1.f, 0.f);
 				VB = new VertexBuffer<VertexPositionTexture>(Host, 4, vertices);
-				delete [4] vertices;
+				delete[4] vertices;
 			}
 
 			~Quad()
@@ -1772,9 +1771,9 @@ namespace Green
 						XMFLOAT3(xstart + i * xstep, 0.f, 0.f),
 						XMFLOAT2(i * xtexstep, 0.f));
 				}
-				
+
 				VB = new VertexBuffer<VertexPositionTexture>(Host, width, vertices);
-				delete [VertexCount] vertices;
+				delete[VertexCount] vertices;
 			}
 
 			virtual const VertexDefinition* GetVertexDefinition() override
@@ -1829,7 +1828,7 @@ namespace Green
 					}
 				}
 				VB = new VertexBuffer<VertexPositionTexture>(Host, width * height, vertices);
-				delete [vertexCount] vertices;				
+				delete[vertexCount] vertices;
 
 				unsigned int triangleWidth = width - 1, triangleHeight = height - 1;
 				IndexCount = triangleWidth * triangleHeight * 6;
@@ -1849,7 +1848,7 @@ namespace Green
 					}
 				}
 				IB = new IndexBuffer<unsigned int>(Host, IndexCount, indicies);
-				delete [IndexCount] indicies;
+				delete[IndexCount] indicies;
 			}
 
 			virtual const VertexDefinition* GetVertexDefinition() override
@@ -1882,7 +1881,7 @@ namespace Green
 
 		class Cross : public IVertexDefinition
 		{
-			private:
+		private:
 			GraphicsDevice* Host;
 			VertexBuffer<VertexPositionColor>* VB;
 		public:
@@ -1901,7 +1900,7 @@ namespace Green
 				vertices[5] = VertexPositionColor(XMFLOAT3(0, 0, l), XMFLOAT4(0.f, 0.f, 1.f, 1.f));
 
 				VB = new VertexBuffer<VertexPositionColor>(Host, 6, vertices);
-				delete [6] vertices;
+				delete[6] vertices;
 			}
 
 			virtual const VertexDefinition* GetVertexDefinition() override
@@ -1936,7 +1935,7 @@ namespace Green
 			VertexBuffer<VertexPositionNormalTexture>* VB;
 		public:
 			Square(GraphicsDevice* graphicsDevice)
-			{	
+			{
 				Host = graphicsDevice;
 
 				VertexPositionNormalTexture* vertices = new VertexPositionNormalTexture[4];
@@ -1953,7 +1952,7 @@ namespace Green
 				vertices[3].Texture = XMFLOAT2(1.f, 0.f);
 				vertices[3].Normal = XMFLOAT3(0.f, 0.f, 1.f);
 				VB = new VertexBuffer<VertexPositionNormalTexture>(Host, 4, vertices);
-				delete [4] vertices;
+				delete[4] vertices;
 			}
 
 			~Square()
@@ -2033,11 +2032,11 @@ namespace Green
 				vertices[23] = VertexPositionNormalTexture(XMFLOAT3(-a, -a, a), n, XMFLOAT2(tx0, 0.f));
 
 				VB = new VertexBuffer<VertexPositionNormalTexture>(Host, 24, vertices);
-				delete [24] vertices;
+				delete[24] vertices;
 
 				unsigned short* indicies = new unsigned short[36];
 				unsigned p, j = 0;
-				for(int i = 0; i < 6; i++)
+				for (int i = 0; i < 6; i++)
 				{
 					p = i * 4;
 					indicies[j++] = p;
@@ -2049,7 +2048,7 @@ namespace Green
 				}
 
 				IB = new IndexBuffer<unsigned short>(Host, 36, indicies);
-				delete [36] indicies;
+				delete[36] indicies;
 			}
 
 			virtual const VertexDefinition* GetVertexDefinition() override
@@ -2099,8 +2098,8 @@ namespace Green
 
 				float t = h / 2.f, b = -t, r = d / 2.f, c, s, tx;
 				float tr = (1.f - texDiv) / 2.f, tcx, tcy = 1.f - tr, aStep = XM_2PI / (divisions - 1), a, tStep = 1.f / (divisions - 1);
-				
-				
+
+
 				int i = 0, bottom, top, sideBottom, sideTop;
 				XMFLOAT3 n;
 
@@ -2110,7 +2109,7 @@ namespace Green
 				a = 0.f;
 				vertices[i++] = VertexPositionNormalTexture(XMFLOAT3(0, 0, b), n, XMFLOAT2(tcx, tcy));
 				bottom = i;
-				for(int j = 0; j < divisions; j++)
+				for (int j = 0; j < divisions; j++)
 				{
 					c = cos(a);
 					s = sin(a);
@@ -2124,7 +2123,7 @@ namespace Green
 				a = 0.f;
 				vertices[i++] = VertexPositionNormalTexture(XMFLOAT3(0, 0, t), n, XMFLOAT2(tcx, tcy));
 				top = i;
-				for(int j = 0; j < divisions; j++)
+				for (int j = 0; j < divisions; j++)
 				{
 					c = cos(a);
 					s = sin(a);
@@ -2136,7 +2135,7 @@ namespace Green
 				sideBottom = i;
 				a = 0.f;
 				tx = 0.f;
-				for(int j = 0; j < divisions; j++)
+				for (int j = 0; j < divisions; j++)
 				{
 					c = cos(a);
 					s = sin(a);
@@ -2149,7 +2148,7 @@ namespace Green
 				sideTop = i;
 				a = 0.f;
 				tx = 0.f;
-				for(int j = 0; j < divisions; j++)
+				for (int j = 0; j < divisions; j++)
 				{
 					c = cos(a);
 					s = sin(a);
@@ -2159,13 +2158,13 @@ namespace Green
 				}
 
 				VB = new VertexBuffer<VertexPositionNormalTexture>(Host, VertexCount, vertices);
-				delete [VertexCount] vertices;
+				delete[VertexCount] vertices;
 
 				int triangleHorCount = divisions - 1;
 				IndexCount = triangleHorCount * 3 * 4;
 				unsigned short* indicies = new unsigned short[IndexCount];
 				unsigned p, j = 0;
-				for(int i = 0; i < triangleHorCount; i++)
+				for (int i = 0; i < triangleHorCount; i++)
 				{
 					indicies[j++] = bottom + i + 1;
 					indicies[j++] = bottom + i;
@@ -2182,7 +2181,7 @@ namespace Green
 				}
 
 				IB = new IndexBuffer<unsigned short>(Host, IndexCount, indicies);
-				delete [IndexCount] indicies;
+				delete[IndexCount] indicies;
 			}
 
 			virtual const VertexDefinition* GetVertexDefinition() override
@@ -2216,7 +2215,7 @@ namespace Green
 		void GraphicsDevice::SetShaders(VertexShader* vs, PixelShader* ps, GeometryShader* gs)
 		{
 			vs->Apply();
-			if(gs) gs->Apply();
+			if (gs) gs->Apply();
 			else DeviceContext->GSSetShader(0, 0, 0);
 			ps->Apply();
 		}
