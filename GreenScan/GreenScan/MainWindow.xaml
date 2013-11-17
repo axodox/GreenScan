@@ -145,7 +145,7 @@
                         <Separator/>
                         <MenuItem Header="{x:Static p:Resources.MenuDeviceCalibrate}" Command="{x:Static local:GreenScanCommands.Calibrate}"/>                        
                     </MenuItem>
-                    <MenuItem x:Name="MITurntable" Header="{x:Static p:Resources.MenuTurntable}" Visibility="{Binding IsConnected, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <MenuItem x:Name="MITurntable" Header="{x:Static p:Resources.MenuTurntable}"> <!--Visibility="{Binding IsConnected, Converter={StaticResource BooleanToVisibilityConverter}}">-->
                         <MenuItem Header="{x:Static p:Resources.MenuTurntableScan}" Command="{x:Static local:TurntableCommands.Scan}">
                             <MenuItem.Icon>
                                 <Image Source="Icons/scan16.png"/>

@@ -9,6 +9,7 @@
 #define MIN_AGGREGATED_COUNT 10
 #define SAVE_VERSION 1
 using namespace std;
+using namespace DirectX;
 
 list<WIN32_FIND_DATAW>* ListFiles(LPCWSTR path, LPCWSTR filter)
 {
@@ -414,14 +415,14 @@ void SaveSingleDepthPixelTestResults(
 	}
 }
 
-int _tmain(int argc, _TCHAR* argv[])
+void RawDataTest(LPCWSTR path)
 {
 	//Build file list
-	list<WIN32_FIND_DATAW>* files = ListFiles(L"G:\\Axodox\\Dokumentumok\\Visual Studio 2012\\Projects\\GreenScan\\Release", L"*.gsr");
+	list<WIN32_FIND_DATAW>* files = ListFiles(path, L"*.gsr");
 	if (files == nullptr)
 	{
 		printf("No files found!\r\n");
-		return 0;
+		return;
 	}
 
 	//Averages
@@ -430,7 +431,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	unsigned short* count;
 	CalculateAverage(files, fileCount, size, count, average);
 
-	if (!fileCount) return 0;
+	if (!fileCount) return ;
 
 	//Standard deviations
 	double* deviation;
@@ -461,8 +462,41 @@ int _tmain(int argc, _TCHAR* argv[])
 	delete[DEPTH_BINS] depthCounts;
 	delete[DEPTH_BINS] depthValues;
 	delete files;
+}
 
-	//End
+XMFLOAT4* FL4Load(LPCWSTR path, unsigned &size)
+{
+	FILE* file;
+	if (_wfopen_s(&file, path, L"rb"))
+	{
+		puts("No float4 file found!");
+		return nullptr;
+	}
+	unsigned width, height;
+	fread(&width, sizeof(width), 1, file);
+	fread(&height, sizeof(height), 1, file);
+	size = width * height;
+
+	XMFLOAT4* vertices;
+	fread(vertices, sizeof(*vertices), width * height, file);
+	fclose(file);
+	return vertices;
+}
+
+void Float4DataTest(LPCWSTR path)
+{
+	//Load data
+	unsigned size;
+	XMFLOAT4* vertices = FL4Load(path, size);
+	if (!vertices) return;
+
+	
+}
+
+int _tmain(int argc, _TCHAR* argv[])
+{
+	RawDataTest(L"G:\\Axodox\\Dokumentumok\\Visual Studio 2012\\Projects\\GreenScan\\Release");
+
 	system("PAUSE");
 	return 0;
 }

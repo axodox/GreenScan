@@ -11,5 +11,6 @@
 #include <stdio.h>
 #include <tchar.h>
 #include <list>
+#include <DirectXMath.h>
 
 // TODO: reference additional headers your program requires here

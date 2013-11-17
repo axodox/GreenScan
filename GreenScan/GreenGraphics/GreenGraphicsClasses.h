@@ -253,6 +253,7 @@ namespace Green
 			{
 				Opaque,
 				Additive,
+				Subtractive,
 				AlphaBlend
 			};
 
@@ -275,13 +276,13 @@ namespace Green
 					rtbd.BlendOpAlpha = D3D11_BLEND_OP_ADD;
 					break;
 				case BlendType::Additive:
+				case BlendType::Subtractive:
 					rtbd.BlendEnable = true;
 					rtbd.SrcBlend = D3D11_BLEND_ONE;
 					rtbd.DestBlend = D3D11_BLEND_ONE;
-					rtbd.BlendOp = D3D11_BLEND_OP_ADD;
+					rtbd.BlendOp = rtbd.BlendOpAlpha = (type == Additive ? D3D11_BLEND_OP_ADD : D3D11_BLEND_OP_REV_SUBTRACT);
 					rtbd.SrcBlendAlpha = D3D11_BLEND_ONE;
 					rtbd.DestBlendAlpha = D3D11_BLEND_ONE;
-					rtbd.BlendOpAlpha = D3D11_BLEND_OP_ADD;
 					break;
 				case BlendType::AlphaBlend:
 					rtbd.BlendEnable = true;
@@ -1592,13 +1593,13 @@ namespace Green
 		class Texture2DDoubleBuffer
 		{
 		private:
-			int TextureCount, TextureInRead, TextureInWrite, FrontTextureIndex;
+			int TextureCount, TextureInRead, TextureInWrite, FrontTextureIndex, BackTextureIndex;
 			int Width, Height;
 			Texture2D** Textures;
 		public:
 			Texture2DDoubleBuffer(GraphicsDevice* graphicsDevice, int width, int height, DXGI_FORMAT format, int size = 2) :
 				TextureCount(size), Width(width), Height(height), TextureInRead(-1), TextureInWrite(-1),
-				FrontTextureIndex(-1)
+				FrontTextureIndex(-1), BackTextureIndex(-1)
 			{
 				Textures = new Texture2D*[size];
 				for (int i = 0; i < size; i++)
@@ -1620,6 +1621,7 @@ namespace Green
 				} while (id == TextureInRead);
 				TextureInWrite = id;
 				Textures[TextureInWrite]->Load<T>(data);
+				BackTextureIndex = (id + 1) % TextureCount;
 				FrontTextureIndex = TextureInWrite;
 				TextureInWrite = -1;
 			}
@@ -1643,6 +1645,14 @@ namespace Green
 					return 0;
 				TextureInRead = FrontTextureIndex;
 				return Textures[FrontTextureIndex];
+			}
+
+			Texture2D* GetBackTexture()
+			{
+				if (BackTextureIndex == -1 || TextureInRead != -1 || TextureInWrite == BackTextureIndex)
+					return 0;
+				TextureInRead = BackTextureIndex;
+				return Textures[BackTextureIndex];
 			}
 
 			void SetForVS(int slot = 0)

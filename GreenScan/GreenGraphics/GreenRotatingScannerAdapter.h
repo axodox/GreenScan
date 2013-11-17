@@ -9,6 +9,7 @@ using namespace System;
 using namespace System::Windows::Threading;
 using namespace Green::Kinect;
 using namespace Green::Extensions;
+using namespace Green::MathExtensions;
 using namespace Turntables;
 
 namespace Green

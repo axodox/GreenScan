@@ -59,9 +59,9 @@ namespace Green
 			RenderTarget2D *RTDepthSum;
 			RenderTargetPair *RTPDepth;
 			ReadableRenderTarget2D *RRTSaveVertices, *RRTSaveTexture;
-			BlendState *BAdditive, *BOpaque;
+			BlendState *BAdditive, *BSubtractive, *BOpaque;
 			RasterizerState *RDefault, *RCullNone, *RWireframe;
-			int NextDepthBufferSize, DepthBufferSize;
+			int NextDepthBufferSize, DepthBufferSize, DepthBufferSlotsUsed;
 			int NextTriangleGridWidth, NextTriangleGridHeight;
 			bool StaticInput;
 			static const int DistortionMapWidth = 160;
@@ -177,6 +177,7 @@ namespace Green
 				DepthDistortionMap = nullptr;
 
 				BAdditive = new BlendState(Device, BlendState::Additive);
+				BSubtractive = new BlendState(Device, BlendState::Subtractive);
 				BOpaque = new BlendState(Device, BlendState::Opaque);
 
 				RDefault = new RasterizerState(Device, RasterizerState::Default);
@@ -227,6 +228,7 @@ namespace Green
 				delete TScaleMap;
 				delete TGauss;
 				delete BAdditive;
+				delete BSubtractive;
 				delete BOpaque;
 				delete RDefault;
 				delete RCullNone;
@@ -296,25 +298,34 @@ namespace Green
 
 					//Depth averaging
 					RDefault->Set();
-					RTDepthSum->SetAsRenderTarget();
-					RTDepthSum->Clear();
-					Device->SetShaders(VSSimple, PSDepthSum);
-					BAdditive->Apply();
-					Texture2D *depthTex;
-					for (int i = 0; i < DepthBufferSize; i++)
+					if (DepthBufferSlotsUsed <= DepthBufferSize)
 					{
-						depthTex = TDBDepth->BeginTextureUse(i);
-						if (depthTex == 0) continue;
-						depthTex->SetForPS();
-
+						RTDepthSum->SetAsRenderTarget();
+						Device->SetShaders(VSSimple, PSDepthSum);
+						BAdditive->Apply();
+						TDBDepth->GetFrontTexture()->SetForPS();
 						QMain->Draw();
 						TDBDepth->EndTextureUse();
+						DepthBufferSlotsUsed++;
 					}
+
 					RTPDepth->SetAsRenderTarget();
 					Device->SetShaders(VSSimple, PSDepthAverage);
 					BOpaque->Apply();
 					RTDepthSum->SetForPS();
 					QMain->Draw();
+
+					if (DepthBufferSlotsUsed >= DepthBufferSize)
+					{
+						RTDepthSum->SetAsRenderTarget();
+						Device->SetShaders(VSSimple, PSDepthSum);
+						BSubtractive->Apply();
+						TDBDepth->GetBackTexture()->SetForPS();
+						QMain->Draw();
+						TDBDepth->EndTextureUse();
+						DepthBufferSlotsUsed--;
+					}
+					BOpaque->Apply();
 
 					//Distortion Correction
 					if (DepthDistortionChanged)
@@ -590,6 +601,7 @@ namespace Green
 				}
 
 				DepthBufferSize = NextDepthBufferSize;
+				DepthBufferSlotsUsed = 0;
 				SetDepthAndColorOptions();
 				KinectReady = true;
 				StaticInput = mode & KinectDevice::Virtual;

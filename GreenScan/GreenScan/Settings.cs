@@ -198,7 +198,7 @@ namespace Green.Scan
             PreprocessingProperties = new SettingGroup("Preprocessing") { FriendlyName = GreenResources.SettingGroupPreprocessing };
             SettingGroups.Add(PreprocessingProperties);
 
-            DepthAveraging = new NumericSetting<int>("DepthAveraging", 1, 1, 32) { FriendlyName = GreenResources.SettingDepthAveraging, AvailabilityProvider = kinectModeIsDepthAndColor };
+            DepthAveraging = new NumericSetting<int>("DepthAveraging", 1, 1, 256) { FriendlyName = GreenResources.SettingDepthAveraging, AvailabilityProvider = kinectModeIsDepthAndColor };
             DepthGaussIterations = new NumericSetting<int>("DepthGaussIterations", 0, 0, 4) { FriendlyName = GreenResources.SettingDepthGaussIterations, AvailabilityProvider = kinectModeIsDepthAndColor };
             DepthGaussSigma = new NumericSetting<float>("DepthGaussSigma", 1, 0.1f, 4f, 2) { FriendlyName = GreenResources.SettingDepthGaussSigma, AvailabilityProvider = kinectModeIsDepthAndColor };
             PreprocessingProperties.Settings.Add(DepthAveraging);

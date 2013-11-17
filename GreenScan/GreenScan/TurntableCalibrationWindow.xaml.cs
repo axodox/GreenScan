@@ -10,6 +10,8 @@ using Green.Scan;
 using Green.MathExtensions;
 using Green.Helper;
 using Green.Kinect;
+using MathNet.Numerics;
+using MathNet.Numerics.Algorithms.LinearAlgebra;
 using Line = Green.MathExtensions.Line;
 using GreenResources = GreenScan.Properties.Resources;
 
@@ -299,23 +301,6 @@ namespace GreenScan
         public Plane Table { get; private set; }
         public bool IsCalibrated { get; private set; }
 
-        public float TranslationX { get { return (float)Table.Origin.X; } }
-        public float TranslationY { get { return (float)-Table.Origin.Y; } }
-        public float TranslationZ { get { return (float)Table.Origin.Z; } }
-        public float RotationX
-        {
-            get
-            {
-                return (float)-Vector3.AngleOf(Vector3.UnitZ, Vector3.UnitX * Table.Normal).ToDegrees();
-            }
-        }
-        public float RotationZ
-        {
-            get
-            {
-                return (float)-(Math.Asin(Math.Abs(Table.Normal.X / Table.Normal.Length))).ToDegrees();
-            }
-        }
         public TurntableCalibrator()
         {
             IsCalibrated = false;
@@ -331,15 +316,16 @@ namespace GreenScan
             Plane b = PlaneFromDepthData(data, new RectangleRegion(standardB.TopLeft, standardB.BottomRight));
             Line axis = Plane.Intersect(a, b);
             Vector3 origin = axis.Intersect(Ground);
-            Table = new Plane(origin, axis.Direction);
+            Table = new Plane(origin, (axis.Direction.Y > 0 ? -axis.Direction : axis.Direction));
             StandardA = a;
             StandardB = b;
             IsCalibrated = true;
         }
 
-        public delegate Float4 WorldPositionFunction(int x, int y, ushort depth);
         public static Plane PlaneFromDepthData(Float4[,] Data, Region region)
         {
+            
+
             int width = Data.GetLength(0);
             int height = Data.GetLength(1);
             Plane P = new Plane();
@@ -377,8 +363,8 @@ namespace GreenScan
                     P.Origin = new Vector3(pos.X, pos.Y, pos.Z);
 
                     //Calculate normal
-                    double a, b, c, d, e, f;
-                    a = b = c = d = e = f = 0;
+                    double x2, y2, z2, xy, xz, yz;
+                    x2 = y2 = z2 = xy = xz = yz = 0;
                     double rx, ry, rz;
                     pData = sData + startX;
                     for (int y = minY; y < maxY; y++)
@@ -392,19 +378,23 @@ namespace GreenScan
                                 rx = pos.X - P.Origin.X;
                                 ry = pos.Y - P.Origin.Y;
                                 rz = pos.Z - P.Origin.Z;
-                                a += ry * ry;
-                                b += rz * ry;
-                                c -= rx * ry;
-                                d += ry * rz;
-                                e += rz * rz;
-                                f -= rx * rz;
+                                x2 += rx * rx;
+                                y2 += ry * ry;
+                                z2 += rz * rz;
+                                xy += rx * ry;
+                                xz += rx * rz;
+                                yz += ry * rz;
                             }
                         }
                         pData += jumpX;
                     }
-                    double nz = (c * d - a * f) / (b * d - a * e);
-                    double ny = (f - e * nz) / d;
-                    P.Normal = new Vector3(1d, ny, nz).Direction;
+                    ManagedLinearAlgebraProvider linear = new ManagedLinearAlgebraProvider();
+                    double[] matrix = new double[] { x2, xy, xz, xy, y2, yz, xz, yz, z2 };
+                    double[] eigenVectors = new double[9];
+                    Complex[] eigenValues = new Complex[3];
+                    double[] matrixD = new double[9];
+                    linear.EigenDecomp(true, 3, matrix, eigenVectors, eigenValues, matrixD);
+                    P.Normal = new Vector3(eigenVectors[0], eigenVectors[1], eigenVectors[2]);
                 }
             }
             return P;
