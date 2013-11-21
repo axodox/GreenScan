@@ -9,7 +9,6 @@
 #define MIN_AGGREGATED_COUNT 10
 #define SAVE_VERSION 1
 using namespace std;
-using namespace DirectX;
 
 list<WIN32_FIND_DATAW>* ListFiles(LPCWSTR path, LPCWSTR filter)
 {
@@ -462,35 +461,6 @@ void RawDataTest(LPCWSTR path)
 	delete[DEPTH_BINS] depthCounts;
 	delete[DEPTH_BINS] depthValues;
 	delete files;
-}
-
-XMFLOAT4* FL4Load(LPCWSTR path, unsigned &size)
-{
-	FILE* file;
-	if (_wfopen_s(&file, path, L"rb"))
-	{
-		puts("No float4 file found!");
-		return nullptr;
-	}
-	unsigned width, height;
-	fread(&width, sizeof(width), 1, file);
-	fread(&height, sizeof(height), 1, file);
-	size = width * height;
-
-	XMFLOAT4* vertices;
-	fread(vertices, sizeof(*vertices), width * height, file);
-	fclose(file);
-	return vertices;
-}
-
-void Float4DataTest(LPCWSTR path)
-{
-	//Load data
-	unsigned size;
-	XMFLOAT4* vertices = FL4Load(path, size);
-	if (!vertices) return;
-
-	
 }
 
 int _tmain(int argc, _TCHAR* argv[])
