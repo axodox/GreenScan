@@ -7,6 +7,7 @@ using namespace System;
 using namespace MathNet::Numerics;
 using namespace MathNet::Numerics::Algorithms::LinearAlgebra;
 using namespace std;
+using namespace Gdiplus;
 
 #pragma unmanaged
 list<WIN32_FIND_DATAW>* ListFiles(LPCWSTR path, LPCWSTR filter)
@@ -30,7 +31,7 @@ struct float4
 	float X, Y, Z, W;
 };
 
-bool FL4Load(LPCWSTR path, float4* &buffer, unsigned &size)
+bool FL4Load(LPCWSTR path, float4* &buffer, unsigned &size, unsigned &width, unsigned &height)
 {
 	FILE* file;
 	if (_wfopen_s(&file, path, L"rb"))
@@ -38,11 +39,11 @@ bool FL4Load(LPCWSTR path, float4* &buffer, unsigned &size)
 		puts("No float4 file found!");
 		return false;
 	}
-	unsigned width, height, newSize;
-	fread(&width, sizeof(width), 1, file);
-	fread(&height, sizeof(height), 1, file);
+	unsigned newWidth, newHeight, newSize;
+	fread(&newWidth, sizeof(width), 1, file);
+	fread(&newHeight, sizeof(height), 1, file);
 	
-	newSize = width * height;
+	newSize = newWidth * newHeight;
 	if(size != newSize && buffer)
 	{
 		fclose(file);
@@ -53,6 +54,8 @@ bool FL4Load(LPCWSTR path, float4* &buffer, unsigned &size)
 	{
 		buffer = new float4[newSize];
 		size = newSize;
+		width = newWidth;
+		height = newHeight;
 	}
 	
 	fread(buffer, sizeof(float4), size, file);
@@ -329,6 +332,88 @@ void SaveGlobalResults(
 	fclose(file);
 }
 
+int GetEncoderClsid(const WCHAR* form, CLSID* pClsid)
+{
+	UINT num;
+	UINT size;
+	ImageCodecInfo* pImageCodecInfo = NULL;
+	GetImageEncodersSize(&num, &size);
+	if (size == 0)
+		return -1;
+
+	pImageCodecInfo = (ImageCodecInfo*)(malloc(size));
+	if (pImageCodecInfo == NULL)
+		return -1;
+	GetImageEncoders(num, size, pImageCodecInfo);
+	for (UINT j = 0; j < num; j++)
+	{
+		if (wcscmp(pImageCodecInfo[j].MimeType, form) == 0)
+		{
+			*pClsid = pImageCodecInfo[j].Clsid;
+			free(pImageCodecInfo);
+			return j;
+		}
+	}
+	free(pImageCodecInfo);
+	return -1;
+}
+
+struct PixelARGB
+{
+	byte B, G, R, A;
+};
+
+void SaveDensityMap(
+	LPCWSTR path,
+	unsigned width,
+	unsigned height,
+	double dataMin,
+	double dataMax,
+	const float4* const buffer,
+	const double* const data)
+{
+	unsigned size = width * height;
+	Bitmap* bitmap = new Bitmap(width, height, PixelFormat32bppARGB);
+	Gdiplus::Rect lockRect(0, 0, width, height);
+	BitmapData bitmapData;
+	bitmap->LockBits(&lockRect, Gdiplus::ImageLockMode::ImageLockModeWrite, PixelFormat32bppARGB, &bitmapData);
+
+	double dataExt = max(dataMax, -dataMin);
+
+	const double* pData = data;
+	const float4* pBuffer = buffer;
+	PixelARGB* pBitmap;
+	short intensity;
+	for (int j = 0; j < height; j++)
+	{
+		pBitmap = (PixelARGB*)((byte*)bitmapData.Scan0 + bitmapData.Stride * j);
+		for (int i = 0; i < width; i++)
+		{
+			if (pBuffer->W)
+			{
+				intensity = min(max((int)(*pData / dataExt * 255), -255), 255);
+				pBitmap->R = max(intensity, 0);
+				pBitmap->G = 0;
+				pBitmap->B = max(-intensity, 0);
+				pBitmap->A = 255;
+			}
+			else
+				pBitmap->A = 0;
+
+			pData++;
+			pBitmap++;
+			pBuffer++;
+		}
+	}
+	bitmap->UnlockBits(&bitmapData);
+	WCHAR fileName[MAX_PATH];
+	swprintf(fileName, MAX_PATH, L"%s-min%.4f, max%.4f.png", path, dataMin, dataMax);
+	CLSID pngClsid;
+	GetEncoderClsid(L"image/png", &pngClsid);
+	bitmap->Save(fileName, &pngClsid, NULL);
+	delete bitmap;
+}
+
 #pragma managed
 
 double3 CalculateNormal(
@@ -344,7 +429,7 @@ double3 CalculateNormal(
     array<double>^  matrixD = gcnew array<double>(9);
 	linear->EigenDecomp(true, 3, matrix, eigenVectors, eigenValues, matrixD);
 	double3 normal = double3(eigenVectors[0], eigenVectors[1], eigenVectors[2]);
-	if(normal.Y > 0) normal = -normal;
+	if(normal.Z > 0) normal = -normal;
 	return normal;
 }
 
@@ -359,7 +444,7 @@ void ProcessImages(
 {
 	ManagedLinearAlgebraProvider^ linear = gcnew ManagedLinearAlgebraProvider();
 	float4* buffer = nullptr;
-	unsigned size = 0, *distanceBins = nullptr;
+	unsigned size = 0, *distanceBins = nullptr, width, height;
 	double3 origin, normal;
 	covariance3x3 cov;
 	double maxDistance, minDistance, *distances = nullptr, distanceBinWidth, distanceDeviation;
@@ -369,7 +454,7 @@ void ProcessImages(
 	imageData** imageProperties = new imageData*[imageCount], **pImageProperties = imageProperties;
 	for(const WIN32_FIND_DATAW &file : *files)
 	{
-		if(FL4Load(file.cFileName, buffer, size))
+		if (FL4Load(file.cFileName, buffer, size, width, height))
 		{
 			origin = CalculateOrigin(buffer, size);
 			cov = CalculateCovariance(buffer, size, origin);
@@ -378,6 +463,7 @@ void ProcessImages(
 			CalculateDistances(buffer, size, origin, normal, distances, minDistance, maxDistance);
 			CalculateDistanceHistogram(buffer, distances, size, minDistance, maxDistance, distanceBins, distanceBinWidth, distanceDeviation);
 			SaveFileResults(file, distanceBins, minDistance, distanceBinWidth);
+			SaveDensityMap(file.cFileName, width, height, minDistance, maxDistance, buffer, distances);
 
 			PrepareGlobalProcessing(buffer, size, origin, normal, minGlobalDistance, maxGlobalDistance);
 			*pImageProperties++ = new imageData(origin, normal);
@@ -391,7 +477,7 @@ void ProcessImages(
 	distanceDeviationBin* ddBins = CreateGlobalHistogram(minGlobalDistance, maxGlobalDistance, globalWidth);
 	for(const WIN32_FIND_DATAW &file : *files)
 	{
-		if(FL4Load(file.cFileName, buffer, size))
+		if(FL4Load(file.cFileName, buffer, size, width, height))
 		{
 			origin = (*pImageProperties)->Origin;
 			normal = (*pImageProperties)->Normal;
@@ -426,8 +512,13 @@ void Float4DataTest(LPCWSTR path)
 
 int main(array<System::String ^> ^args)
 {
-	Float4DataTest(L"E:\\Teszt");
+	ULONG_PTR GdiPlusToken;
+	GdiplusStartupInput gsi;
+	GdiplusStartup(&GdiPlusToken, &gsi, 0);
 
+	Float4DataTest(L"Q:\\Asztal\\Teszt\\FloatFerde");
+
+	GdiplusShutdown(GdiPlusToken);
 	//Console::ReadLine();
     return 0;
 }

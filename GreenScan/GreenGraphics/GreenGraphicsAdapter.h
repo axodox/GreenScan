@@ -198,13 +198,18 @@ namespace Green
 				ShadedRainbow,
 				Scale,
 				ShadedScale,
-				Blinn,
+				Phong,
 				Textured
 			};
 
 			void SetShading(ShadingModes mode, float depthMaximum, float depthMinimum, float shadingPeriode, float shadingPhase, float triangleLimit, bool wireframeShading, bool useModuleShading)
 			{
 				XWindow->SetShading((DirectXWindow::ShadingModes)mode, depthMaximum, depthMinimum, shadingPeriode, shadingPhase, triangleLimit, wireframeShading, useModuleShading);
+			}
+
+			void SetLighting(float ambient, float diffuse, float specular, float shininess)
+			{
+				XWindow->SetLighting(ambient, diffuse, specular, shininess);
 			}
 
 			void Draw()

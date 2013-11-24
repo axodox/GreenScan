@@ -14,10 +14,8 @@ namespace GreenScan
     /// </summary>
     public partial class KinectCalibrationWindow : Window
     {
-        DispatcherTimer Timer;
         int SceneNumber;
         int Image;
-        int Angle = int.MinValue;
         private RemotingServer Remote;
         public KinectCalibrationWindow(RemotingServer remotingServer)
         {
@@ -33,20 +31,13 @@ namespace GreenScan
             Commands = new string[] { "Export", "Export", "Save" };
             Arguments = new string[] { "PNG/raw", "PNG/raw", "" };
             Labels = new string[] { "Infrared", "Color", "Depth" };
-            Timer = new DispatcherTimer();
-            Timer.Interval = new TimeSpan(0, 0, 1);
-            Timer.Tick += Timer_Tick;
-            Timer.Start();
+            SAngle.ValueChanged += SAngle_ValueChanged;
         }
 
-        void Timer_Tick(object sender, EventArgs e)
+        void SAngle_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             int newAngle = (int)SAngle.Value;
-            if (Angle != newAngle)
-            {
-                Remote.SetOption("Kinect.ElevationAngle", newAngle.ToString());
-                Angle = newAngle;
-            }
+            Remote.SetOption("Kinect.ElevationAngle", newAngle.ToString());
         }
 
         private void BPath_Click(object sender, RoutedEventArgs e)
@@ -127,7 +118,6 @@ namespace GreenScan
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            Timer.Stop();
             Remote.RestoreOption("Save.Directory");
             Remote.RestoreOption("Save.Label");
             Remote.RestoreOption("Save.NoTimestamp");

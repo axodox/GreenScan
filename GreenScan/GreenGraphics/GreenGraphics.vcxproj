@@ -222,7 +222,7 @@
     <Image Include="app.ico" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="BlinnPixelShader.hlsl">
+    <FxCompile Include="PhongPixelShader.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
@@ -590,6 +590,7 @@
   <ItemGroup>
     <None Include="Header.hlsli" />
     <None Include="ImportHeader.hlsli" />
+    <None Include="Phong.hlsli" />
     <None Include="Structs.hlsli" />
   </ItemGroup>
   <ItemGroup>

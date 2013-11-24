@@ -26,7 +26,7 @@ namespace Green
 				ShadedRainbow,
 				Scale,
 				ShadedScale,
-				Blinn,
+				Phong,
 				Textured
 			} ShadingMode;
 		private:
@@ -51,7 +51,7 @@ namespace Green
 			SamplerState *SLinearWrap, *SLinearClamp, *SPointClamp;
 			VertexShader *VSSimple, *VSCommon, *VSReprojection;
 			GeometryShader *GSReprojection;
-			PixelShader *PSSimple, *PSInfrared, *PSDepth, *PSColor, *PSSine, *PSPeriodicScale, *PSPeriodicShadedScale, *PSScale, *PSShadedScale, *PSBlinn, *PSTextured;
+			PixelShader *PSSimple, *PSInfrared, *PSDepth, *PSColor, *PSSine, *PSPeriodicScale, *PSPeriodicShadedScale, *PSScale, *PSShadedScale, *PSPhong, *PSTextured;
 			PixelShader *PSDepthSum, *PSDepthAverage, *PSDepthGaussH, *PSDepthGaussV, *PSVectorOutput, *PSTextureOutput, *PSDistortionCorrection;
 			Texture2D *TColor, *TDepthCorrection;
 			Texture1D *THueMap, *TScaleMap, *TGauss;
@@ -111,8 +111,15 @@ namespace Green
 				float TriangleLimit;
 			} DepthAndColorOptions;
 
+			struct LightingConstants
+			{
+				XMFLOAT3 Intensity;
+				float Shininess;
+			} LightingOptions;
+
 			ConstantBuffer<DepthAndColorConstants>* CBDepthAndColor;
 			ConstantBuffer<CommonConstants>* CBCommon;
+			ConstantBuffer<LightingConstants>* CBLighting;
 
 			void CreateResources()
 			{
@@ -141,7 +148,7 @@ namespace Green
 				PSPeriodicShadedScale = new PixelShader(Device, L"PeriodicShadedScalePixelShader.cso");
 				PSScale = new PixelShader(Device, L"ScalePixelShader.cso");
 				PSShadedScale = new PixelShader(Device, L"ShadedScalePixelShader.cso");
-				PSBlinn = new PixelShader(Device, L"BlinnPixelShader.cso");
+				PSPhong = new PixelShader(Device, L"PhongPixelShader.cso");
 				PSTextured = new PixelShader(Device, L"TexturedPixelShader.cso");
 
 				PSDepthSum = new PixelShader(Device, L"DepthSumPixelShader.cso");
@@ -159,6 +166,7 @@ namespace Green
 				ZeroMemory(&Params, sizeof(RenderingParameters));
 				CBDepthAndColor = new ConstantBuffer<DepthAndColorConstants>(Device);
 				CBCommon = new ConstantBuffer<CommonConstants>(Device);
+				CBLighting = new ConstantBuffer<LightingConstants>(Device);
 
 				KinectReady = false;
 
@@ -210,7 +218,7 @@ namespace Green
 				delete PSPeriodicShadedScale;
 				delete PSScale;
 				delete PSShadedScale;
-				delete PSBlinn;
+				delete PSPhong;
 				delete PSTextured;
 				delete PSDepthSum;
 				delete PSDepthAverage;
@@ -224,6 +232,7 @@ namespace Green
 				delete SPointClamp;
 				delete CBDepthAndColor;
 				delete CBCommon;
+				delete CBLighting;
 				delete THueMap;
 				delete TScaleMap;
 				delete TGauss;
@@ -431,8 +440,8 @@ namespace Green
 							SLinearClamp->SetForPS();
 							TScaleMap->SetForPS();
 							break;
-						case ShadingModes::Blinn:
-							Device->SetShaders(VSReprojection, PSBlinn, GSReprojection);
+						case ShadingModes::Phong:
+							Device->SetShaders(VSReprojection, PSPhong, GSReprojection);
 							break;
 						case ShadingModes::Textured:
 							Device->SetShaders(VSReprojection, PSTextured, GSReprojection);
@@ -814,6 +823,12 @@ namespace Green
 				DrawIfNeeded();
 			}
 
+			void SetLighting(float ambient, float diffuse, float specular, float shininess)
+			{
+				LightingOptions.Intensity = XMFLOAT3(ambient, diffuse, specular);
+				LightingOptions.Shininess = shininess;
+			}
+
 			void SetPerformance(int triangleGridWidth, int triangleGridHeight)
 			{
 				NextTriangleGridWidth = triangleGridWidth;
@@ -1132,6 +1147,8 @@ namespace Green
 				CBCommon->SetForVS(0);
 				CBCommon->SetForGS(0);
 				CBCommon->SetForPS(0);
+				CBLighting->Update(&LightingOptions);
+				CBLighting->SetForPS(3);
 
 				Device->Clear(BackgroundColor);
 				if (KinectReady)

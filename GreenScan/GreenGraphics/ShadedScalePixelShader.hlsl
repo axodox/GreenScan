@@ -1,16 +1,11 @@
 #include "Header.hlsli"
+#include "Phong.hlsli"
 Texture1D ScaleTexture : register(t0);
 SamplerState ScaleSampler : register(s0);
 
-float4 main(VertexPositionWorldNormalDepthTexture v) : SV_TARGET
+float4 main(VertexPositionWorldNormalDepthTexture surface) : SV_TARGET
 {
-	float shade = abs(v.Normal.z);
-	if(shade < 0.f || shade > 1.f)
-		return 0.f;
-	else
-	{
-		float4 color = ScaleTexture.Sample(ScaleSampler, (v.Depth - DepthMinimum) / (DepthMaximum - DepthMinimum)) * (0.5f + shade / 4.f);
-		color.a = 1.f;
-		return color;
-	}
+	float intensity = GetPhongIntensity(surface.World, surface.Normal, 0.f);
+	float3 color = ScaleTexture.Sample(ScaleSampler, (surface.Depth - DepthMinimum) / (DepthMaximum - DepthMinimum)).xyz;
+	return float4(color * intensity, 1.0f);
 }

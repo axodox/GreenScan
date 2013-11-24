@@ -125,9 +125,6 @@
     <FxCompile Include="DepthPixelShader.hlsl">
       <Filter>Source Files\Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="BlinnPixelShader.hlsl">
-      <Filter>Source Files\Shaders</Filter>
-    </FxCompile>
     <FxCompile Include="ScalePixelShader.hlsl">
       <Filter>Source Files\Shaders</Filter>
     </FxCompile>
@@ -257,6 +254,9 @@
     <FxCompile Include="VectorImportPixelShader.hlsl">
       <Filter>Source Files\Shaders</Filter>
     </FxCompile>
+    <FxCompile Include="PhongPixelShader.hlsl">
+      <Filter>Source Files\Shaders</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Header.hlsli">
@@ -266,6 +266,9 @@
       <Filter>Source Files\Shaders</Filter>
     </None>
     <None Include="ImportHeader.hlsli">
+      <Filter>Source Files\Shaders</Filter>
+    </None>
+    <None Include="Phong.hlsli">
       <Filter>Source Files\Shaders</Filter>
     </None>
   </ItemGroup>

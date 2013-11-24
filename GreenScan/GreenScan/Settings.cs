@@ -57,6 +57,12 @@ namespace Green.Scan
         public NumericSetting<float> TriangleRemoveLimit { get; private set; }
         public BooleanSetting WireframeShading { get; private set; }
 
+        public SettingGroup LightingProperties { get; private set; }
+        public NumericSetting<float> AmbientLighting { get; private set; }
+        public NumericSetting<float> DiffuseLighting { get; private set; }
+        public NumericSetting<float> SpecularLighting { get; private set; }
+        public NumericSetting<float> Shininess { get; private set; }
+
         public SettingGroup PerformanceProperties { get; private set; }
         public SizeSetting TriangleGridResolution { get; private set; }
 
@@ -177,7 +183,7 @@ namespace Green.Scan
             TurntableScanningSetter = new SettingSetter();
 
             //Kinect
-            KinectProperties = new SettingGroup("Kinect") { FriendlyName = GreenResources.SettingGroupKinect, Footer = GreenResources.SettingGroupKinectFooter, IsHidden = true };
+            KinectProperties = new SettingGroup("Kinect") { FriendlyName = GreenResources.SettingGroupKinect, Footer = GreenResources.SettingGroupKinectFooter };
             SettingGroups.Add(KinectProperties);
 
             KinectMode = new EnumSetting<KinectManager.Modes>("Mode", KinectManager.Modes.DepthAndColor) { FriendlyName = GreenResources.SettingKinectMode, FriendlyOptions = GreenResources.EnumKinectManagerModes.Split('|') };
@@ -270,10 +276,12 @@ namespace Green.Scan
 
             UseModuleShading = new BooleanSetting("ModuleShading", false) { FriendlyName = GreenResources.SettingUseModuleShading, AvailabilityProvider = kinectModeIsDepthAndColor };
             ShadingMode = new EnumSetting<GraphicsCanvas.ShadingModes>("ShadingMode", GraphicsCanvas.ShadingModes.Rainbow) { FriendlyName = GreenResources.SettingShadingMode, AvailabilityProvider = kinectModeIsDepthAndColor, FriendlyOptions = GreenResources.EnumGraphicsCanvasShadingModes.Split('|') };
+            DependentAvailability periodicShading = new DependentAvailability(ShadingMode, "Zebra|Rainbow|ShadedRainbow");
+            DependentAvailability phongShading = new DependentAvailability(ShadingMode, "ShadedRainbow|ShadedScale|Phong");
             DepthMaximum = new NumericSetting<float>("DepthMaximum", 8f, 0f, 8f, 2) { FriendlyName = GreenResources.SettingDepthMaximum, AvailabilityProvider = kinectModeIsDepthAndColor };
             DepthMinimum = new NumericSetting<float>("DepthMinimum", 0.4f, 0.4f, 8f, 2) { FriendlyName = GreenResources.SettingDepthMinimum, AvailabilityProvider = kinectModeIsDepthAndColor };
-            ShadingPeriode = new NumericSetting<float>("ShadingPeriode", 1f, 0.01f, 2f, 2) { FriendlyName = GreenResources.SettingShadingPeriode };
-            ShadingPhase = new NumericSetting<float>("ShadingPhase", 0f, 0f, 1f, 2) { FriendlyName = GreenResources.SettingShadingPhase };
+            ShadingPeriode = new NumericSetting<float>("ShadingPeriode", 1f, 0.01f, 2f, 2) { FriendlyName = GreenResources.SettingShadingPeriode, AvailabilityProvider = periodicShading };
+            ShadingPhase = new NumericSetting<float>("ShadingPhase", 0f, 0f, 1f, 2) { FriendlyName = GreenResources.SettingShadingPhase, AvailabilityProvider = periodicShading };
             TriangleRemoveLimit = new NumericSetting<float>("TriangleRemoveLimit", 0.0024f, 0.0001f, 0.004f, 4) { FriendlyName = GreenResources.SettingTriangleRemoveLimit, AvailabilityProvider = kinectModeIsDepthAndColor };
             WireframeShading = new BooleanSetting("WireframeShading", false) { FriendlyName = GreenResources.SettingWireframeShading, AvailabilityProvider = kinectModeIsDepthAndColor };
             ShadingProperties.Settings.Add(UseModuleShading);
@@ -284,6 +292,19 @@ namespace Green.Scan
             ShadingProperties.Settings.Add(ShadingPhase);
             ShadingProperties.Settings.Add(TriangleRemoveLimit);
             ShadingProperties.Settings.Add(WireframeShading);
+
+            //Lighting
+            LightingProperties = new SettingGroup("Lighting") { FriendlyName = GreenResources.SettingGroupLighting };
+            SettingGroups.Add(LightingProperties);
+
+            AmbientLighting = new NumericSetting<float>("AmbientLighting", 0.1f, 0f, 1f, 2) { FriendlyName = GreenResources.SettingAmbientLighting, AvailabilityProvider = phongShading };
+            DiffuseLighting = new NumericSetting<float>("DiffuseLighting", 0.8f, 0f, 1f, 2) { FriendlyName = GreenResources.SettingDiffuseLighting, AvailabilityProvider = phongShading };
+            SpecularLighting = new NumericSetting<float>("SpecularLighting", 0.4f, 0f, 1f, 2) { FriendlyName = GreenResources.SettingSpecularLighting, AvailabilityProvider = phongShading };
+            Shininess = new NumericSetting<float>("Shininess", 20f, 0f, 50f, 1) { FriendlyName = GreenResources.SettingShininess, AvailabilityProvider = phongShading };
+            LightingProperties.Settings.Add(AmbientLighting);
+            LightingProperties.Settings.Add(DiffuseLighting);
+            LightingProperties.Settings.Add(SpecularLighting);
+            LightingProperties.Settings.Add(Shininess);
 
             //Performance
             PerformanceProperties = new SettingGroup("Performance") { FriendlyName = GreenResources.SettingGroupPerformance };

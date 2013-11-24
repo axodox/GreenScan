@@ -49,7 +49,7 @@ VertexPositionWorldNormalDepthTexture main(VertexPositionTextureIn vi)
 
 	VertexPositionWorldNormalDepthTexture vo;
 	vo.Position = posScreen;
-	vo.WorldPosition = posWorld;
+	vo.World = posWorld;
 	vo.Normal = normalize(mul(normal, NormalTransform));
 	vo.Depth = depth;
 	vo.Texture = tex;

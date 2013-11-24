@@ -11,3 +11,6 @@
 #include <stdio.h>
 #include <tchar.h>
 #include <list>
+#include <comdef.h>
+#include <gdiplus.h>
+#pragma comment (lib, "Gdiplus.lib")

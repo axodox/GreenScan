@@ -71,7 +71,7 @@ struct VertexPositionDepth
 struct VertexPositionWorldNormalDepthTexture
 {
     float4 Position : SV_POSITION;
-	float3 WorldPosition : POSITION1;
+	float3 World : POSITION1;
 	float3 Normal: NORMAL0;
 	float Depth : NORMAL1;
 	float2 Texture : TEXCOORD0;

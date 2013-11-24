@@ -151,7 +151,7 @@
     <value>Start</value>
   </data>
   <data name="EnumGraphicsCanvasShadingModes" xml:space="preserve">
-    <value>Zebra|Rainbow|Shaded rainbow|Scale|Shaded scale|Blinn|Textured</value>
+    <value>Zebra|Rainbow|Shaded rainbow|Scale|Shaded scale|Phong|Textured</value>
   </data>
   <data name="EnumKinectManagerModes" xml:space="preserve">
     <value>Depth|Color|Depth with color|Infrared</value>
@@ -327,6 +327,9 @@
   <data name="SaveUnsuccesful" xml:space="preserve">
     <value>Saving was unsuccessful!</value>
   </data>
+  <data name="SettingAmbientLighting" xml:space="preserve">
+    <value>Ambient intensity (units)</value>
+  </data>
   <data name="SettingColorDispositionX" xml:space="preserve">
     <value>Color X disposition (pixels)</value>
   </data>
@@ -369,6 +372,9 @@
   <data name="SettingDepthToIRMapping" xml:space="preserve">
     <value>Depth to IR mapping</value>
   </data>
+  <data name="SettingDiffuseLighting" xml:space="preserve">
+    <value>Diffuse intensity (units)</value>
+  </data>
   <data name="SettingElevationAngle" xml:space="preserve">
     <value>Elevation angle (degrees)</value>
   </data>
@@ -380,6 +386,9 @@
   </data>
   <data name="SettingGroupKinectFooter" xml:space="preserve">
     <value>*Applies to Kinect for Windows only</value>
+  </data>
+  <data name="SettingGroupLighting" xml:space="preserve">
+    <value>Lighting</value>
   </data>
   <data name="SettingGroupPerformance" xml:space="preserve">
     <value>Performance</value>
@@ -473,6 +482,12 @@
   </data>
   <data name="SettingShadingPhase" xml:space="preserve">
     <value>Shading phase (units)</value>
+  </data>
+  <data name="SettingShininess" xml:space="preserve">
+    <value>Shininess exponent (units)</value>
+  </data>
+  <data name="SettingSpecularLighting" xml:space="preserve">
+    <value>Specular intensity (units)</value>
   </data>
   <data name="SettingTranslationX" xml:space="preserve">
     <value>Translation X (meters)</value>

@@ -151,7 +151,7 @@
     <value>Kezdés</value>
   </data>
   <data name="EnumGraphicsCanvasShadingModes" xml:space="preserve">
-    <value>Zebra|Szivárványszín|Árnyalt szivárványszín|Skála|Árnyalt skála|Blinn|Textúrázott</value>
+    <value>Zebra|Szivárványszín|Árnyalt szivárványszín|Skála|Árnyalt skála|Phong|Textúrázott</value>
   </data>
   <data name="EnumKinectManagerModes" xml:space="preserve">
     <value>Mélység|Színes|Mélység + színes|Infravörös</value>
@@ -327,6 +327,9 @@
   <data name="SaveUnsuccesful" xml:space="preserve">
     <value>Mentés sikertelen!</value>
   </data>
+  <data name="SettingAmbientLighting" xml:space="preserve">
+    <value>Ambiens intentzitás (egységben)</value>
+  </data>
   <data name="SettingColorDispositionX" xml:space="preserve">
     <value>Színes kép eltolása X irányban (pixelben)</value>
   </data>
@@ -369,6 +372,9 @@
   <data name="SettingDepthToIRMapping" xml:space="preserve">
     <value>Mélységből -&gt; Infravörös leképezés</value>
   </data>
+  <data name="SettingDiffuseLighting" xml:space="preserve">
+    <value>Diffúz intentzitás (egységben)</value>
+  </data>
   <data name="SettingElevationAngle" xml:space="preserve">
     <value>Emelkedési szög (fokban)</value>
   </data>
@@ -380,6 +386,9 @@
   </data>
   <data name="SettingGroupKinectFooter" xml:space="preserve">
     <value>*Csak a Kinect for Windows eszközökre vonatkozik</value>
+  </data>
+  <data name="SettingGroupLighting" xml:space="preserve">
+    <value>Megvilágítás</value>
   </data>
   <data name="SettingGroupPerformance" xml:space="preserve">
     <value>Teljesítmény</value>
@@ -473,6 +482,12 @@
   </data>
   <data name="SettingShadingPhase" xml:space="preserve">
     <value>Árnyalási fázis (egységben)</value>
+  </data>
+  <data name="SettingShininess" xml:space="preserve">
+    <value>Fényességi kitevő (egységben)</value>
+  </data>
+  <data name="SettingSpecularLighting" xml:space="preserve">
+    <value>Spekuláris intentzitás (egységben)</value>
   </data>
   <data name="SettingTranslationX" xml:space="preserve">
     <value>Eltolás X irányban (méterben)</value>

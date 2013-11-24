@@ -9,6 +9,7 @@
 #define MIN_AGGREGATED_COUNT 10
 #define SAVE_VERSION 1
 using namespace std;
+using namespace Gdiplus;
 
 list<WIN32_FIND_DATAW>* ListFiles(LPCWSTR path, LPCWSTR filter)
 {
@@ -39,7 +40,9 @@ enum Modes
 bool ReadRawDepthFile(
 	LPCWSTR path, 
 	USHORT* &depthImage,
-	unsigned &size)
+	unsigned &size, 
+	unsigned &width, 
+	unsigned &height)
 {
 	bool ok = false;
 	FILE* file = nullptr;
@@ -71,6 +74,8 @@ bool ReadRawDepthFile(
 				{
 					depthImage = new USHORT[depthSize];
 					size = depthSize;
+					width = depthWidth;
+					height = depthHeight;
 				}
 				if (size == depthSize)
 				{
@@ -84,6 +89,14 @@ bool ReadRawDepthFile(
 	return ok;
 }
 
+bool ReadRawDepthFile(
+	LPCWSTR path,
+	USHORT* &depthImage)
+{
+	unsigned size, width, height;
+	return ReadRawDepthFile(path, depthImage, size, width, height);
+}
+
 double inline ToDepth(USHORT raw)
 {
 	return raw * 0.000125;
@@ -93,6 +106,8 @@ void CalculateAverage(
 	const list<WIN32_FIND_DATAW>* const files,
 	unsigned &fileCount,
 	unsigned &size,
+	unsigned &width,
+	unsigned &height,
 	unsigned short *&count,
 	double *&average	
 	)
@@ -105,7 +120,7 @@ void CalculateAverage(
 	fileCount = 0;
 	for (const WIN32_FIND_DATAW &file : *files)
 	{
-		if (ReadRawDepthFile(file.cFileName, image, size))
+		if (ReadRawDepthFile(file.cFileName, image, size, width, height))
 		{
 			fileCount++;
 
@@ -172,7 +187,7 @@ void CalculateStandardDeviation(
 	ZeroMemory(deviation, sizeof(double)* size);
 	for (const WIN32_FIND_DATAW &file : *files)
 	{
-		if (ReadRawDepthFile(file.cFileName, image, size))
+		if (ReadRawDepthFile(file.cFileName, image))
 		{
 			pImage = image;
 			pAverage = average;
@@ -207,24 +222,11 @@ void CalculateStandardDeviation(
 }
 
 template <class T> void FindLimits(
-	const T* const data, 
+	const T* const data,
 	unsigned length,
 	T &min,
-	T &max)
-{
-	if (!length) return;
-	min = data[0];
-	max = data[0];
-	const T* pData = data;
-	for (int i = 1; i < length; i++)
-	{
-		if (*pData < min)
-			min = *pData;
-		if (*pData > max)
-			max = *pData;
-		pData++;
-	}
-}
+	T &max,
+	const unsigned short* const count = nullptr);
 
 void CalculateAggregatedDeviations(
 	unsigned size,
@@ -244,7 +246,7 @@ void CalculateAggregatedDeviations(
 	ZeroMemory(aggregated, sizeof(double)* AGGREGATED_BINS);
 	
 	double minimum, maximum;
-	FindLimits(average, size, minimum, maximum);
+	FindLimits(average, size, minimum, maximum, count);
 	double width = (maximum - minimum) / AGGREGATED_BINS;
 	unsigned bin;
 	for (int i = 0; i < size; i++)
@@ -311,7 +313,7 @@ void SingleDepthPixelTest(
 	double* depths = new double[fileCount], depth;
 	for (const WIN32_FIND_DATAW &file : *files)
 	{
-		if (ReadRawDepthFile(file.cFileName, image, size))
+		if (ReadRawDepthFile(file.cFileName, image))
 		{
 			depth = ToDepth(image[index]);
 			if (depth > MIN_DEPTH && depth < MAX_DEPTH)
@@ -414,6 +416,88 @@ void SaveSingleDepthPixelTestResults(
 	}
 }
 
+struct PixelARGB
+{
+	byte B, G, R, A;
+};
+
+int GetEncoderClsid(const WCHAR* form, CLSID* pClsid)
+{
+	UINT num;
+	UINT size;
+	ImageCodecInfo* pImageCodecInfo = NULL;
+	GetImageEncodersSize(&num, &size);
+	if (size == 0)
+		return -1;
+
+	pImageCodecInfo = (ImageCodecInfo*)(malloc(size));
+	if (pImageCodecInfo == NULL)
+		return -1;
+	GetImageEncoders(num, size, pImageCodecInfo);
+	for (UINT j = 0; j < num; j++)
+	{
+		if (wcscmp(pImageCodecInfo[j].MimeType, form) == 0)
+		{
+			*pClsid = pImageCodecInfo[j].Clsid;
+			free(pImageCodecInfo);
+			return j;
+		}
+	}
+	free(pImageCodecInfo);
+	return -1;
+}
+
+void SaveDensityMap(
+	LPCWSTR path,
+	unsigned width,
+	unsigned height,
+	const unsigned short* const count,
+	const double* const data)
+{
+	unsigned size = width * height;
+	Bitmap* bitmap = new Bitmap(width, height, PixelFormat32bppARGB);
+	Gdiplus::Rect lockRect(0, 0, width, height);
+	BitmapData bitmapData;	
+	bitmap->LockBits(&lockRect, Gdiplus::ImageLockMode::ImageLockModeWrite, PixelFormat32bppARGB, &bitmapData);
+
+	double dataMin, dataMax, dataWidth;
+	FindLimits(data, size, dataMin, dataMax, count);
+	dataWidth = dataMax - dataMin;
+
+	const double* pData = data;
+	const unsigned short* pCount = count;
+	PixelARGB* pBitmap;
+	byte intensity;
+	for (int j = 0; j < height; j++)
+	{
+		pBitmap = (PixelARGB*)((byte*)bitmapData.Scan0 + bitmapData.Stride * j);
+		for (int i = 0; i < width; i++)
+		{
+			if (*pCount)
+			{
+				intensity = min(max((int)((*pData - dataMin) / dataWidth * 255), 0), 255);
+				pBitmap->R = intensity;
+				pBitmap->G = 255 - intensity;
+				pBitmap->B = 0;
+				pBitmap->A = 255;
+			}
+			else
+				pBitmap->A = 0;
+
+			pData++;
+			pBitmap++;
+			pCount++;
+		}
+	}
+	bitmap->UnlockBits(&bitmapData);
+	WCHAR fileName[MAX_PATH];
+	swprintf(fileName, MAX_PATH, L"%s-min%.4f, max%.4f.png", path, dataMin, dataMax);
+	CLSID pngClsid;
+	GetEncoderClsid(L"image/png", &pngClsid);
+	bitmap->Save(fileName, &pngClsid, NULL);
+	delete bitmap;
+}
+
 void RawDataTest(LPCWSTR path)
 {
 	//Build file list
@@ -425,10 +509,10 @@ void RawDataTest(LPCWSTR path)
 	}
 
 	//Averages
-	unsigned fileCount, size;
+	unsigned fileCount, size, width, height;
 	double* average;
 	unsigned short* count;
-	CalculateAverage(files, fileCount, size, count, average);
+	CalculateAverage(files, fileCount, size, width, height, count, average);
 
 	if (!fileCount) return ;
 
@@ -450,6 +534,8 @@ void RawDataTest(LPCWSTR path)
 	SaveGlobalResults("globalResults.csv", size, count, average, deviation);
 	SaveAggregatedResults("aggregatedResults.csv", aggregatedAverages, aggregatedCounts, aggregatedDeviations);
 	SaveSingleDepthPixelTestResults("depthTestResults.csv", depthValues, depthCounts);
+	SaveDensityMap(L"average", width, height, count, average);
+	SaveDensityMap(L"deviation", width, height, count, deviation);
 
 	//Free memory
 	delete[size] count;
@@ -465,9 +551,39 @@ void RawDataTest(LPCWSTR path)
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	RawDataTest(L"G:\\Axodox\\Dokumentumok\\Visual Studio 2012\\Projects\\GreenScan\\Release");
+	ULONG_PTR GdiPlusToken;
+	GdiplusStartupInput gsi;
+	GdiplusStartup(&GdiPlusToken, &gsi, 0);
 
+	RawDataTest(argv[1]);
+
+	GdiplusShutdown(GdiPlusToken);
 	system("PAUSE");
 	return 0;
 }
 
+#undef max
+#undef min
+template <class T> void FindLimits(
+	const T* const data,
+	unsigned length,
+	T &min,
+	T &max,
+	const unsigned short* const count)
+{
+	if (!length) return;
+	min = numeric_limits<T>::max();
+	max = numeric_limits<T>::min();
+	const T* pData = data - 1;
+	const unsigned short* pCount = count - 1;
+	for (int i = 1; i < length; i++)
+	{
+		pData++;
+		pCount++;
+		if (count && !*pCount) continue;
+		if (*pData < min)
+			min = *pData;
+		if (*pData > max)
+			max = *pData;
+	}
+}

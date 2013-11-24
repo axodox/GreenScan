@@ -102,6 +102,7 @@ namespace Green.Scan
             SetView();
             SetCameras();
             SetShading();
+            SetLighting();
             SetPerformance();
             SetSave();
 
@@ -145,6 +146,8 @@ namespace Green.Scan
         #endregion
         
         #region Settings
+        int TargetAngle;
+        BackgroundWorker AngleSetWorker;
 
         void InitSettings()
         {
@@ -155,12 +158,22 @@ namespace Green.Scan
             Settings.ViewProperties.ValueChanged += (object sender, EventArgs e) => { SetView(); };
             Settings.CameraProperties.ValueChanged += (object sender, EventArgs e) => { SetCameras(); };
             Settings.ShadingProperties.ValueChanged += (object sender, EventArgs e) => { SetShading(); };
+            Settings.LightingProperties.ValueChanged += (object sender, EventArgs e) => { SetLighting(); };
             Settings.PerformanceProperties.ValueChanged += (object sender, EventArgs e) => { SetPerformance(); };
             Settings.SaveProperties.ValueChanged += (object sender, EventArgs e) => { SetSave(); };
             Settings.TurntableProperties.ValueChanged += (object sender, EventArgs e) => { SetTurntable(); };
             Settings.TurntableMode.ValueChanged += (object sender, EventArgs e) => { SetTurntableMode(); };
             Settings.TurntableAxialProperties.ValueChanged += (object sender, EventArgs e) => { SetTurntableAxial(); };
             Settings.TurntableVolumetricProperties.ValueChanged += (object sender, EventArgs e) => { SetTurntableVolumetric(); };
+
+            AngleSetWorker = new BackgroundWorker();
+            AngleSetWorker.DoWork += AngleSetWorker_DoWork;
+        }
+
+        void AngleSetWorker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            while (DeviceManager.Angle != TargetAngle)
+                DeviceManager.Angle = TargetAngle;
         }
 
         void InitRemoting()
@@ -209,11 +222,14 @@ namespace Green.Scan
 
         }
 
+        
         void SetKinect()
         {
             DeviceManager.SetEmitter(Settings.EmitterEnabled.Value);
             DeviceManager.SetNearMode(Settings.NearModeEnabled.Value);
-            DeviceManager.Angle = Settings.ElevationAngle.Value;
+            TargetAngle = Settings.ElevationAngle.Value;
+            if (!AngleSetWorker.IsBusy)
+                AngleSetWorker.RunWorkerAsync();
         }
 
         void SetPreprocessing()
@@ -267,6 +283,15 @@ namespace Green.Scan
                 Settings.TriangleRemoveLimit.Value,
                 Settings.WireframeShading.Value,
                 Settings.UseModuleShading.Value);
+        }
+
+        void SetLighting()
+        {
+            GraphicsCore.SetLighting(
+                Settings.AmbientLighting.Value,
+                Settings.DiffuseLighting.Value,
+                Settings.SpecularLighting.Value,
+                Settings.Shininess.Value);
         }
 
         void SetPerformance()
