@@ -3,6 +3,9 @@
 #define MAX_DEPTH 8
 #define DISTANCE_HISTOGRAM_BINS 30
 #define DISTANVE_DEVIATION_BINS 30
+#define RADIUS_BINS 30
+#define IMAGE_CENTER_X 310
+#define IMAGE_CENTER_Y 246
 using namespace System;
 using namespace MathNet::Numerics;
 using namespace MathNet::Numerics::Algorithms::LinearAlgebra;
@@ -316,6 +319,73 @@ void AddToGlobalHistogram(
 	}
 }
 
+void CalculateRadiusAvgDistancesResults(
+	const double* const distances,
+	unsigned width,
+	unsigned height,
+	double* &radii,
+	double* &avgDistances
+	)
+{
+	unsigned size = width * height;
+	int maxX = max(width - IMAGE_CENTER_X, IMAGE_CENTER_X);
+	int maxY = max(height - IMAGE_CENTER_Y, IMAGE_CENTER_Y);
+	double maxR = sqrt(maxX * maxX + maxY * maxY);
+	if (!radii)
+	{
+		radii = new double[RADIUS_BINS];
+		for (int i = 0; i < RADIUS_BINS; i++)
+		{
+			radii[i] = i * maxR / RADIUS_BINS;
+		}
+	}	
+	if (!avgDistances)
+	{
+		avgDistances = new double[RADIUS_BINS];
+	}
+	ZeroMemory(avgDistances, sizeof(double)* RADIUS_BINS);
+	unsigned* counts = new unsigned[RADIUS_BINS];
+	const double* pDistances = distances;
+	ZeroMemory(counts, sizeof(unsigned)* RADIUS_BINS);
+	unsigned bin;
+	int dx, dy;
+	for (int j = 0; j < height; j++)
+	for (int i = 0; i < width; i++)
+	{
+		dx = i - IMAGE_CENTER_X;
+		dy = j - IMAGE_CENTER_Y;
+		bin = min(sqrt(dx*dx + dy*dy) / maxR * RADIUS_BINS, RADIUS_BINS);
+		(counts[bin])++;
+		avgDistances[bin] += *pDistances;
+		pDistances++;
+	}
+
+	for (int i = 0; i < RADIUS_BINS; i++)
+	{
+		if (counts[i]) avgDistances[i] /= counts[i];
+	}
+	//delete[RADIUS_BINS] counts;
+}
+
+void SaveRadiusAvgDistances(
+	WIN32_FIND_DATAW sourceFile,
+	const double* const &radii,
+	const double* const &avgDistances)
+{
+	wchar_t path[MAX_PATH];
+	wcscpy(path, sourceFile.cFileName);
+	wcscat(path, L"RadiusResults.csv");
+
+	FILE* file = nullptr;
+	if (_wfopen_s(&file, path, L"w")) return;
+
+	for (int i = 0; i < RADIUS_BINS; i++)
+	{
+		fprintf(file, "%f, %f\r\n", radii[i], avgDistances[i]);
+	}
+	fclose(file);
+}
+
 void SaveGlobalResults(
 	LPCWSTR path,
 	distanceDeviationBin* const bins)
@@ -448,7 +518,7 @@ void ProcessImages(
 	double3 origin, normal;
 	covariance3x3 cov;
 	double maxDistance, minDistance, *distances = nullptr, distanceBinWidth, distanceDeviation;
-	double maxGlobalDistance = 0, minGlobalDistance = MAX_DEPTH;
+	double maxGlobalDistance = 0, minGlobalDistance = MAX_DEPTH, *radii = nullptr, *avgDistances = nullptr;
 
 	unsigned imageCount = files->size();
 	imageData** imageProperties = new imageData*[imageCount], **pImageProperties = imageProperties;
@@ -462,15 +532,19 @@ void ProcessImages(
 
 			CalculateDistances(buffer, size, origin, normal, distances, minDistance, maxDistance);
 			CalculateDistanceHistogram(buffer, distances, size, minDistance, maxDistance, distanceBins, distanceBinWidth, distanceDeviation);
+			CalculateRadiusAvgDistancesResults(distances, width, height, radii, avgDistances);
 			SaveFileResults(file, distanceBins, minDistance, distanceBinWidth);
 			SaveDensityMap(file.cFileName, width, height, minDistance, maxDistance, buffer, distances);
-
+			SaveRadiusAvgDistances(file, radii, avgDistances);
+			
 			PrepareGlobalProcessing(buffer, size, origin, normal, minGlobalDistance, maxGlobalDistance);
 			*pImageProperties++ = new imageData(origin, normal);
 		}
 	}
 	if(distances) delete[size] distances;
 	if(distanceBins) delete[DISTANCE_HISTOGRAM_BINS] distanceBins;
+	if(radii) delete[RADIUS_BINS] radii;
+	if(avgDistances) delete[RADIUS_BINS] avgDistances;
 
 	pImageProperties = imageProperties;
 	double globalWidth;
@@ -516,7 +590,7 @@ int main(array<System::String ^> ^args)
 	GdiplusStartupInput gsi;
 	GdiplusStartup(&GdiPlusToken, &gsi, 0);
 
-	Float4DataTest(L"Q:\\Asztal\\Teszt\\FloatFerde");
+	Float4DataTest(L"Q:\\Asztal\\Teszt\\FloatSzemben");
 
 	GdiplusShutdown(GdiPlusToken);
 	//Console::ReadLine();
